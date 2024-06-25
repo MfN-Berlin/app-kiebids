@@ -1,1 +1,1 @@
-# app.kiebids
+# Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
