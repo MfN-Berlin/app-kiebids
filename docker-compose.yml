@@ -1,1 +1,58 @@
+services:
+  prefect:
+    image: prefecthq/prefect:2-python3.10
+    ports:
+      - "4200:4200"
+    command: prefect server start --host 0.0.0.0
+    volumes:
+      - ./prefect-data:/root/.prefect
+    profiles: [server]
 
+  agent:
+    image: prefecthq/prefect:2-python3.10
+    command: prefect worker start --pool default
+    depends_on:
+      - prefect
+    environment:
+      - PREFECT_API_URL=http://host.docker.internal:4200/api
+    profiles: [server]
+
+  kiebids_ocr_server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kiebids-ocr:latest
+    volumes:
+      - ./data/input:/app/data/input
+      - ./data/output:/app/data/output
+    environment:
+      - PREFECT_API_URL=http://host.docker.internal:4200/api
+    command: ["python", "kiebids/ocr_flow.py", "server"]
+    profiles: [server]
+
+  kiebids_ocr_local:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kiebids-ocr:latest
+    volumes:
+      - ./data/input:/app/data/input
+      - ./data/output:/app/data/output
+    command: ["python", "kiebids/ocr_flow.py", "local"]
+    profiles: [local]
+
+  kiebids_ocr_interactive:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: kiebids-ocr:latest
+    volumes:
+      - ./data/input:/app/data/input
+      - ./data/output:/app/data/output
+    entrypoint: /bin/bash
+    tty: true
+    stdin_open: true
+    profiles: [interactive]
+
+volumes:
+  data:
