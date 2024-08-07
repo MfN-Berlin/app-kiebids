@@ -19,10 +19,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    depends_on:
+      - prefect
+      - agent
     container_name: kiebids_ocr
     volumes:
-      - ./data/input:/app/data/input
-      - ./data/output:/app/data/output
+      - ./data:/app/data
     environment:
       - PREFECT_API_URL=http://host.docker.internal:4200/api
+      - INPUT_DIR=/app/data/input
+      - OUTPUT_DIR=/app/data/output
     command: ["python", "kiebids/ocr_flow.py", "server"]

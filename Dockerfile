@@ -14,5 +14,6 @@ COPY . /app
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-ENV INPUT_DIR=/app/data/input
-ENV OUTPUT_DIR=/app/data/output
+# # Create a non-root user and give them ownership of the app directory
+# RUN useradd -m appuser && chown -R appuser:appuser /app
+# USER appuser
