@@ -1,5 +1,4 @@
 FROM prefecthq/prefect:2-python3.10
-
 WORKDIR /app
 
 # Install Tesseract OCR dependencies and OpenCV dependencies

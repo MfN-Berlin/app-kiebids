@@ -11,8 +11,9 @@ from modules.semantic_labeling import semantic_labeling
 from modules.entity_linking import entity_linking
 
 
-INPUT_DIR = os.environ.get("INPUT_DIR", Path("./data/input").resolve())
-OUTPUT_DIR = os.environ.get("OUTPUT_DIR", Path("./data/output").resolve())
+BASE_DIR = Path(__file__).parent.parent
+INPUT_DIR = Path(os.environ.get("INPUT_DIR", BASE_DIR / "data" / "input"))
+OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", BASE_DIR / "data" / "output"))
 
 
 @task
