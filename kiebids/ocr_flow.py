@@ -17,13 +17,12 @@ OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", BASE_DIR / "data" / "output"))
 
 
 @task
-def process_single_image(image_path, output_path):
-
-    preprocessing(image_path, output_path)
-    layout_analysis(image_path, output_path)
-    text_recognition(image_path, output_path)
-    semantic_labeling(image_path, output_path)
-    entity_linking(image_path, output_path)
+def process_single_image(image_path, output_path, debug=True):
+    preprocessing(image_path, output_path, debug=debug)
+    layout_analysis(image_path, output_path, debug=debug)
+    text_recognition(image_path, output_path, debug=debug)
+    semantic_labeling(image_path, output_path, debug=debug)
+    entity_linking(image_path, output_path, debug=debug)
 
 
 @flow(name="KIEBIDS pipeline", log_prints=True)
@@ -37,7 +36,7 @@ def ocr_flow():
 
     # Process images sequentially
     for image_path in image_paths:
-        process_single_image(image_path, OUTPUT_DIR)
+        process_single_image(image_path, str(OUTPUT_DIR), debug=True)
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)
