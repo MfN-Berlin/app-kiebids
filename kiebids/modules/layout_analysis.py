@@ -3,6 +3,7 @@ import yaml
 import cv2
 
 import numpy as np
+import torch
 from pathlib import Path
 from prefect import task
 
@@ -27,9 +28,12 @@ def layout_analysis(image_path, output_path, debug=False):
     # TODO: Rewrite the code so that the model doesn't have to be loaded new for each image
     # TODO: No hardcoding - put in config file somwhere? 
     model_path = script_path.parent / "models" / layout_analysis_config["name"]
+    print(f"Loading segment anything model from {model_path} ...")
     mask_generator = load_model(model_path)
 
     image_orig = cv2.imread(image_path)
+    print("Generating masks...")
+    # For mps we need to convert the image to float32
     masks = mask_generator.generate(image_orig)
     label_masks = filter_masks(masks)
 
@@ -43,11 +47,14 @@ def layout_analysis(image_path, output_path, debug=False):
 
 def load_model(model_path): 
 
-    # device = "cpu"
     sam = sam_model_registry[layout_analysis_config['model_type']](checkpoint=model_path) 
 
-    # TODO: Change to logging 
-    print(f"Loading segment anything Model")
+    device = 'mps' if torch.backends.mps.is_available() else 'cpu'
+    #device = 'cpu'
+    print(f"Using device: {device}")
+    sam.to(device=device)
+
+    # TODO: Change to logging  
     mask_generator = SamAutomaticMaskGenerator(
             sam,
             points_per_side=layout_analysis_config['points_per_side'],

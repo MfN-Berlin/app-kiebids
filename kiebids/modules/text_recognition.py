@@ -1,31 +1,45 @@
-import os 
+import os
 
 import pytesseract
+
+import cv2
+
 from pathlib import Path
 from prefect import task
 
 
 @task
-def text_recognition(image_name, input_path, output_path, debug=False):
+def text_recognition(input_dir, output_path, debug=False):
+    """
+    Recognize text from cropped images.
+    param:
+    input_path: str, path to directory containing cropped images
+    output_path: str, path to output directory
+    """
 
     OUTPUT_DIR_TEXT_RECOGNITION = Path(output_path) / "text_recogniton"
-    
-    # Get all cropped images related to the input image
-    images = [image for image in os.listdir(input_path) if image.startswith(image_name)]
+    os.makedirs(OUTPUT_DIR_TEXT_RECOGNITION, exist_ok=True)
 
-    for image in images: 
-        image_path = Path(input_path) / image
+    # Get all cropped images related to the input image
+    images = [image for image in os.listdir(input_dir)]
+
+    for image in images:
+        image_path = Path(input_dir) / image
         text = get_text(image_path)
 
-        text_output_path =  OUTPUT_DIR_TEXT_RECOGNITION /  os.path.basename(image_path).split(".")[0] + '.txt'
+        image_name = image.split(".")[0] + ".txt"
+        text_output_path = OUTPUT_DIR_TEXT_RECOGNITION / image_name
 
-        with open(text_output_path, 'w') as f:
-                f.write(text)
+        with open(text_output_path, "w") as f:
+            f.write(text)
+
+    return str(OUTPUT_DIR_TEXT_RECOGNITION)
 
 
 def get_text(image_path, debug=False):
-    '''
+    """
     Get ocr text from image with tesseract
-    '''
-    text = pytesseract.image_to_string(image_path)
-    return text 
+    """
+    image = cv2.imread(image_path)
+    text = pytesseract.image_to_string(image)
+    return text

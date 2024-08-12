@@ -18,11 +18,11 @@ OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", BASE_DIR / "data" / "output"))
 
 @task
 def process_single_image(image_path, output_path, debug=True):
-    preprocessing(image_path, output_path, debug=debug)
-    layout_analysis(image_path, output_path, debug=debug)
-    text_recognition(image_path, output_path, debug=debug)
-    semantic_labeling(image_path, output_path, debug=debug)
-    entity_linking(image_path, output_path, debug=debug)
+    preprocessing_output_path = preprocessing(image_path, output_path, debug=debug)
+    layout_analysis_output_dir = layout_analysis(preprocessing_output_path, output_path, debug=debug)
+    text_recognition_output_dir = text_recognition(layout_analysis_output_dir, output_path, debug=debug)
+    semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path, debug=debug)
+    # entity_linking(image_path, output_path, debug=debug)
 
 
 @flow(name="KIEBIDS pipeline", log_prints=True)
