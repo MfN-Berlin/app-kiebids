@@ -1,4 +1,8 @@
+black
 numpy
 opencv-python
 prefect
 pytesseract
+ruff
+sphinx
+
