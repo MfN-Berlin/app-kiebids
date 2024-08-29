@@ -2,7 +2,7 @@ from lxml import etree
 import numpy as np
 import cv2
 from io import BytesIO
-from PIL import Image
+from PIL import Image, ImageDraw
 import requests
 
 def draw_bounding_box(
@@ -38,7 +38,7 @@ def load_image_from_url(url):
         
         # Load the image into memory
         image = Image.open(BytesIO(response.content))
-                
+
         return image
     except requests.exceptions.RequestException as e:
         print(f"Error fetching image from URL: {e}")
@@ -47,9 +47,52 @@ def load_image_from_url(url):
         print(f"Error opening image: {e}")
         return None
 
+
+def draw_polygon_on_image(image_path, coordinates, output_path):
+    # Open the image
+    image = Image.open(image_path)
+    draw = ImageDraw.Draw(image)
+
+    # Convert the string of coordinates into a list of tuples
+    points = [tuple(map(int, point.split(','))) for point in coordinates.split()]
+
+    # Draw the polygon
+    draw.polygon(points, outline="red", fill=None)
+
+    # Save the image with the drawn polygon
+    image.save(output_path)
+    print(f"Image saved to {output_path}")
+
+
+
+
 if __name__ == "__main__":
-    image = load_image_from_url("https://files.transkribus.eu/Get?id=QFUJGCEQCZMEPSENVPIRJGQA")
-    image.save("./data/test_image.jpg")
+    # load and save image
+    # image = load_image_from_url("https://files.transkribus.eu/Get?id=QFUJGCEQCZMEPSENVPIRJGQA")
+    # image.save("./data/test_image.jpg")
+
+    # access points in xml
+    tree = etree.parse('data/test_transcribus.xml')
+    root = tree.getroot()
+    ns = {'ns': root.nsmap[None]} if None in root.nsmap else {}
+
+    # XPath query to find all TextLine elements, considering namespaces if they exist
+    textlines = root.xpath('//ns:TextLine' if ns else '//TextLine', namespaces=ns)
+
+    # Iterate over each TextLine and extract the points from Coords
+    for textline in textlines:
+        coords = textline.find('ns:Coords' if ns else 'Coords', namespaces=ns)
+        if coords is not None:
+            points = coords.get('points')
+            print(points)
+
+
+    # draw polygon on image
+    # image_path = "./data/test_image.jpg"
+    # output_path = "./data/pol_image.jpg"
+    # coordinates = "95,101 140,108 178,99 192,108 227,108 280,94 302,103 337,95 360,101 360,51 333,36 309,40 285,32 248,47 203,30 149,42 112,27 96,34"
+    # draw_polygon_on_image(image_path, coordinates, output_path)
+
 
 # # Example usage
 # image_url = "https://example.com/path/to/your/image.jpg"
