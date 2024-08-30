@@ -36,8 +36,8 @@ def draw_polygon_on_image(image, coordinates, i=-1):
         y_min = min(point[1] for point in points)
 
         label_position = (x_min, y_min - 10)
-        font = ImageFont.load_default()
-        draw.text(label_position, str(i), fill="red", font=font)
+        font = ImageFont.load_default(size=24)
+        draw.text(label_position, str(i), fill="blue", font=font)
 
     return image
 
@@ -71,16 +71,15 @@ def process_xml_files(folder_path, output_path):
             coords = textline.find('ns:Coords' if ns else 'Coords', namespaces=ns)
             if coords is not None:
                 points = coords.get('points')
-                image = draw_polygon_on_image(image, points, i)
+                image = draw_polygon_on_image(image, points, i+1)
 
             unicode_elem = textline.find('.//ns:Unicode' if ns else './/Unicode', namespaces=ns)
             if unicode_elem is not None:
-                transcriptions += f"{i}. {unicode_elem.text}\n"
+                transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
-        font = ImageFont.load_default()
-
-        # TODO set font size
-        caption_height = 50 + (10 * len(transcriptions.splitlines()))
+        # Add transcriptions as caption to the image
+        font = ImageFont.load_default(size=16)
+        caption_height = 50 + (20 * len(transcriptions.splitlines()))
         caption_image = Image.new('RGB', (image.width, caption_height), color='black')
         draw = ImageDraw.Draw(caption_image)
         draw.text((10, 10), transcriptions, fill="white", font=font)
