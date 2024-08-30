@@ -5,6 +5,9 @@ from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
 import requests
 
+from kiebids import config, getLogger
+
+logger = getLogger(__name__, log_level=config.log_level)
 
 def load_image_from_url(url):
     try:
@@ -15,10 +18,10 @@ def load_image_from_url(url):
 
         return image
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching image from URL: {e}")
+        logger.error(f"Error fetching image from URL: {e}")
         return None
     except IOError as e:
-        print(f"Error opening image: {e}")
+        logger.error(f"Error opening image: {e}")
         return None
 
 
@@ -40,6 +43,10 @@ def draw_polygon_on_image(image, coordinates, i=-1):
 
 
 def process_xml_files(folder_path, output_path):
+    """
+    Process XML files in the given folder path and 
+    save the images with polygons and transcriptions in the output path.
+    """
     files = [f for f in os.listdir(folder_path) if f.endswith('.xml')]
     for filename in tqdm(files, desc="Processing XML files"):
         file_path = os.path.join(folder_path, filename)
@@ -88,4 +95,7 @@ def process_xml_files(folder_path, output_path):
 
 if __name__ == "__main__":
     # access points in xml
-    process_xml_files('data/', 'data/')
+    process_xml_files(
+        os.path.join(config.shared_folder, 'hymdata_sample/20230511T160908__coll.mfn-berlin.de_u_78a081'),
+        os.path.join(config.shared_folder, 'hymdata_overlayed')
+    )

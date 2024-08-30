@@ -5,3 +5,7 @@ pytesseract
 lxml
 requests 
 pillow
+tqdm
+dotmap
+python-dotenv
+sty
