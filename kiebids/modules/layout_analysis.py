@@ -1,5 +1,4 @@
 import os
-import yaml
 import cv2
 
 import numpy as np
@@ -7,12 +6,12 @@ import torch
 from pathlib import Path
 from prefect import task
 
+from kiebids import pipeline_config
+
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
 # Import config 
 script_path = Path(__file__).parent.parent.resolve()
-with open(script_path / "ocr_config.yaml") as file:
-    pipeline_config = yaml.safe_load(file)
 
 layout_analysis_config = pipeline_config["layout_analysis"]
 

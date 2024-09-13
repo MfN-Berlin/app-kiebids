@@ -5,11 +5,11 @@ import cv2
 from pathlib import Path
 from prefect import task
 
+from kiebids import pipeline_config
+
 
 # Import config
 script_path = Path(__file__).parent.parent.resolve()
-with open(script_path / "ocr_config.yaml") as file:
-    pipeline_config = yaml.safe_load(file)
 
 preprocessing_config = pipeline_config["preprocessing"]
 
