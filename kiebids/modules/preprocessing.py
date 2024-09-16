@@ -4,28 +4,21 @@ import cv2
 
 from pathlib import Path
 from prefect import task
+from prefect.logging import get_logger
 
-from kiebids import pipeline_config
+from kiebids import pipeline_config, config
+from kiebids.utils import kiebids_wrapper
 
+logger = get_logger(__name__)
+logger.setLevel(config.log_level)
 
-# Import config
-script_path = Path(__file__).parent.parent.resolve()
-
+debug_path = "preprocessing"
 preprocessing_config = pipeline_config["preprocessing"]
 
-# Create debugging path
-DEBUG_PATH = script_path.parent / "data" / "debug" / "preprocessing"
-os.makedirs(DEBUG_PATH, exist_ok=True)
-
-
 @task
-def preprocessing(image_path, output_path, debug=False):
-    OUTPUT_DIR_PREPROCESSING = Path(output_path) / "preprocessing"
-    os.makedirs(OUTPUT_DIR_PREPROCESSING, exist_ok=True)
-
-    # Todo: Change prints to loggings
-    print("Preprocessing image: ", image_path)
-    print("Debug mode: ", debug)
+@kiebids_wrapper(debug_path)
+def preprocessing(image_path, debug=False):
+    logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
     if preprocessing_config["gray"]["enabled"]:
@@ -43,16 +36,15 @@ def preprocessing(image_path, output_path, debug=False):
     if preprocessing_config["contrast"]["enabled"]:
         image = contrast(image, debug=debug)
 
-    # Save the image
-    image_output_path = OUTPUT_DIR_PREPROCESSING / Path(image_path).name
-    cv2.imwrite(str(image_output_path), image)
-    return str(image_output_path)
+    return image
 
 
 def gray(image, debug=False):
     """Converts an image to grayscale"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    if debug is True:
+    # TODO is this writing each processed image necessary?
+    if config.log_level == "DEBUG":
+        # This is just overwriting the same image
         image_name = DEBUG_PATH / "gray_image.jpg"
         print("Saving gray image to: ", image_name)
         cv2.imwrite(str(image_name), gray)

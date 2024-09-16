@@ -1,7 +1,4 @@
 import os
-from importlib import metadata
-from importlib.metadata import version
-
 import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
