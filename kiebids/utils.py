@@ -9,8 +9,10 @@ from kiebids import config
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
-def kiebids_wrapper(debug_dir_name="default"):
-    # TODO describe what this wrapper does
+def debug_writer(debug_dir_name="default"):
+    """
+    Decorator to write images to disk in debug mode.
+    """
     def decorator(func):
         def wrapper(*args, **kwargs):
             image = func(*args, **kwargs)
