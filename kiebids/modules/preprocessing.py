@@ -1,19 +1,16 @@
-import os
-import yaml
 import cv2
-
-from pathlib import Path
 from prefect import task
 from prefect.logging import get_logger
 
 from kiebids import pipeline_config, config
 from kiebids.utils import debug_writer
 
-logger = get_logger(__name__)
+module = "preprocessing"
+logger = get_logger(module)
 logger.setLevel(config.log_level)
 
-debug_path = "preprocessing"
-preprocessing_config = pipeline_config["preprocessing"]
+debug_path = f"{pipeline_config['debug_path']}/{module}"
+module_config = pipeline_config[module]
 
 
 @task
@@ -22,19 +19,19 @@ def preprocessing(image_path, debug=False):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
-    if preprocessing_config["gray"]["enabled"]:
+    if module_config["gray"]["enabled"]:
         image = gray(image)
 
-    if preprocessing_config["smooth"]["enabled"]:
+    if module_config["smooth"]["enabled"]:
         image = smooth(image)
 
-    if preprocessing_config["threshold"]["enabled"]:
+    if module_config["threshold"]["enabled"]:
         image = threshold(image)
 
-    if preprocessing_config["denoise"]["enabled"]:
+    if module_config["denoise"]["enabled"]:
         image = denoise(image)
 
-    if preprocessing_config["contrast"]["enabled"]:
+    if module_config["contrast"]["enabled"]:
         image = contrast(image)
 
     return image

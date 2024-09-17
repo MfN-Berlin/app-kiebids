@@ -5,24 +5,16 @@ from pathlib import Path
 from prefect import flow, task
 
 from modules.preprocessing import preprocessing
-from modules.layout_analysis import layout_analysis
+from modules.layout_analysis import LayoutAnalyzer
 from modules.text_recognition import text_recognition
-from modules.semantic_labeling import semantic_labeling
+# commented out for now to avoid tensorflow loading
+# from modules.semantic_labeling import semantic_labeling
 from modules.entity_linking import entity_linking
 
 
 BASE_DIR = Path(__file__).parent.parent
 INPUT_DIR = Path(os.environ.get("INPUT_DIR", BASE_DIR / "data" / "input"))
 OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", BASE_DIR / "data" / "output"))
-
-
-@task
-def process_single_image(image_path, output_path, debug=True):
-    preprocessing_output_path = preprocessing(image_path, output_path, debug=debug)
-    layout_analysis_output_dir = layout_analysis(preprocessing_output_path, output_path, debug=debug)
-    text_recognition_output_dir = text_recognition(layout_analysis_output_dir, output_path, debug=debug)
-    semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path, debug=debug)
-    # entity_linking(image_path, output_path, debug=debug)
 
 
 @flow(name="KIEBIDS pipeline", log_prints=True)
@@ -34,9 +26,27 @@ def ocr_flow():
         if file.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif"))
     ]
 
+    # init objects/models for every stage
+    layout_analyzer = LayoutAnalyzer()
+
+    # TODO model loading pro stage. how to do this best?
     # Process images sequentially
     for image_path in image_paths:
-        process_single_image(image_path, str(OUTPUT_DIR), debug=True)
+        # accepts image path. outputs image
+        preprocessed_image = preprocessing(image_path=image_path)
+
+        # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
+        bb_labels = layout_analyzer.run(preprocessed_image)
+
+        # text_recognition.run
+        # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
+        # text_recognition_output_dir = text_recognition(preprocessed_image, bb_labels)
+
+        # semantic_labeling.run
+        # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)
+        # entity_linking.run
+        # entity_linking(image_path, output_path)
+
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)

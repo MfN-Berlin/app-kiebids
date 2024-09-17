@@ -1,75 +1,70 @@
 import os
 import cv2
-
-import numpy as np
 import torch
-from pathlib import Path
+import numpy as np
 from prefect import task
-
-from kiebids import pipeline_config
-
+from prefect.logging import get_logger
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
 
-# Import config
-script_path = Path(__file__).parent.parent.resolve()
-
-layout_analysis_config = pipeline_config["layout_analysis"]
-
-# Create debugging path
-DEBUG_PATH = script_path.parent / "data" / "debug" / "layout_analysis"
-os.makedirs(DEBUG_PATH, exist_ok=True)
+from kiebids import pipeline_config, config
+from kiebids.utils import debug_writer
 
 
-@task
-def layout_analysis(image_path, output_path, debug=False):
-    # TODO: Put the paths in a config file somewhere?
-    OUTPUT_DIR_LAYOUT_ANALYSIS = Path(output_path) / "layout_analysis"
-    os.makedirs(OUTPUT_DIR_LAYOUT_ANALYSIS, exist_ok=True)
-    # TODO: Rewrite the code so that the model doesn't have to be loaded new for each image
-    # TODO: No hardcoding - put in config file somwhere?
-    model_path = script_path.parent / "models" / layout_analysis_config["name"]
-    print(f"Loading segment anything model from {model_path} ...")
-    mask_generator = load_model(model_path)
+module = "layout_analysis"
+logger = get_logger(module)
+logger.setLevel(config.log_level)
 
-    image_orig = cv2.imread(image_path)
-    print("Generating masks...")
-    # For mps we need to convert the image to float32
-    masks = mask_generator.generate(image_orig)
-    label_masks = filter_masks(masks)
-
-    if debug:
-        save_anns(label_masks, DEBUG_PATH)
-
-    image_name = image_path.split("/")[-1].split(".")[0]
-    plot_and_save_bbox_images(
-        image_orig, label_masks, image_name, OUTPUT_DIR_LAYOUT_ANALYSIS
-    )
-    return OUTPUT_DIR_LAYOUT_ANALYSIS
+debug_path = f"{pipeline_config['debug_path']}/{module}"
+module_config = pipeline_config[module]
 
 
-def load_model(model_path):
-    sam = sam_model_registry[layout_analysis_config["model_type"]](
-        checkpoint=model_path
-    )
+class LayoutAnalyzer:
+    def __init__(self):
+        model_path = module_config["model_path"]
+        self.mask_generator = self.load_model(model_path)
 
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    # device = 'cpu'
-    print(f"Using device: {device}")
-    sam.to(device=device)
+    # TODO Rename to something more suitable and self-explanatory
+    @task
+    # @debug_writer(debug_path)
+    def run(self, image):
+        logger.info("Generating masks...")
+        masks = self.mask_generator.generate(image)
 
-    # TODO: Change to logging
-    mask_generator = SamAutomaticMaskGenerator(
-        sam,
-        points_per_side=layout_analysis_config["points_per_side"],
-        pred_iou_thresh=layout_analysis_config["pred_iou_thresh"],
-        stability_score_thresh=layout_analysis_config["stability_score_thresh"],
-        crop_n_layers=layout_analysis_config["crop_n_layers"],
-        min_mask_region_area=layout_analysis_config["min_mask_region_area"],
-        output_mode=layout_analysis_config["output_mode"],  # "uncompressed_rle"
-    )
-    return mask_generator
+        label_masks = filter_masks(masks)
+
+        # TODO debug mode
+        # if debug:
+        #     save_anns(label_masks, DEBUG_PATH)
+        
+        # image_name = "bb_mask.jpg"
+        # plot_and_save_bbox_images(
+        #     image, label_masks, image_name, "data"
+        # )
+        return label_masks
 
 
+    def load_model(self, model_path):
+        logger.info(f"Loading segment anything model from {model_path} ...")
+        sam = sam_model_registry[module_config["model_type"]](
+            checkpoint=model_path
+        )
+
+        device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        logger.info(f"Using device: {device}")
+        sam.to(device=device)
+
+        mask_generator = SamAutomaticMaskGenerator(
+            sam,
+            points_per_side=module_config["points_per_side"],
+            pred_iou_thresh=module_config["pred_iou_thresh"],
+            stability_score_thresh=module_config["stability_score_thresh"],
+            crop_n_layers=module_config["crop_n_layers"],
+            min_mask_region_area=module_config["min_mask_region_area"],
+            output_mode=module_config["output_mode"],  # "uncompressed_rle"
+        )
+        return mask_generator
+
+# TODO do this somewhere else
 def save_anns(anns, output_path):
     if len(anns) == 0:
         print("No annotations found.")
