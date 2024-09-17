@@ -13,7 +13,6 @@ script_path = Path(__file__).parent.resolve()
 
 @task
 def semantic_labeling(image_dir, output_path, debug=False):
-
     OUTPUT_DIR_SEMANTIC_LABELING = Path(output_path) / "semantic_labeling"
     os.makedirs(OUTPUT_DIR_SEMANTIC_LABELING, exist_ok=True)
 

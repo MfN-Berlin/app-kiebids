@@ -15,6 +15,7 @@ logger.setLevel(config.log_level)
 debug_path = "preprocessing"
 preprocessing_config = pipeline_config["preprocessing"]
 
+
 @task
 @debug_writer(debug_path)
 def preprocessing(image_path, debug=False):
@@ -22,69 +23,51 @@ def preprocessing(image_path, debug=False):
     image = cv2.imread(image_path)
 
     if preprocessing_config["gray"]["enabled"]:
-        image = gray(image, debug=debug)
+        image = gray(image)
 
     if preprocessing_config["smooth"]["enabled"]:
-        image = smooth(image, debug=debug)
+        image = smooth(image)
 
     if preprocessing_config["threshold"]["enabled"]:
-        image = threshold(image, debug=debug)
+        image = threshold(image)
 
     if preprocessing_config["denoise"]["enabled"]:
-        image = denoise(image, debug=debug)
+        image = denoise(image)
 
     if preprocessing_config["contrast"]["enabled"]:
-        image = contrast(image, debug=debug)
+        image = contrast(image)
 
     return image
 
 
-def gray(image, debug=False):
+def gray(image):
     """Converts an image to grayscale"""
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    # TODO is this writing each processed image necessary?
-    if config.log_level == "DEBUG":
-        # This is just overwriting the same image
-        image_name = DEBUG_PATH / "gray_image.jpg"
-        print("Saving gray image to: ", image_name)
-        cv2.imwrite(str(image_name), gray)
     return gray
 
 
-def smooth(image, debug=False):
+def smooth(image):
     """Smoothens an image"""
     smoothed = cv2.bilateralFilter(image, 9, 75, 75)
-    if debug:
-        image_name = DEBUG_PATH / "smoothed_image.jpg"
-        cv2.imwrite(str(image_name), smoothed)
     return smoothed
 
 
-def threshold(image, debug=False):
+def threshold(image):
     """Applies thresholding to an image"""
     thresholded = cv2.adaptiveThreshold(
         image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2
     )
-    if debug:
-        image_name = DEBUG_PATH / "thresholded_image.jpg"
-        cv2.imwrite(str(image_name), thresholded)
     return thresholded
 
 
-def denoise(image, debug=False):
+def denoise(image):
     """Denoises an image"""
     denoised = cv2.fastNlMeansDenoising(image, None, 10, 7, 21)
-    if debug:
-        image_name = DEBUG_PATH / "denoised_image.jpg"
-        cv2.imwrite(str(image_name), denoised)
     return denoised
 
 
-def contrast(image, debug=False):
+def contrast(image):
     """Increases the contrast of an image"""
     clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
     contrasted = clahe.apply(image)
-    if debug:
-        image_name = DEBUG_PATH / "contrasted_image.jpg"
-        cv2.imwrite(str(image_name), contrasted)
     return contrasted

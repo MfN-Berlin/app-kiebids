@@ -9,10 +9,12 @@ from kiebids import config
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
+
 def debug_writer(debug_dir_name="default"):
     """
     Decorator to write images to disk in debug mode.
     """
+
     def decorator(func):
         def wrapper(*args, **kwargs):
             image = func(*args, **kwargs)
@@ -28,11 +30,15 @@ def debug_writer(debug_dir_name="default"):
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved image to: %s", image_output_path)
             return image
+
         return wrapper
 
     return decorator
 
+
 if __name__ == "__main__":
     from kiebids.modules.preprocessing import preprocessing
 
-    preprocessing_output_path = preprocessing(image_path="data/images/raw_image1.png", debug=True)
+    preprocessing_output_path = preprocessing(
+        image_path="data/images/raw_image1.png", debug=True
+    )
