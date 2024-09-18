@@ -1,20 +1,28 @@
 import os
-
-import pytesseract
+from pathlib import Path
 
 import cv2
-
-from pathlib import Path
+import pytesseract
 from prefect import task
+from prefect.logging import get_logger
+
+from kiebids import config, pipeline_config
+
+module = "layout_analysis"
+logger = get_logger(module)
+logger.setLevel(config.log_level)
+
+debug_path = f"{pipeline_config['debug_path']}/{module}"
+module_config = pipeline_config[module]
 
 
 @task
-def text_recognition(input_dir, output_path, debug=False):
+def text_recognition(image, bb_labels, debug=False):
     """
     Recognize text from cropped images.
     param:
-    input_path: str, path to directory containing cropped images
-    output_path: str, path to output directory
+    image:
+    bb_labels:
     """
 
     OUTPUT_DIR_TEXT_RECOGNITION = Path(output_path) / "text_recogniton"

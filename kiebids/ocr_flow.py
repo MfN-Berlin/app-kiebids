@@ -1,16 +1,13 @@
 import os
 import sys
-
 from pathlib import Path
-from prefect import flow, task
 
-from modules.preprocessing import preprocessing
-from modules.layout_analysis import LayoutAnalyzer
-from modules.text_recognition import text_recognition
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
-from modules.entity_linking import entity_linking
-
+from modules.layout_analysis import LayoutAnalyzer
+from modules.preprocessing import preprocessing
+from modules.text_recognition import text_recognition
+from prefect import flow
 
 BASE_DIR = Path(__file__).parent.parent
 INPUT_DIR = Path(os.environ.get("INPUT_DIR", BASE_DIR / "data" / "input"))
@@ -40,13 +37,12 @@ def ocr_flow():
 
         # text_recognition.run
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        # text_recognition_output_dir = text_recognition(preprocessed_image, bb_labels)
+        text_recognition_output_dir = text_recognition(preprocessed_image, bb_labels)
 
         # semantic_labeling.run
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)
         # entity_linking.run
         # entity_linking(image_path, output_path)
-
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)

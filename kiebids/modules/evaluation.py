@@ -1,9 +1,10 @@
-from lxml import etree
 import os
-from tqdm import tqdm
 from io import BytesIO
-from PIL import Image, ImageDraw, ImageFont
+
 import requests
+from lxml import etree
+from PIL import Image, ImageDraw, ImageFont
+from tqdm import tqdm
 
 from kiebids import config, getLogger
 
@@ -21,7 +22,7 @@ def load_image_from_url(url):
     except requests.exceptions.RequestException as e:
         logger.error(f"Error fetching image from URL: {e}")
         return None
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Error opening image: {e}")
         return None
 
@@ -60,11 +61,7 @@ def process_xml_files(folder_path, output_path):
             namespaces=ns,
         )
         # excluding some fields without assignment
-        comments = dict(
-            item.split("=", 1)
-            for item in comments.text.split(", ")
-            if len(item.split("=", 1)) == 2
-        )
+        comments = dict(item.split("=", 1) for item in comments.text.split(", ") if len(item.split("=", 1)) == 2)
 
         # loading from url
         image_url = comments.get("imgUrl")
@@ -81,9 +78,7 @@ def process_xml_files(folder_path, output_path):
                 points = coords.get("points")
                 image = draw_polygon_on_image(image, points, i + 1)
 
-            unicode_elem = textline.find(
-                ".//ns:Unicode" if ns else ".//Unicode", namespaces=ns
-            )
+            unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
             if unicode_elem is not None:
                 transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
