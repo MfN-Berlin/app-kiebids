@@ -11,9 +11,9 @@ logger.setLevel(config.log_level)
 
 
 # TODO interface for different stages
-def debug_writer(debug_path=""):
+def debug_writer(debug_path="", module=""):
     """
-    Decorator to write images outputs to disk in debug mode.
+    Decorator to write outputs of different stages/modules to disk in debug mode.
     """
 
     def decorator(func):
@@ -22,16 +22,25 @@ def debug_writer(debug_path=""):
             if not debug_path:
                 return func(*args, **kwargs)
 
-            image = func(*args, **kwargs)
-
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
 
-            if kwargs.get("image_path"):
-                image_output_path = Path(debug_path) / Path(kwargs["image_path"]).name
-                cv2.imwrite(str(image_output_path), image)
-                logger.debug("Saved image to: %s", image_output_path)
-            return image
+            if module == "preprocessing":
+                image = func(*args, **kwargs)
+
+                if kwargs.get("image_path"):
+                    image_output_path = Path(debug_path) / Path(kwargs["image_path"]).name
+                    cv2.imwrite(str(image_output_path), image)
+                    logger.debug("Saved image to: %s", image_output_path)
+                return image
+            elif module == "layout_analysis":
+                label_masks = func(*args, **kwargs)
+                # TODO make image kwargs
+                image_name = "test"
+                image = args[1]
+                plot_and_save_bbox_images(image, label_masks, image_name, debug_path)
+
+                return label_masks
 
         return wrapper
 

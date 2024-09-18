@@ -3,6 +3,7 @@ from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
 from kiebids import config, pipeline_config, get_logger
+from kiebids.utils import debug_writer
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
@@ -19,7 +20,7 @@ class LayoutAnalyzer:
 
     # TODO Rename to something more suitable and self-explanatory
     @task
-    # @debug_writer(debug_path)
+    @debug_writer(debug_path, module=module)
     def run(self, image):
 
         logger.info("Generating masks...")
@@ -27,10 +28,6 @@ class LayoutAnalyzer:
 
         label_masks = self.filter_masks(masks)
 
-        # image_name = "bb_mask.jpg"
-        # plot_and_save_bbox_images(
-        #     image, label_masks, image_name, "data"
-        # )
         return label_masks
 
     def load_model(self, model_path):

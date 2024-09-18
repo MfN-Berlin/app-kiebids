@@ -14,7 +14,7 @@ module_config = pipeline_config[module]
 
 
 @task
-@debug_writer(debug_path)
+@debug_writer(debug_path, module=module)
 def preprocessing(image_path):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)

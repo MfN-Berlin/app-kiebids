@@ -1,4 +1,3 @@
-debug_path: "data/debug"
 preprocessing:
   gray: false
   smooth: false
