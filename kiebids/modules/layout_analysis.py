@@ -1,9 +1,8 @@
 import torch
 from prefect import task
-from prefect.logging import get_logger
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
-from kiebids import config, pipeline_config
+from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)

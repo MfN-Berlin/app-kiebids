@@ -3,8 +3,7 @@ import os
 import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
-
-from kiebids.logger import getLogger
+from prefect.logging import get_logger
 
 load_dotenv()
 
@@ -15,5 +14,5 @@ with open(os.path.join(os.path.dirname(__file__), "../configs/ocr_config.yaml"))
     pipeline_config = DotMap(yaml.safe_load(f))
 
 __all__ = [
-    "getLogger",
+    "get_logger",
 ]

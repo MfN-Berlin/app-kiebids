@@ -1,9 +1,9 @@
 import cv2
 from prefect import task
-from prefect.logging import get_logger
 
-from kiebids import config, pipeline_config
+from kiebids import config, pipeline_config, get_logger
 from kiebids.utils import debug_writer
+
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)

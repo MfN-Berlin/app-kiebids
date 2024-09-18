@@ -1,12 +1,7 @@
-import os
-from pathlib import Path
-
-import cv2
 import pytesseract
 from prefect import task
-from prefect.logging import get_logger
 
-from kiebids import config, pipeline_config
+from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)

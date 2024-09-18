@@ -2,9 +2,9 @@ import os
 import sys
 from pathlib import Path
 
-from modules.layout_analysis import LayoutAnalyzer
-from modules.preprocessing import preprocessing
-from modules.text_recognition import text_recognition
+from kiebids.modules.layout_analysis import LayoutAnalyzer
+from kiebids.modules.preprocessing import preprocessing
+from kiebids.modules.text_recognition import text_recognition
 
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
@@ -27,7 +27,6 @@ def ocr_flow():
     # init objects/models for every stage
     layout_analyzer = LayoutAnalyzer()
 
-    # TODO model loading pro stage. how to do this best?
     # Process images sequentially
     for image_path in image_paths:
         # accepts image path. outputs image
@@ -53,11 +52,4 @@ def ocr_flow():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "server":
-        ocr_flow.serve(
-            name="kiebids-ocr-deployment",
-            parameters={},
-        )
-        # prefect deploy
-    else:
-        ocr_flow()
+    ocr_flow()
