@@ -19,19 +19,19 @@ def preprocessing(image_path, debug=False):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
-    if module_config["gray"]["enabled"]:
+    if module_config["gray"]:
         image = gray(image)
 
-    if module_config["smooth"]["enabled"]:
+    if module_config["smooth"]:
         image = smooth(image)
 
-    if module_config["threshold"]["enabled"]:
+    if module_config["threshold"]:
         image = threshold(image)
 
-    if module_config["denoise"]["enabled"]:
+    if module_config["denoise"]:
         image = denoise(image)
 
-    if module_config["contrast"]["enabled"]:
+    if module_config["contrast"]:
         image = contrast(image)
 
     return image

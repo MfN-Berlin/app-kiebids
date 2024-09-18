@@ -2,11 +2,12 @@ import os
 import sys
 from pathlib import Path
 
-# commented out for now to avoid tensorflow loading
-# from modules.semantic_labeling import semantic_labeling
 from modules.layout_analysis import LayoutAnalyzer
 from modules.preprocessing import preprocessing
 from modules.text_recognition import text_recognition
+
+# commented out for now to avoid tensorflow loading
+# from modules.semantic_labeling import semantic_labeling
 from prefect import flow
 
 BASE_DIR = Path(__file__).parent.parent

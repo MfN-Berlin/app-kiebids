@@ -1,17 +1,14 @@
+debug_path: "data/debug"
 preprocessing:
-  gray: 
-    enabled: true
-  smooth: 
-    enabled: true
-  threshold: 
-    enabled: true
-  denoise: 
-    enabled: true
-  contrast:
-    enabled: true
+  gray: true
+  smooth: true
+  threshold: true
+  denoise: true
+  contrast: true
 
-layout_analysis: 
+layout_analysis:
   name: "sam_vit_b_01ec64.pth"
+  model_path: "/mnt/data/ZUG-Biodiversität/models/sam_vit_b_01ec64.pth"
   model_type: "vit_b"
   points_per_side: 32
   pred_iou_thresh: 0.86
