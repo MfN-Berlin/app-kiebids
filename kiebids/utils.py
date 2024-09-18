@@ -10,11 +10,12 @@ logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
 
-def debug_writer(debug_dir_name="default"):
+def debug_writer(debug_dir_name=""):
     """
     Decorator to write images outputs to disk in debug mode.
     """
 
+    # TODO: check for empty string debug_dir_name and neglect if empty
     def decorator(func):
         def wrapper(*args, **kwargs):
             if not os.path.exists(config.output_path):

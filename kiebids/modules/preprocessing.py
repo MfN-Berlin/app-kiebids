@@ -5,17 +5,17 @@ from prefect.logging import get_logger
 from kiebids import config, pipeline_config
 from kiebids.utils import debug_writer
 
-module = "preprocessing"
+module = __name__.split(".")[-1]
 logger = get_logger(module)
 logger.setLevel(config.log_level)
 
-debug_path = f"{pipeline_config['debug_path']}/{module}"
+debug_path = "" if config.mode != "debug" else f"{pipeline_config['debug_path']}/{module}"
 module_config = pipeline_config[module]
 
 
 @task
 @debug_writer(debug_path)
-def preprocessing(image_path, debug=False):
+def preprocessing(image_path):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 

@@ -1,10 +1,10 @@
 debug_path: "data/debug"
 preprocessing:
-  gray: true
-  smooth: true
-  threshold: true
-  denoise: true
-  contrast: true
+  gray: false
+  smooth: false
+  threshold: false
+  denoise: false
+  contrast: false
 
 layout_analysis:
   name: "sam_vit_b_01ec64.pth"

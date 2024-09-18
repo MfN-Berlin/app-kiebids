@@ -5,11 +5,11 @@ from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
 from kiebids import config, pipeline_config
 
-module = "layout_analysis"
+module = __name__.split(".")[-1]
 logger = get_logger(module)
 logger.setLevel(config.log_level)
 
-debug_path = f"{pipeline_config['debug_path']}/{module}"
+debug_path = "" if config.mode != "debug" else f"{pipeline_config['debug_path']}/{module}"
 module_config = pipeline_config[module]
 
 

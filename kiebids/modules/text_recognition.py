@@ -8,11 +8,11 @@ from prefect.logging import get_logger
 
 from kiebids import config, pipeline_config
 
-module = "text_recognition"
+module = __name__.split(".")[-1]
 logger = get_logger(module)
 logger.setLevel(config.log_level)
 
-debug_path = f"{pipeline_config['debug_path']}/{module}"
+debug_path = "" if config.mode != "debug" else f"{pipeline_config['debug_path']}/{module}"
 module_config = pipeline_config[module]
 
 
