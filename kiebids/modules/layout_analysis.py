@@ -53,7 +53,7 @@ class LayoutAnalyzer:
         )
         return mask_generator
 
-    def filter_masks(masks):
+    def filter_masks(self, masks):
         """Sort masks by area in descending order and keep only those that mask labels :)"""
         # If there is only one mask, return it
         if len(masks) == 1:
