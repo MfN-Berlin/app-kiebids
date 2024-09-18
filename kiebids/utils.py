@@ -10,24 +10,25 @@ logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
 
-def debug_writer(debug_dir_name=""):
+# TODO interface for different stages
+def debug_writer(debug_path=""):
     """
     Decorator to write images outputs to disk in debug mode.
     """
 
-    # TODO: check for empty string debug_dir_name and neglect if empty
     def decorator(func):
         def wrapper(*args, **kwargs):
-            if not os.path.exists(config.output_path):
-                debug_path = Path(config.output_path) / debug_dir_name
-                os.makedirs(debug_path, exist_ok=True)
+            # When debug path not given, no need to do anything
+            if not debug_path:
+                return func(*args, **kwargs)
 
             image = func(*args, **kwargs)
 
-            if kwargs.get("debug"):
-                # TODO check for type?
-                # TODO check for image_path in kwargs
-                image_output_path = debug_path / Path(kwargs["image_path"]).name
+            if not os.path.exists(debug_path):
+                os.makedirs(debug_path, exist_ok=True)
+
+            if kwargs.get("image_path"):
+                image_output_path = Path(debug_path) / Path(kwargs["image_path"]).name
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved image to: %s", image_output_path)
             return image
@@ -48,8 +49,7 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
     """
 
     for i, mask in enumerate(masks, 1):
-        bbox = mask["bbox"]
-        x, y, w, h = bbox
+        x, y, w, h = mask["bbox"]
 
         # Crop the image using the bounding box
         cropped_image = image[y : y + h, x : x + w]

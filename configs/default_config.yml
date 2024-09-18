@@ -4,3 +4,4 @@ log_level: DEBUG
 shared_folder: /mnt/data/ZUG-Biodiversität
 
 output_path: data/output
+debug_path: "data/debug"
