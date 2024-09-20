@@ -21,8 +21,7 @@ class LayoutAnalyzer:
     # TODO Rename to something more suitable and self-explanatory
     @task
     @debug_writer(debug_path, module=module)
-    def run(self, image):
-
+    def run(self, image, **kwargs):
         masks = self.mask_generator.generate(image)
 
         label_masks = self.filter_masks(masks)

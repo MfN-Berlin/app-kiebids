@@ -39,8 +39,7 @@ def preprocessing(image_path):
 
 def gray(image):
     """Converts an image to grayscale"""
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    return gray
+    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
 def smooth(image):

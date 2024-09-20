@@ -38,15 +38,15 @@ def debug_writer(debug_path="", module=""):
                 return image
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
-                
+
                 image = kwargs.get("image")
-                plot_and_save_bbox_images(image, label_masks, image_name, debug_path)
+                plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
 
                 return label_masks
             elif module == "text_recognition":
                 texts_n_labels = func(*args, **kwargs)
 
-                # TODO save texts inside image 
+                # TODO save texts inside image
                 image = kwargs.get("image")
                 return texts_n_labels
 
@@ -76,6 +76,7 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
         cv2.imwrite(output_path, cropped_image)
 
         logger.info("Saved bounding box image to %s", output_path)
+
 
 def draw_polygon_on_image(image, coordinates, i=-1):
     draw = ImageDraw.Draw(image)

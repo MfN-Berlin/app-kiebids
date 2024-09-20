@@ -6,10 +6,36 @@ from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
+from kiebids.utils import draw_polygon_on_image
 from kiebids import config, get_logger
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
+
+
+def evaluate_module(module=""):
+    """ """
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            if not module:
+                return func(*args, **kwargs)
+
+            if module == "layout_analysis":
+                bb_labels = func(*args, **kwargs)
+                # comparing labels with ground truth
+                return bb_labels
+            elif module == "text_recognition":
+                text_and_labels = func(*args, **kwargs)
+                # comparing text with ground truth
+                return text_and_labels
+            elif module == "semantic_labeling":
+                # do something here
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
 
 
 def load_image_from_url(url):

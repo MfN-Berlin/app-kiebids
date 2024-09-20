@@ -14,6 +14,7 @@ from prefect import flow
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
+
 @flow(name=pipeline_name, log_prints=True)
 def ocr_flow():
 
@@ -28,13 +29,13 @@ def ocr_flow():
         logger.info("Processing image %s from %s.", filename, config.image_path)
 
         # accepts image path. outputs image
-        preprocessed_image = preprocessing(image_path=Path(config.image_path)/filename)
+        preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
         bb_labels = layout_analyzer.run(image=preprocessed_image, filename=filename)
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        text_recognition_output_dir = text_recognition(image=preprocessed_image, labels=bb_labels, filename=filename)
+        text_recognition_output_dir = text_recognition(image=preprocessed_image, bb_labels=bb_labels, filename=filename)
 
         # semantic_labeling.run
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)

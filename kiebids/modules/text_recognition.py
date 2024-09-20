@@ -12,7 +12,7 @@ module_config = pipeline_config[module]
 
 
 @task
-def text_recognition(image, bb_labels):
+def text_recognition(image, bb_labels, **kwargs):
     """
     Recognize text from cropped images.
     param:
