@@ -27,17 +27,25 @@ def debug_writer(debug_path="", module=""):
 
             if module == "preprocessing":
                 image = func(*args, **kwargs)
-
                 if kwargs.get("image_path"):
                     image_output_path = Path(debug_path) / Path(kwargs["image_path"]).name
                     cv2.imwrite(str(image_output_path), image)
-                    logger.debug("Saved image to: %s", image_output_path)
+                    logger.debug("Saved original image to: %s", image_output_path)
                 return image
+
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
-                # TODO make image kwargs
-                image_name = "test"
-                image = args[1]
+                # TODO put this up
+                image_name = kwargs.get("image_name")
+                image = kwargs.get("image")
+                plot_and_save_bbox_images(image, label_masks, image_name, debug_path)
+
+                return label_masks
+            elif module == "text_recognition":
+                label_masks = func(*args, **kwargs)
+                # TODO put this up
+                image_name = kwargs.get("image_name")
+                image = kwargs.get("image")
                 plot_and_save_bbox_images(image, label_masks, image_name, debug_path)
 
                 return label_masks

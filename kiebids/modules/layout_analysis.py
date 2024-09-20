@@ -23,7 +23,6 @@ class LayoutAnalyzer:
     @debug_writer(debug_path, module=module)
     def run(self, image):
 
-        logger.info("Generating masks...")
         masks = self.mask_generator.generate(image)
 
         label_masks = self.filter_masks(masks)

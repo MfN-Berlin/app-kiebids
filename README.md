@@ -2,10 +2,15 @@
 
 ## Usage
 
-```
 # 1/ Run kiebids/ocr_flow.py locally
-prefect cloud login
+Open terminal and start prefect inside 
+```
+prefect server start
+```
+Open a new terminal and run:
+```
 python kiebids/ocr_flow.py
+```
 
 # 2/ Build images and start services defined in compose.yaml.
 #    Access web server at http://127.0.0.1:4200. You can trigger a pipeline run
