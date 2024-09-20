@@ -6,9 +6,10 @@ from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
-from kiebids import config, getLogger
+from kiebids import config, get_logger
 
-logger = getLogger(__name__, log_level=config.log_level)
+logger = get_logger(__name__)
+logger.setLevel(config.log_level)
 
 
 def load_image_from_url(url):
@@ -25,23 +26,6 @@ def load_image_from_url(url):
     except OSError as e:
         logger.error(f"Error opening image: {e}")
         return None
-
-
-def draw_polygon_on_image(image, coordinates, i=-1):
-    draw = ImageDraw.Draw(image)
-    points = [tuple(map(int, point.split(","))) for point in coordinates.split()]
-    draw.polygon(points, outline="red", fill=None, width=2)
-
-    if i >= 0:
-        # Calculate the upper-left corner for the label
-        x_min = min(point[0] for point in points)
-        y_min = min(point[1] for point in points)
-
-        label_position = (x_min, y_min - 10)
-        font = ImageFont.load_default(size=24)
-        draw.text(label_position, str(i), fill="blue", font=font)
-
-    return image
 
 
 def process_xml_files(folder_path, output_path):

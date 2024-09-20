@@ -3,5 +3,6 @@ log_level: DEBUG
 
 shared_folder: /mnt/data/ZUG-Biodiversität
 
+image_path: data/input
 output_path: data/output
-debug_path: "data/debug"
+debug_path: data/debug
