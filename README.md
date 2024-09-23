@@ -1,5 +1,12 @@
 # Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
 
+## Python environment setup
+```
+conda create -n zug-mfn python=3.10.13
+conda activate zug-mfn
+pip install -r requirements.txt
+```
+
 ## Usage
 
 ### Run ocr flow locally
