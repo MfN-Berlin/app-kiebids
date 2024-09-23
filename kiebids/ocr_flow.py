@@ -15,7 +15,7 @@ pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
 
-@flow(name=pipeline_name, log_prints=True)
+@flow(name=pipeline_name, log_prints=True, retries=3)
 def ocr_flow():
 
     # init objects/models for every stage

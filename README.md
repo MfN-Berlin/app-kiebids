@@ -2,25 +2,30 @@
 
 ## Usage
 
-# 1/ Run kiebids/ocr_flow.py locally
-Open terminal and start prefect inside 
+### Run ocr flow locally
+Run: 
 ```
-prefect server start
+bash run_flow.sh
 ```
-Open a new terminal and run:
+This will start the prefect server in background (if not started so far) and execute the basic flow.
+
+If you'd like to kill the prefect server at execution end then run:
 ```
-python kiebids/ocr_flow.py
+bash run_flow.sh --stop_prefect
 ```
 
-# 2/ Build images and start services defined in compose.yaml.
+-----
+
+### 2/ Build images and start services defined in compose.yaml.
 #    Access web server at http://127.0.0.1:4200. You can trigger a pipeline run
 #    by going to deployments, clicking on the three dots, choosing Quick Run.
+```
 docker compose up --build
 # stop and remove running services
 docker compose down
 ```
 
-
+----- 
 ## Teuxdeux
 
 - Reuse Docker image
