@@ -14,6 +14,13 @@ If you'd like to kill the prefect server at execution end then run:
 bash run_flow.sh --stop_prefect
 ```
 
+----
+### Run pytest:
+
+```
+pytest -s
+```
+
 -----
 
 ### 2/ Build images and start services defined in compose.yaml.
