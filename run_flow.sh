@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PYTHONPATH=$PYTHONPATH:.
+
 # Function to gracefully stop the first process
 stop_prefect() {
     echo "Stopping prefect process..."
