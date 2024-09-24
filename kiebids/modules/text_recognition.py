@@ -1,45 +1,32 @@
-import os
-
 import pytesseract
-
-import cv2
-
-from pathlib import Path
 from prefect import task
+
+from kiebids import config, pipeline_config, get_logger
+
+module = __name__.split(".")[-1]
+logger = get_logger(module)
+logger.setLevel(config.log_level)
+
+debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}"
+module_config = pipeline_config[module]
 
 
 @task
-def text_recognition(input_dir, output_path, debug=False):
+def text_recognition(image, bb_labels, **kwargs):
     """
     Recognize text from cropped images.
     param:
-    input_path: str, path to directory containing cropped images
-    output_path: str, path to output directory
+    image:
+    bb_labels:
     """
 
-    OUTPUT_DIR_TEXT_RECOGNITION = Path(output_path) / "text_recogniton"
-    os.makedirs(OUTPUT_DIR_TEXT_RECOGNITION, exist_ok=True)
+    tc_results = []
+    for bbox in bb_labels:
+        # create snippet of image out of bounding box
+        x, y, w, h = bbox["bbox"]
 
-    # Get all cropped images related to the input image
-    images = [image for image in os.listdir(input_dir)]
+        # Crop the image using the bounding box
+        cropped_image = image[y : y + h, x : x + w]
+        tc_results.append({"text": pytesseract.image_to_string(cropped_image), "bbox": bbox["bbox"]})
 
-    for image in images:
-        image_path = Path(input_dir) / image
-        text = get_text(image_path)
-
-        image_name = image.split(".")[0] + ".txt"
-        text_output_path = OUTPUT_DIR_TEXT_RECOGNITION / image_name
-
-        with open(text_output_path, "w") as f:
-            f.write(text)
-
-    return str(OUTPUT_DIR_TEXT_RECOGNITION)
-
-
-def get_text(image_path, debug=False):
-    """
-    Get ocr text from image with tesseract
-    """
-    image = cv2.imread(image_path)
-    text = pytesseract.image_to_string(image)
-    return text
+    return tc_results

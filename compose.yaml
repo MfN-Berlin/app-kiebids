@@ -27,6 +27,4 @@ services:
       - ./data:/app/data
     environment:
       - PREFECT_API_URL=http://host.docker.internal:4200/api
-      - INPUT_DIR=/app/data/input
-      - OUTPUT_DIR=/app/data/output
     command: ["python", "kiebids/ocr_flow.py", "server"]

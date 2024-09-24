@@ -1,26 +1,34 @@
 # Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
 
+## Python environment setup
+```
+conda create -n zug-mfn python=3.10.13
+conda activate zug-mfn
+pip install -r requirements.txt
+```
+
 ## Usage
 
+### Run ocr flow locally
+Run: 
 ```
-# 1/ Run kiebids/ocr_flow.py locally
-prefect cloud login
-python kiebids/ocr_flow.py
+bash run_flow.sh
+```
+This will start the prefect server in background (if not started so far) and execute the basic flow.
 
-# 2/ Build images and start services defined in compose.yaml.
-#    Access web server at http://127.0.0.1:4200. You can trigger a pipeline run
-#    by going to deployments, clicking on the three dots, choosing Quick Run.
-docker compose up --build
-# stop and remove running services
-docker compose down
+If you'd like to kill the prefect server at execution end then run:
+```
+bash run_flow.sh --stop_prefect
 ```
 
+----
+### Run pytest:
 
-## Teuxdeux
+```
+pytest -s
+```
 
-- Reuse Docker image
-
-
+-----
 
 ## Modules
 Overview of each module 
@@ -31,39 +39,3 @@ Overview of each module
 4. Semantic Labeling
 5. Entity linking 
 6. Evaluation
-
-
-## Data Structure 
-
-The output for each module will fall into the following folder structure: 
-
-```
-── data
-
-│   ├── output
-│   │   ├── preprocessing
-│   │   │   ├── image_X.jpg
-│   │   ├── layout_analysis
-│   │   |   ├── image_X
-│   │   |   │   ├── image_X_1.jpg
-│   │   |   │   ├── image_X_2.jpg
-│   │   ├── text_recognition 
-│   │   |   ├── image_X
-│   │   |   │   ├── image_X_1_ocr.txt
-│   │   |   │   ├── image_X_2_ocr.txt
-│   │   ├── semantic_labeling
-│   │   |   │   ├── image_X_1_handwritten
-│   │   |   │   ├── image_X_1_barcode 
-│   │   ├── entity_linking
-``` 
-
-For each module there is an optional 'debug' flag. If the debug flag is set to true, interim results will be saved to the ```data/debug``` folder, where each module has its own subfolder. 
-```
-│   ├── debug 
-│   │   ├── preprocessing
-│   │   ├── layout_analysis
-│   │   ├── text_recocgnition 
-│   │   ├── semantic_labelling
-│   │   ├── entity_linking
-```
-

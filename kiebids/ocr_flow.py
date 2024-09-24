@@ -1,42 +1,49 @@
 import os
-import sys
-
+from tqdm import tqdm
 from pathlib import Path
-from prefect import flow, task
 
-from modules.preprocessing import preprocessing
-from modules.layout_analysis import layout_analysis
-from modules.text_recognition import text_recognition
-from modules.semantic_labeling import semantic_labeling
-from modules.entity_linking import entity_linking
+from kiebids.modules.layout_analysis import LayoutAnalyzer
+from kiebids.modules.preprocessing import preprocessing
+from kiebids.modules.text_recognition import text_recognition
+from kiebids import config, pipeline_config, get_logger
 
+# commented out for now to avoid tensorflow loading
+# from modules.semantic_labeling import semantic_labeling
+from prefect import flow
 
-BASE_DIR = Path(__file__).parent.parent
-INPUT_DIR = Path(os.environ.get("INPUT_DIR", BASE_DIR / "data" / "input"))
-OUTPUT_DIR = Path(os.environ.get("OUTPUT_DIR", BASE_DIR / "data" / "output"))
-
-
-@task
-def process_single_image(image_path, output_path, debug=True):
-    preprocessing_output_path = preprocessing(image_path, output_path, debug=debug)
-    layout_analysis_output_dir = layout_analysis(preprocessing_output_path, output_path, debug=debug)
-    text_recognition_output_dir = text_recognition(layout_analysis_output_dir, output_path, debug=debug)
-    semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path, debug=debug)
-    # entity_linking(image_path, output_path, debug=debug)
+pipeline_name = pipeline_config.pipeline_name
+logger = get_logger(pipeline_name)
 
 
-@flow(name="KIEBIDS pipeline", log_prints=True)
+@flow(name=pipeline_name, log_prints=True, retries=3)
 def ocr_flow():
 
-    image_paths = [
-        os.path.join(INPUT_DIR, file)
-        for file in os.listdir(INPUT_DIR)
-        if file.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif"))
-    ]
+    # init objects/models for every stage
+    layout_analyzer = LayoutAnalyzer()
 
     # Process images sequentially
-    for image_path in image_paths:
-        process_single_image(image_path, str(OUTPUT_DIR), debug=True)
+    for filename in tqdm(os.listdir(config.image_path)):
+        if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
+            continue
+
+        logger.info("Processing image %s from %s.", filename, config.image_path)
+
+        # accepts image path. outputs image
+        preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
+
+        # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
+        bb_labels = layout_analyzer.run(image=preprocessed_image, filename=filename)
+
+        # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
+        text_recognition_output_dir = text_recognition(image=preprocessed_image, bb_labels=bb_labels, filename=filename)
+
+        # semantic_labeling.run
+        # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)
+
+        # entity_linking.run
+        # entity_linking(image_path, output_path)
+
+        # write results to PAGE Format
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)
@@ -46,11 +53,4 @@ def ocr_flow():
 
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1 and sys.argv[1] == "server":
-        ocr_flow.serve(
-            name="kiebids-ocr-deployment",
-            parameters={},
-        )
-        # prefect deploy
-    else:
-        ocr_flow()
+    ocr_flow()

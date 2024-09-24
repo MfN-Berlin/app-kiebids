@@ -1,31 +1,23 @@
 import os
 import shutil
-
-import tensorflow as tf
-import numpy as np
-
-from prefect import task
 from pathlib import Path
 
+import numpy as np
+import tensorflow as tf
+from prefect import task
 
 script_path = Path(__file__).parent.resolve()
 
 
 @task
 def semantic_labeling(image_dir, output_path, debug=False):
-
     OUTPUT_DIR_SEMANTIC_LABELING = Path(output_path) / "semantic_labeling"
     os.makedirs(OUTPUT_DIR_SEMANTIC_LABELING, exist_ok=True)
 
     images = [image for image in os.listdir(image_dir)]
 
     # TODO: this is the handwritten/not handwritten classifier, loop for all the models
-    model_path = (
-        script_path.parent.parent
-        / "models"
-        / "semantic_labeling"
-        / "label_classifier_hp"
-    )
+    model_path = script_path.parent.parent / "models" / "semantic_labeling" / "label_classifier_hp"
 
     print("Loading model: ", model_path)
     model = load_model(model_path)
@@ -40,9 +32,7 @@ def semantic_labeling(image_dir, output_path, debug=False):
 
         # TODO: Do something with the score from the prediction
         entry = predict_label(image_path, model, class_names=class_names)
-        shutil.copy(
-            image_path, str(OUTPUT_DIR_SEMANTIC_LABELING / entry["class"] / image)
-        )
+        shutil.copy(image_path, str(OUTPUT_DIR_SEMANTIC_LABELING / entry["class"] / image))
 
 
 def load_model(model_path):
@@ -72,9 +62,7 @@ def predict_label(image_path, model, class_names=["handwritten", "printed"]):
     predictions = model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
     entry = {}
-    entry["filename"] = os.path.basename(
-        image_path
-    )  # Get the filename without the directory
+    entry["filename"] = os.path.basename(image_path)  # Get the filename without the directory
     entry["class"] = class_names[np.argmax(score)]
     entry["score"] = 100 * np.max(score)
 
