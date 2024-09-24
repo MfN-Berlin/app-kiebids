@@ -10,6 +10,11 @@ pip install -r requirements.txt
 ## Usage
 
 ### Run ocr flow locally
+
+Create .env file containing port env variable:
+```
+PREFECT_PORT=<some-port-number-between-4200-and-4300>
+```
 Run: 
 ```
 bash run_flow.sh
@@ -29,6 +34,8 @@ pytest -s
 ```
 
 -----
+
+
 
 ## Modules
 Overview of each module 
