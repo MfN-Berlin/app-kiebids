@@ -1,12 +1,19 @@
 #!/bin/bash
 
 export PYTHONPATH=$PYTHONPATH:.
+source .env
+
+if [ -z "$PREFECT_PORT" ]; then
+    echo "PREFECT_PORT is not set. please define PREFECT_PORT in .env file"
+fi
+
+export PREFECT_API_URL=http://localhost:$PREFECT_PORT/api
 
 # Function to gracefully stop the first process
 stop_prefect() {
     echo "Stopping prefect process..."
     # kill $PREFECT_PROCESS_PID  # Kill the first process using its PID
-    kill $(lsof -i :4200 | awk 'NR>1 {print $2}')
+    kill $(lsof -i :$PREFECT_PORT | awk 'NR>1 {print $2}')
     exit 0
 }
 
@@ -16,10 +23,9 @@ trap 'stop_prefect' INT
 # Get the path to the current Python executable
 PYTHON_PATH=$(which /usr/bin/env python)
 
-# Check if port 4200 is in use
-if ! lsof -i :4200 > /dev/null; then
-    # prefect server start & sleep 5 && $PYTHON_PATH kiebids/ocr_flow.py
-    prefect server start &
+# Check if port $PREFECT_PORT is in use
+if ! lsof -i :$PREFECT_PORT > /dev/null; then
+    prefect server start --port $PREFECT_PORT &
     # Capturing PID of prefect server
     PREFECT_PROCESS_PID=$!
 
