@@ -1,0 +1,95 @@
+import os
+from pathlib import Path
+
+import cv2
+from PIL import Image, ImageDraw, ImageFont
+from prefect.logging import get_logger
+
+from kiebids import config
+
+logger = get_logger(__name__)
+logger.setLevel(config.log_level)
+
+
+def debug_writer(debug_path="", module=""):
+    """
+    Decorator to write outputs of different stages/modules to disk in debug mode.
+    """
+
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            # When debug path not given, no need to do anything
+            if not debug_path or not module:
+                return func(*args, **kwargs)
+
+            if not os.path.exists(debug_path):
+                os.makedirs(debug_path, exist_ok=True)
+
+            # TODO try except
+            image_name = kwargs.get("filename", "default.png")
+
+            if module == "preprocessing":
+                # TODO write original?
+                image = func(*args, **kwargs)
+                if kwargs.get("image_path"):
+                    image_output_path = Path(debug_path) / image_name
+                    cv2.imwrite(str(image_output_path), image)
+                    logger.debug("Saved preprocessed image to: %s", image_output_path)
+                return image
+            elif module == "layout_analysis":
+                label_masks = func(*args, **kwargs)
+
+                image = kwargs.get("image")
+                plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
+
+                return label_masks
+            elif module == "text_recognition":
+                texts_n_labels = func(*args, **kwargs)
+
+                # TODO save texts inside image
+                image = kwargs.get("image")
+                return texts_n_labels
+
+        return wrapper
+
+    return decorator
+
+
+def plot_and_save_bbox_images(image, masks, image_name, output_dir):
+    """
+    Plot and save individual images for each mask, using the bounding box to crop the image.
+
+    Args:
+    image (numpy.ndarray): The original image as a numpy array (height, width, 3).
+    masks (list): A list of dictionaries, each containing a 'bbox' key with [x, y, width, height].
+    output_dir (str): Directory to save the output images.
+    """
+
+    for i, mask in enumerate(masks, 1):
+        x, y, w, h = mask["bbox"]
+
+        # Crop the image using the bounding box
+        cropped_image = image[y : y + h, x : x + w]
+
+        # Save the cropped image
+        output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
+        cv2.imwrite(output_path, cropped_image)
+
+        logger.info("Saved bounding box image to %s", output_path)
+
+
+def draw_polygon_on_image(image, coordinates, i=-1):
+    draw = ImageDraw.Draw(image)
+    points = [tuple(map(int, point.split(","))) for point in coordinates.split()]
+    draw.polygon(points, outline="red", fill=None, width=2)
+
+    if i >= 0:
+        # Calculate the upper-left corner for the label
+        x_min = min(point[0] for point in points)
+        y_min = min(point[1] for point in points)
+
+        label_position = (x_min, y_min - 10)
+        font = ImageFont.load_default(size=24)
+        draw.text(label_position, str(i), fill="blue", font=font)
+
+    return image

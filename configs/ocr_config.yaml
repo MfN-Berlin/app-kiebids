@@ -1,0 +1,28 @@
+pipeline_name: "KIEBIDS pipeline"
+
+preprocessing:
+  gray: false
+  smooth: false
+  threshold: false
+  denoise: false
+  contrast: false
+
+layout_analysis:
+  name: "sam_vit_b_01ec64.pth"
+  model_path: "/mnt/data/ZUG-Biodiversität/models/sam_vit_b_01ec64.pth"
+  model_type: "vit_b"
+  points_per_side: 32
+  pred_iou_thresh: 0.86
+  stability_score_thresh: 0.92
+  crop_n_layers: 0
+  min_mask_region_area: 100            
+  output_mode: "binary_mask"  # "uncompressed_rle
+
+text_recognition:
+
+entity_linking: 
+
+semantic_labeling: 
+
+
+ 
