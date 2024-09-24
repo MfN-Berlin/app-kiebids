@@ -5,6 +5,7 @@ source .env
 
 if [ -z "$PREFECT_PORT" ]; then
     echo "PREFECT_PORT is not set. please define PREFECT_PORT in .env file"
+    exit 1
 fi
 
 export PREFECT_API_URL=http://localhost:$PREFECT_PORT/api
