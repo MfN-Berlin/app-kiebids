@@ -4,7 +4,7 @@ from pathlib import Path
 
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
-from kiebids.modules.text_recognition import text_recognition
+from kiebids.modules.text_recognition import TextRecognizer
 from kiebids import config, pipeline_config, get_logger
 
 # commented out for now to avoid tensorflow loading
@@ -20,6 +20,7 @@ def ocr_flow():
 
     # init objects/models for every stage
     layout_analyzer = LayoutAnalyzer()
+    text_recognizer = TextRecognizer()
 
     # Process images sequentially
     for filename in tqdm(os.listdir(config.image_path)):
@@ -35,7 +36,9 @@ def ocr_flow():
         bb_labels = layout_analyzer.run(image=preprocessed_image, filename=filename)
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        text_recognition_output_dir = text_recognition(image=preprocessed_image, bb_labels=bb_labels, filename=filename)
+        recognized_text = text_recognizer.run(
+            image=preprocessed_image, bb_labels=[bb_label["bbox"] for bb_label in bb_labels]
+        )
 
         # semantic_labeling.run
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)
