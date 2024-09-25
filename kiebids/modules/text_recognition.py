@@ -23,14 +23,19 @@ class TextRecognizer:
     def __init__(self):
         gpu = torch.cuda.is_available()
         self.language = module_config["language"]
+        self.text_threshold = module_config["text_threshold"]
+        self.decoder = module_config["decoder"]
+
         self.model = easyocr.Reader([self.language], gpu=gpu)
 
     def get_text(self, image: np.array):
-        text = self.model.readtext(image, paragraph=True)
+        text = self.model.readtext(
+            image, decoder=self.decoder, text_threshold=self.text_threshold, paragraph=True, detail=0
+        )
         if len(text) == 0:
             return ""
         else:
-            return text[0][1]
+            return text[0]
 
     def crop_image(self, image: np.array, bounding_box: list[int]):
         """get the cropped image from bounding boxes"""
