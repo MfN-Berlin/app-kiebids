@@ -13,8 +13,8 @@ debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}
 module_config = pipeline_config[module]
 
 
-@task
 @debug_writer(debug_path, module=module)
+@task
 def preprocessing(image_path):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)

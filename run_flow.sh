@@ -34,6 +34,7 @@ if ! lsof -i :$PREFECT_PORT > /dev/null; then
     sleep 5
 fi
 
+# TODO adjust this when running with deployment server
 # wait for flow to finish
 $PYTHON_PATH kiebids/ocr_flow.py
 
