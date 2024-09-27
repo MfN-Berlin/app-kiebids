@@ -57,9 +57,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--serve-deployment",
-        type=str,
-        required=False,
-        default="",
+        action="store_true",
         help="activate deployment serving mode",
     )
 

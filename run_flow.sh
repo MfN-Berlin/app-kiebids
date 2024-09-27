@@ -1,5 +1,51 @@
 #!/bin/bash
 
+usage() {
+    echo "Usage: $0 [--serve-deployment] [--stop-prefect] [--help]"
+    echo
+    echo "Options:"
+    echo "  --serve-deployment    serve the prefect deployment"
+    echo "  --stop-prefect     stop the prefect server after running the flow"
+    echo "  --help        Display this help message."
+    exit 1
+}
+serve_deployment=0
+stop_prefect=0
+
+# Parse command-line options using getopt
+OPTIONS=$(getopt -o "" --long "serve-deployment,stop-prefect,help" -- "$@")
+if [ $? -ne 0 ]; then
+    usage
+fi
+
+eval set -- "$OPTIONS"
+
+# Process the arguments
+while true; do
+    case "$1" in
+        --serve-deployment)
+            serve_deployment=1
+            shift
+            ;;
+        --stop-prefect)
+            stop_prefect=1
+            shift
+            ;;
+        --help)
+            usage
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "Error: Invalid option"
+            echo $1
+            usage
+            ;;
+    esac
+done
+
 export PYTHONPATH=$PYTHONPATH:.
 source .env
 
@@ -34,10 +80,12 @@ if ! lsof -i :$PREFECT_PORT > /dev/null; then
     sleep 5
 fi
 
-# TODO adjust this when running with deployment server
-# wait for flow to finish
-$PYTHON_PATH kiebids/ocr_flow.py
-
-if  [ "$1" = "--stop_prefect" ]; then
-    stop_prefect
+# Finally, run the flow
+if [ $serve_deployment -eq 1 ]; then
+    $PYTHON_PATH kiebids/ocr_flow.py --serve-deployment
+else
+    $PYTHON_PATH kiebids/ocr_flow.py
+    if [ $stop_prefect -eq 1 ]; then
+        stop_prefect
+    fi
 fi

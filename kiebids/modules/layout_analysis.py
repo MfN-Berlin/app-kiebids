@@ -20,7 +20,7 @@ class LayoutAnalyzer:
 
     # TODO Rename to something more suitable and self-explanatory
     @debug_writer(debug_path, module=module)
-    @task(name="layout_analysis")
+    @task(name=module)
     def run(self, image, **kwargs):
         masks = self.mask_generator.generate(image)
 
