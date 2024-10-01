@@ -5,6 +5,7 @@ import numpy as np
 
 from prefect import task
 
+from kiebids.utils import crop_image
 from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
@@ -26,21 +27,16 @@ class TextRecognizer:
         self.text_threshold = module_config["text_threshold"]
         self.decoder = module_config["decoder"]
 
-        self.model = easyocr.Reader([self.language], gpu=gpu)
+        self.model = easyocr.Reader([module_config.language], gpu=gpu)
 
     def get_text(self, image: np.array):
-        text = self.model.readtext(
-            image, decoder=self.decoder, text_threshold=self.text_threshold, paragraph=True, detail=0
-        )
-        if len(text) == 0:
-            return ""
-        else:
-            return text[0]
 
-    def crop_image(self, image: np.array, bounding_box: list[int]):
-        """get the cropped image from bounding boxes"""
-        x, y, w, h = bounding_box
-        return image[y : y + h, x : x + w]
+        # readtext() returns either an empty list if no text found or a list with only one element of text. 
+        # If detail=1 it would return a list of texts. 
+        texts = self.model.readtext(
+            image, decoder=module_config.decoder, text_threshold=module_config.text_threshold, paragraph=True, detail=0
+        )
+        return texts[0] if texts else ""
 
     @task
     def run(self, image: np.array, bounding_boxes: list):
@@ -48,7 +44,7 @@ class TextRecognizer:
         Returns text for each bounding box in image
         Parameters:
             image: np.array
-            bounding_boxes: list of bounding box coordinates of form [x,y,w,h].
+            bounding_boxes: list of bounding box coordinates of form [x_min,y_min,width,height]
 
         Returns:
             dictionary with bounding box and text
@@ -57,7 +53,7 @@ class TextRecognizer:
         output = []
 
         for bounding_box in bounding_boxes:
-            cropped_image = self.crop_image(image, bounding_box)
+            cropped_image = crop_image(image, bounding_box)
 
             text = self.get_text(image=cropped_image)
 

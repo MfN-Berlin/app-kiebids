@@ -1,4 +1,6 @@
 import os
+
+import numpy as np
 from pathlib import Path
 
 import cv2
@@ -55,6 +57,16 @@ def debug_writer(debug_path="", module=""):
     return decorator
 
 
+def crop_image(image: np.array, bounding_box: list[int]):
+    """get the cropped image from bounding boxes. 
+    Parameters: 
+        image: he original image as a numpy array (height, width, 3)
+        bounding_box: coordinates to crop [x_min,y_min,width,height]
+    """
+    x, y, w, h = bounding_box
+    return image[y : y + h, x : x + w]
+
+
 def plot_and_save_bbox_images(image, masks, image_name, output_dir):
     """
     Plot and save individual images for each mask, using the bounding box to crop the image.
@@ -66,10 +78,9 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
     """
 
     for i, mask in enumerate(masks, 1):
-        x, y, w, h = mask["bbox"]
 
         # Crop the image using the bounding box
-        cropped_image = image[y : y + h, x : x + w]
+        cropped_image = crop_image(image=image, bounding_box = mask['bbox'])
 
         # Save the cropped image
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
