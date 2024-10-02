@@ -51,8 +51,8 @@ def debug_writer(debug_path="", module=""):
 
                 # TODO save texts inside image
                 image = kwargs.get("image")
-                output_path = os.path.join(debug_path,image_name.split(".")[0] + '.json') 
-                with open(output_path, 'w') as f:
+                output_path = os.path.join(debug_path, image_name.split(".")[0] + ".json")
+                with open(output_path, "w") as f:
                     json.dump(texts, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
                 return texts
@@ -63,8 +63,8 @@ def debug_writer(debug_path="", module=""):
 
 
 def crop_image(image: np.array, bounding_box: list[int]):
-    """get the cropped image from bounding boxes. 
-    Parameters: 
+    """get the cropped image from bounding boxes.
+    Parameters:
         image: he original image as a numpy array (height, width, 3)
         bounding_box: coordinates to crop [x_min,y_min,width,height]
     """
@@ -85,7 +85,7 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
     for i, mask in enumerate(masks, 1):
 
         # Crop the image using the bounding box
-        cropped_image = crop_image(image=image, bounding_box = mask['bbox'])
+        cropped_image = crop_image(image=image, bounding_box=mask["bbox"])
 
         # Save the cropped image
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")

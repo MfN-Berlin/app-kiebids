@@ -37,8 +37,7 @@ def ocr_flow():
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         recognized_text = text_recognizer.run(
-            image=preprocessed_image, bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
-            filename=filename
+            image=preprocessed_image, bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels], filename=filename
         )
 
         # semantic_labeling.run
