@@ -5,7 +5,7 @@ import numpy as np
 
 from prefect import task
 
-from kiebids.utils import crop_image
+from kiebids.utils import crop_image, debug_writer
 from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
@@ -23,23 +23,20 @@ class TextRecognizer:
 
     def __init__(self):
         gpu = torch.cuda.is_available()
-        self.language = module_config["language"]
-        self.text_threshold = module_config["text_threshold"]
-        self.decoder = module_config["decoder"]
-
         self.model = easyocr.Reader([module_config.language], gpu=gpu)
 
     def get_text(self, image: np.array):
 
         # readtext() returns either an empty list if no text found or a list with only one element of text. 
-        # If detail=1 it would return a list of texts. 
+        # If detail=1 it would return a list of texts, but we are interested in evaluating the whole image.
         texts = self.model.readtext(
             image, decoder=module_config.decoder, text_threshold=module_config.text_threshold, paragraph=True, detail=0
         )
         return texts[0] if texts else ""
 
-    @task
-    def run(self, image: np.array, bounding_boxes: list):
+    @task(name=module)
+    @debug_writer(debug_path, module=module)
+    def run(self, image: np.array, bounding_boxes: list, **kwargs):
         """
         Returns text for each bounding box in image
         Parameters:
