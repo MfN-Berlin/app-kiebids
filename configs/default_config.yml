@@ -3,6 +3,6 @@ log_level: DEBUG
 
 shared_folder: /mnt/data/ZUG-Biodiversität
 
-image_path: /mnt/data/ZUG-Biodiversität/data/1832859/20230511T160908__coll_mfn-berlin_de_u_78a081
+image_path: data/images
 output_path: data/output
 debug_path: data/debug
