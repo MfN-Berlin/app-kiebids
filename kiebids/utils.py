@@ -1,8 +1,11 @@
 import os
+import json
+
+import numpy as np
 from pathlib import Path
 
 import cv2
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
 from kiebids import config
@@ -43,15 +46,29 @@ def debug_writer(debug_path="", module=""):
 
                 return label_masks
             elif module == "text_recognition":
-                texts_n_labels = func(*args, **kwargs)
+                texts = func(*args, **kwargs)
 
                 # TODO save texts inside image
                 image = kwargs.get("image")
-                return texts_n_labels
+                output_path = os.path.join(debug_path, image_name.split(".")[0] + ".json")
+                with open(output_path, "w") as f:
+                    json.dump(texts, f, ensure_ascii=False, indent=4)
+                logger.debug("Saved extracted text to: %s", output_path)
+                return texts
 
         return wrapper
 
     return decorator
+
+
+def crop_image(image: np.array, bounding_box: list[int]):
+    """get the cropped image from bounding boxes.
+    Parameters:
+        image: he original image as a numpy array (height, width, 3)
+        bounding_box: coordinates to crop [x_min,y_min,width,height]
+    """
+    x, y, w, h = bounding_box
+    return image[y : y + h, x : x + w]
 
 
 def plot_and_save_bbox_images(image, masks, image_name, output_dir):
@@ -65,10 +82,9 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
     """
 
     for i, mask in enumerate(masks, 1):
-        x, y, w, h = mask["bbox"]
 
         # Crop the image using the bounding box
-        cropped_image = image[y : y + h, x : x + w]
+        cropped_image = crop_image(image=image, bounding_box=mask["bbox"])
 
         # Save the cropped image
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")

@@ -1,6 +1,11 @@
-import pytesseract
+import easyocr
+import torch
+
+import numpy as np
+
 from prefect import task
 
+from kiebids.utils import crop_image, debug_writer
 from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
@@ -11,22 +16,44 @@ debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}
 module_config = pipeline_config[module]
 
 
-@task(name=module)
-def text_recognition(image, bb_labels, **kwargs):
+class TextRecognizer:
     """
-    Recognize text from cropped images.
-    param:
-    image:
-    bb_labels:
+    Text Recognizer class
     """
 
-    tc_results = []
-    for bbox in bb_labels:
-        # create snippet of image out of bounding box
-        x, y, w, h = bbox["bbox"]
+    def __init__(self):
+        gpu = torch.cuda.is_available()
+        self.model = easyocr.Reader([module_config.language], gpu=gpu)
 
-        # Crop the image using the bounding box
-        cropped_image = image[y : y + h, x : x + w]
-        tc_results.append({"text": pytesseract.image_to_string(cropped_image), "bbox": bbox["bbox"]})
+    def get_text(self, image: np.array):
 
-    return tc_results
+        # readtext() returns either an empty list if no text found or a list with only one element of text.
+        # If detail=1 it would return a list of texts, but we are interested in evaluating the whole image.
+        texts = self.model.readtext(
+            image, decoder=module_config.decoder, text_threshold=module_config.text_threshold, paragraph=True, detail=0
+        )
+        return texts[0] if texts else ""
+
+    @task(name=module)
+    @debug_writer(debug_path, module=module)
+    def run(self, image: np.array, bounding_boxes: list, **kwargs):
+        """
+        Returns text for each bounding box in image
+        Parameters:
+            image: np.array
+            bounding_boxes: list of bounding box coordinates of form [x_min,y_min,width,height]
+
+        Returns:
+            dictionary with bounding box and text
+        """
+
+        output = []
+
+        for bounding_box in bounding_boxes:
+            cropped_image = crop_image(image, bounding_box)
+
+            text = self.get_text(image=cropped_image)
+
+            output.append({"bbox": bounding_box, "text": text})
+
+        return output
