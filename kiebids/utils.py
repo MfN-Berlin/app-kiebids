@@ -28,20 +28,19 @@ def debug_writer(debug_path="", module=""):
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
 
-            # TODO try except
-            image_name = kwargs.get("filename", "default.png")
-
             if module == "preprocessing":
                 # TODO write original?
                 image = func(*args, **kwargs)
-                if kwargs.get("image_path"):
-                    image_output_path = Path(debug_path) / image_name
-                    cv2.imwrite(str(image_output_path), image)
-                    logger.debug("Saved preprocessed image to: %s", image_output_path)
+
+                image_name = kwargs.get("image_path").name if kwargs.get("image_path") else "default.png"
+                image_output_path = Path(debug_path) / image_name
+                cv2.imwrite(str(image_output_path), image)
+                logger.debug("Saved preprocessed image to: %s", image_output_path)
                 return image
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
 
+                image_name = kwargs.get("filename", "default.png")
                 image = kwargs.get("image")
                 plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
 
