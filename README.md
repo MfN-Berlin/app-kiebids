@@ -26,6 +26,11 @@ If you'd like to kill the prefect server at execution end then run:
 bash run_flow.sh --stop_prefect
 ```
 
+To start the server with a deployment (https://docs.prefect.io/3.0/deploy/index) you can run:
+```
+bash run_flow.sh --serve-deployment
+```
+
 ----
 ### Run pytest:
 

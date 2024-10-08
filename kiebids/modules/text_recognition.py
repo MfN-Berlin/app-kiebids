@@ -11,7 +11,7 @@ debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}
 module_config = pipeline_config[module]
 
 
-@task
+@task(name=module)
 def text_recognition(image, bb_labels, **kwargs):
     """
     Recognize text from cropped images.
