@@ -1,6 +1,7 @@
 import os
 from tqdm import tqdm
 from pathlib import Path
+import argparse
 
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
@@ -56,4 +57,18 @@ def ocr_flow():
 
 
 if __name__ == "__main__":
-    ocr_flow()
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--serve-deployment",
+        action="store_true",
+        help="activate deployment serving mode",
+    )
+
+    args = parser.parse_args()
+    if args.serve_deployment:
+        ocr_flow.serve(
+            name=pipeline_config.deployment_name,
+            parameters={},
+        )
+    else:
+        ocr_flow()
