@@ -62,10 +62,15 @@ if __name__ == "__main__":
         action="store_true",
         help="activate deployment serving mode",
     )
+    parser.add_argument(
+        "--disable-flow",
+        action="store_true",
+        help="activate deployment serving mode",
+    )
 
     args = parser.parse_args()
 
-    if config.enable_flow:
+    if not args.disable_flow:
         ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
 
     if args.serve_deployment:
