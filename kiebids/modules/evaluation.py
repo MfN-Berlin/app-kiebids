@@ -9,6 +9,7 @@ from tqdm import tqdm
 import cv2 as cv
 
 from kiebids import config, get_logger
+from kiebids.utils import extract_polygon
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -23,8 +24,11 @@ def evaluator(module=""):
 
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
+                # get ground truth for image
+                gt_labels = get_ground_truth(kwargs.get("filename"))
+                if gt_labels:
+                    compare_layouts(bb_labels, gt_labels)
 
-                compare_layouts(bb_labels)
                 return bb_labels
             elif module == "text_recognition":
                 text_and_labels = func(*args, **kwargs)
@@ -39,13 +43,34 @@ def evaluator(module=""):
     return decorator
 
 
-def compare_layouts(bb_labels):
-    # get ground truth => transcribus output
-    if config.evaluation_paths.hymdata:
-        process_xml_files(config.evaluation_paths.hymdata, config.evaluation)
+def get_ground_truth(filename):
+    xml_file = filename.replace(".jpg", ".xml")
+    polygons = []
 
-    # compare with predicted based on bounding boxes iou
-    # save results
+    # check if ground truth is available
+    if config.evaluation_paths.hymdata and xml_file in os.listdir(config.evaluation_paths.hymdata):
+        # get labels from xml file
+        file_path = os.path.join(config.evaluation_paths.hymdata, xml_file)
+        tree = etree.parse(file_path)
+        root = tree.getroot()
+        ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
+
+        transcriptions = ""
+        textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
+        for textline in textlines:
+            coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
+            if coords is not None:
+                polygons.append(extract_polygon(coords.get("points")))
+
+            # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
+            # if unicode_elem is not None:
+            #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
+
+    return polygons
+
+
+def compare_layouts(bb_labels, ground_truth):
+    pass
 
 
 def load_image_from_url(url):
@@ -117,7 +142,7 @@ def process_xml_files(folder_path, output_path):
             cv.imwrite(f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing)
             cv.imwrite(f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary)
 
-        # # lookup for polygon coordinates and transcriptions
+        # lookup for polygon coordinates and transcriptions
         # transcriptions = ""
         # textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
         # for i, textline in enumerate(textlines):
@@ -146,11 +171,4 @@ def process_xml_files(folder_path, output_path):
 
 
 if __name__ == "__main__":
-    # access points in xml
-    process_xml_files(
-        os.path.join(
-            config.shared_folder,
-            "data/hymdata_sample/20230511T160908__coll.mfn-berlin.de_u_78a081",
-        ),
-        "data/tmp",
-    )
+    get_ground_truth("66fbd9dc-e75c-46f5-8072-af3a10865de4_label_front_0002_label.jpg")

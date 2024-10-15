@@ -93,6 +93,10 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
         logger.info("Saved bounding box image to %s", output_path)
 
 
+def extract_polygon(coordinates):
+    return [tuple(map(int, point.split(","))) for point in coordinates.split()]
+
+
 def draw_polygon_on_image(image, coordinates, i=-1):
     draw = ImageDraw.Draw(image)
     points = [tuple(map(int, point.split(","))) for point in coordinates.split()]
