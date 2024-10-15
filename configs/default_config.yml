@@ -3,6 +3,12 @@ log_level: DEBUG
 
 shared_folder: /mnt/data/ZUG-Biodiversität
 
-image_path: data/images
+# image_path: data/images
+image_path: /mnt/data/ZUG-Biodiversität/data/fossInv_439415/Labels_fossInv_Insekten_20200723/
 output_path: data/output
 debug_path: data/debug
+
+evaluation: data/evaluation
+
+evaluation_paths: 
+  hymdata: /mnt/data/ZUG-Biodiversität/data/hymdata_sample/20230511T160908__coll.mfn-berlin.de_u_78a081

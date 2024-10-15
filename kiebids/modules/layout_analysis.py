@@ -4,6 +4,7 @@ from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
 from kiebids import config, pipeline_config, get_logger
 from kiebids.utils import debug_writer
+from kiebids.modules.evaluation import evaluator
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
@@ -20,8 +21,9 @@ class LayoutAnalyzer:
 
     # TODO Rename to something more suitable and self-explanatory
     @debug_writer(debug_path, module=module)
+    @evaluator(module=module)
     @task(name=module)
-    def run(self, image, **kwargs):
+    def run(self, image, **kwargs):  # pylint: disable=unused-argument
         masks = self.mask_generator.generate(image)
 
         label_masks = self.filter_masks(masks)
