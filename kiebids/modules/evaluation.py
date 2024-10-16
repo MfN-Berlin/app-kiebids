@@ -69,8 +69,74 @@ def get_ground_truth(filename):
     return polygons
 
 
-def compare_layouts(bb_labels, ground_truth):
-    pass
+def compare_layouts(bb_labels: list, ground_truth: list):
+
+    # pred_masks = outputs[0]["instances"][outputs[0]["instances"].pred_classes == cat_id].pred_masks.cpu().numpy()
+    # pred_sum = (pred_masks.sum(axis=0) > 0) if pred_masks.size != 0 else np.zeros((height, width)) > 0
+
+    # gt_masks = get_target_masks(input["image_id"], cat_id)
+    # gt_sum = (gt_masks.sum(axis=0) > 0) if gt_masks.size != 0 else np.zeros((height, width)) > 0
+
+    # for now just assume 1 to 1 mapping
+    for i, bb in enumerate(bb_labels):
+        pred_sum = bb["segmentation"]
+        gt_sum = create_polygon_mask(ground_truth[i], pred_sum.shape)
+
+        if np.sum(pred_sum + gt_sum) == 0:
+            continue
+
+        iou, weight = compute_iou(pred_sum, gt_sum)
+    # self.weights.append(weight)
+    # cat_weights.append(weight)
+    # cat_ious.append(iou)
+
+    # self.update_frame_metrics(iou, gt_sum, pred_sum, cat_id)
+
+
+def create_polygon_mask(polygon_points, image_shape):
+    """
+    Creates a mask of the polygon in the given image.
+
+    :param polygon_points: List of (x, y) tuples representing the polygon vertices.
+    :param image_shape: Tuple (height, width) representing the image shape.
+    :return: A binary mask where the polygon area is filled with 1's, and the rest is 0's.
+    """
+    height, width = image_shape
+
+    # Create a blank mask (same size as the image, single channel)
+    mask = np.zeros((height, width), dtype=np.uint8)
+
+    # Convert polygon_points to a format accepted by OpenCV (an array of shape Nx1x2)
+    polygon_points = np.array(polygon_points, dtype=np.int32)
+    polygon_points = polygon_points.reshape((-1, 1, 2))
+
+    # Draw the polygon on the mask (fill the polygon with white color - value 1)
+    cv.fillPoly(mask, [polygon_points], 1)
+
+    return mask
+
+
+def compute_iou(prediction: np.ndarray, ground_truth: np.ndarray):
+    """
+    computes iou and its weight based on union relative to total num of pixels
+
+    Args:
+        prediction (): prediction of model
+        ground_truth (): ground truth
+
+    Returns:
+        iou:
+        weight: weight of the iou
+    """
+    intersection = np.count_nonzero(prediction & ground_truth)
+    union = np.count_nonzero(prediction | ground_truth)
+
+    # with this weighting we punish cases where pred is much bigger than gt
+    weight = union / ground_truth.size
+    # union == 0 should never occur because we must catching this case before calling compute_iou
+    iou = np.nan if union == 0 else intersection / union
+
+    return iou, weight
 
 
 def load_image_from_url(url):
@@ -172,3 +238,4 @@ def process_xml_files(folder_path, output_path):
 
 if __name__ == "__main__":
     get_ground_truth("66fbd9dc-e75c-46f5-8072-af3a10865de4_label_front_0002_label.jpg")
+    # iou, weight = compute_iou(pred_sum, gt_sum)
