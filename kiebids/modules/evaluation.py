@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 import cv2 as cv
 
-from kiebids import config, get_logger
+from kiebids import config, get_logger, evaluation_writer
 from kiebids.utils import extract_polygon
 
 logger = get_logger(__name__)
@@ -71,21 +71,28 @@ def get_ground_truth(filename):
 
 def compare_layouts(bb_labels: list, ground_truth: list):
 
-    # pred_masks = outputs[0]["instances"][outputs[0]["instances"].pred_classes == cat_id].pred_masks.cpu().numpy()
-    # pred_sum = (pred_masks.sum(axis=0) > 0) if pred_masks.size != 0 else np.zeros((height, width)) > 0
-
-    # gt_masks = get_target_masks(input["image_id"], cat_id)
-    # gt_sum = (gt_masks.sum(axis=0) > 0) if gt_masks.size != 0 else np.zeros((height, width)) > 0
-
     # for now just assume 1 to 1 mapping
     for i, bb in enumerate(bb_labels):
         pred_sum = bb["segmentation"]
         gt_sum = create_polygon_mask(ground_truth[i], pred_sum.shape)
 
+        # Log the image to TensorBoard
+        combined_image = np.concatenate([gt_sum * 150, pred_sum * 150], axis=1)
+        evaluation_writer.add_image(f"gt-left_pred-right-{i}", combined_image[np.newaxis, ...], 0)
+
+        # no polygons in gt and in pred
         if np.sum(pred_sum + gt_sum) == 0:
             continue
 
+        # TODO weights tracking
         iou, weight = compute_iou(pred_sum, gt_sum)
+
+        logger.debug(f"iou: {iou}, weight: {weight}, i: {i}")
+        evaluation_writer.add_scalar("iou", iou, i)
+
+    evaluation_writer.flush()
+
+    # track metrics
     # self.weights.append(weight)
     # cat_weights.append(weight)
     # cat_ious.append(iou)
