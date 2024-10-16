@@ -16,7 +16,6 @@ pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
 
-@flow(name=pipeline_name, log_prints=True, retries=3)
 def ocr_flow():
 
     # init objects/models for every stage
@@ -63,8 +62,17 @@ if __name__ == "__main__":
         action="store_true",
         help="activate deployment serving mode",
     )
+    parser.add_argument(
+        "--disable-flow",
+        action="store_true",
+        help="activate deployment serving mode",
+    )
 
     args = parser.parse_args()
+
+    if not args.disable_flow:
+        ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
+
     if args.serve_deployment:
         ocr_flow.serve(
             name=pipeline_config.deployment_name,
