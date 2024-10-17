@@ -19,7 +19,7 @@ def preprocessing(image_path):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
-    evaluation_writer.add_image("original", image.transpose(2, 0, 1), 0)
+    evaluation_writer.add_image("_original", image.transpose(2, 0, 1), 0)
 
     # TODO resizing only when needed
     # scale = 1/6
