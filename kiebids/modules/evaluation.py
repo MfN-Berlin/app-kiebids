@@ -71,33 +71,37 @@ def get_ground_truth(filename):
 
 def compare_layouts(bb_labels: list, ground_truth: list):
 
+    ious = []
     # for now just assume 1 to 1 mapping
     for i, bb in enumerate(bb_labels):
-        pred_sum = bb["segmentation"]
-        gt_sum = create_polygon_mask(ground_truth[i], pred_sum.shape)
+        # iterate over all ground truth polygons and average the iou
+        for j, gt in enumerate(ground_truth):
+            pred_sum = bb["segmentation"]
+            gt_sum = create_polygon_mask(gt, pred_sum.shape)
 
-        # Log the image to TensorBoard
-        combined_image = np.concatenate([gt_sum * 150, pred_sum * 150], axis=1)
-        evaluation_writer.add_image(f"gt-left_pred-right-{i}", combined_image[np.newaxis, ...], 0)
+            # Log the image to TensorBoard
+            combined_image = np.concatenate([gt_sum * 150, pred_sum * 150], axis=1)
+            evaluation_writer.add_image(f"gt-left_pred-right-{i}-{j}", combined_image[np.newaxis, ...], 0)
 
-        # no polygons in gt and in pred
-        if np.sum(pred_sum + gt_sum) == 0:
-            continue
+            # TODO should this be counted as an iou of 1?
+            # no polygons in gt and in pred
+            if np.sum(pred_sum + gt_sum) == 0:
+                continue
 
-        # TODO weights tracking
-        iou, weight = compute_iou(pred_sum, gt_sum)
+            iou, weight = compute_iou(pred_sum, gt_sum)
 
-        logger.debug(f"iou: {iou}, weight: {weight}, i: {i}")
-        evaluation_writer.add_scalar("iou", iou, i)
+            logger.debug(f"iou: {iou}, weight: {weight}, i: {i}, j: {j}")
+            ious.append((iou, weight))
+            evaluation_writer.add_scalar("_iou", iou, i * len(ground_truth) + j)
+        ious = np.array(ious)
+        # average iou for all ground truth polygons
+        avg_iou = np.average(ious[:, 0], weights=ious[:, 1])
+        logger.info(f"Average IoU: {avg_iou}")
+        evaluation_writer.add_scalar("_avg_iou", avg_iou, i)
+
+        ious = []
 
     evaluation_writer.flush()
-
-    # track metrics
-    # self.weights.append(weight)
-    # cat_weights.append(weight)
-    # cat_ious.append(iou)
-
-    # self.update_frame_metrics(iou, gt_sum, pred_sum, cat_id)
 
 
 def create_polygon_mask(polygon_points, image_shape):
