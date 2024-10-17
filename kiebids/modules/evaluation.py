@@ -80,8 +80,11 @@ def compare_layouts(bb_labels: list, ground_truth: list):
             gt_sum = create_polygon_mask(gt, pred_sum.shape)
 
             # Log the image to TensorBoard
-            combined_image = np.concatenate([gt_sum * 150, pred_sum * 150], axis=1)
-            evaluation_writer.add_image(f"gt-left_pred-right-{i}-{j}", combined_image[np.newaxis, ...], 0)
+            padding = np.ones((gt_sum.shape[0], 50)) * 255  # white padding of width 10
+            combined_image = np.concatenate([gt_sum * 150, padding, pred_sum * 150], axis=1)
+            evaluation_writer.add_image(
+                "gt-left_pred-right", combined_image[np.newaxis, ...], i * len(ground_truth) + j
+            )
 
             # TODO should this be counted as an iou of 1?
             # no polygons in gt and in pred
