@@ -27,7 +27,7 @@ def evaluator(module=""):
                 # get ground truth for image
                 gt_labels = get_ground_truth(kwargs.get("filename"))
                 if gt_labels:
-                    compare_layouts(bb_labels, gt_labels)
+                    compare_layouts(bb_labels, gt_labels, kwargs.get("filename"))
 
                 return bb_labels
             elif module == "text_recognition":
@@ -69,7 +69,7 @@ def get_ground_truth(filename):
     return polygons
 
 
-def compare_layouts(bb_labels: list, ground_truth: list):
+def compare_layouts(bb_labels: list, ground_truth: list, filename: str):
 
     ious = []
     # for now just assume 1 to 1 mapping
@@ -80,10 +80,10 @@ def compare_layouts(bb_labels: list, ground_truth: list):
             gt_sum = create_polygon_mask(gt, pred_sum.shape)
 
             # Log the image to TensorBoard
-            padding = np.ones((gt_sum.shape[0], 50)) * 255  # white padding of width 10
+            padding = np.ones((gt_sum.shape[0], 50), dtype=np.uint8) * 255
             combined_image = np.concatenate([gt_sum * 150, padding, pred_sum * 150], axis=1)
             evaluation_writer.add_image(
-                "gt-left_pred-right", combined_image[np.newaxis, ...], i * len(ground_truth) + j
+                f"{filename}-gt-left_pred-right", combined_image[np.newaxis, ...], i * len(ground_truth) + j
             )
 
             # TODO should this be counted as an iou of 1?
