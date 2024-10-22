@@ -1,12 +1,12 @@
 import os
+import cv2
 from io import BytesIO
 
 import numpy as np
 import requests
 from lxml import etree
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image
 from tqdm import tqdm
-import cv2 as cv
 
 from kiebids import config, get_logger, evaluation_writer
 from kiebids.utils import extract_polygon
@@ -125,7 +125,7 @@ def create_polygon_mask(polygon_points, image_shape):
     polygon_points = polygon_points.reshape((-1, 1, 2))
 
     # Draw the polygon on the mask (fill the polygon with white color - value 1)
-    cv.fillPoly(mask, [polygon_points], 1)
+    cv2.fillPoly(mask, [polygon_points], 1)
 
     return mask
 
@@ -200,29 +200,29 @@ def process_xml_files(folder_path, output_path):
             # Convert the grayscale PIL image to a NumPy array (of type uint8)
             grayscale_np = np.array(grayscale_image, dtype=np.uint8)
 
-            cv.imwrite(f"{output_path}/{filename.replace('.xml', '_gs.jpg')}", grayscale_np)
+            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_gs.jpg')}", grayscale_np)
 
-            # Apply adaptive thresholding using cv.adaptiveThreshold
-            thresholded_image = cv.adaptiveThreshold(
-                grayscale_np, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 17, 2
+            # Apply adaptive thresholding using cv2.adaptiveThreshold
+            thresholded_image = cv2.adaptiveThreshold(
+                grayscale_np, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 17, 2
             )
 
-            ret, binary = cv.threshold(grayscale_np, 100, 255, cv.THRESH_BINARY)
+            ret, binary = cv2.threshold(grayscale_np, 100, 255, cv2.THRESH_BINARY)
 
             kernel = np.ones((3, 3), np.uint8)
-            opening = cv.morphologyEx(thresholded_image, cv.MORPH_OPEN, kernel)
-            closing = cv.morphologyEx(binary, cv.MORPH_CLOSE, kernel)
+            opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel)
+            closing = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
 
             up_points = (grayscale_np.shape[0] * 4, grayscale_np.shape[1] * 4)
-            resized_up = cv.resize(binary, up_points, interpolation=cv.INTER_LINEAR)
+            resized_up = cv2.resize(binary, up_points, interpolation=cv2.INTER_LINEAR)
 
             image.save(f"{output_path}/{filename.replace('.xml', '_orig.jpg')}")
-            cv.imwrite(f"{output_path}/{filename.replace('.xml', '_bw.jpg')}", thresholded_image)
-            cv.imwrite(f"{output_path}/{filename.replace('.xml', '_open.jpg')}", opening)
-            cv.imwrite(f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing)
-            cv.imwrite(f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary)
+            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_bw.jpg')}", thresholded_image)
+            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_open.jpg')}", opening)
+            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing)
+            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary)
 
-        # lookup for polygon coordinates and transcriptions
+        # # lookup for polygon coordinates and transcriptions
         # transcriptions = ""
         # textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
         # for i, textline in enumerate(textlines):
