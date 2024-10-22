@@ -4,6 +4,7 @@ import json
 import numpy as np
 from pathlib import Path
 import fiftyone as fo
+import fiftyone.core.labels as fol
 
 import cv2
 from PIL import ImageDraw, ImageFont
@@ -49,6 +50,22 @@ def debug_writer(debug_path="", module=""):
                 image_name = kwargs.get("filename", "default.png")
                 image = kwargs.get("image")
                 plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
+
+                # TODO take care of circular import
+                from kiebids.modules.preprocessing import debug_path as pdp
+
+                image_output_path = Path(pdp) / image_name
+                sample = fo.Sample(filepath=f"{image_output_path}")
+                sample["module"] = "layout_analysis"
+
+                detections = fol.Detections(
+                    detections=[
+                        fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
+                    ]
+                )
+                sample["predictions"] = detections
+
+                current_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":
