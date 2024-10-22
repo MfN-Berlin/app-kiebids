@@ -31,16 +31,22 @@ def debug_writer(debug_path="", module=""):
                 os.makedirs(debug_path, exist_ok=True)
 
             if module == "preprocessing":
+                # add original image to dataset
+                image_name = kwargs.get("image_path").name if kwargs.get("image_path") else "default.png"
+                sample = fo.Sample(filepath=f"{Path(config.image_path) / image_name}", tags=["original"])
+                sample["image_name"] = image_name
+                current_dataset.add_sample(sample)
+
                 # TODO write original?
                 image = func(*args, **kwargs)
 
-                image_name = kwargs.get("image_path").name if kwargs.get("image_path") else "default.png"
                 image_output_path = Path(debug_path) / image_name
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
-                sample = fo.Sample(filepath=f"{image_output_path}")
-                sample["module"] = "preprocessed"
+                # add preprocessed image to dataset
+                sample = fo.Sample(filepath=f"{image_output_path}", tags=["preprocessed"])
+                sample["image_name"] = image_name
                 current_dataset.add_sample(sample)
 
                 return image
@@ -51,13 +57,10 @@ def debug_writer(debug_path="", module=""):
                 image = kwargs.get("image")
                 plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
 
-                # TODO take care of circular import
-                from kiebids.modules.preprocessing import debug_path as pdp
-
-                image_output_path = Path(pdp) / image_name
-                sample = fo.Sample(filepath=f"{image_output_path}")
-                sample["module"] = "layout_analysis"
-
+                # TODO this wont work if image_name is "default.png"
+                image_output_path = Path(config.image_path) / image_name
+                sample = fo.Sample(filepath=f"{image_output_path}", tags=["layout_analysis"])
+                sample["image_name"] = image_name
                 detections = fol.Detections(
                     detections=[
                         fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
@@ -111,10 +114,6 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
         # Save the cropped image
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
         cv2.imwrite(output_path, cropped_image)
-
-        sample = fo.Sample(filepath=f"{output_path}")
-        sample["module"] = f"layout_analysis-{image_name}"
-        current_dataset.add_sample(sample)
 
         logger.info("Saved bounding box image to %s", output_path)
 

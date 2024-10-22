@@ -24,16 +24,11 @@ def ocr_flow():
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
-    for filename in tqdm(os.listdir(config.image_path)):
+    for filename in tqdm(os.listdir(config.image_path)[: config.max_images]):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
         logger.info("Processing image %s from %s.", filename, config.image_path)
-
-        # TODO conditional fiftyone
-        sample = fo.Sample(filepath=f"{Path(config.image_path) / filename}", tags=["original"])
-        # sample["module"] = "original"
-        current_dataset.add_sample(sample)
 
         # accepts image path. outputs image
         preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
@@ -73,8 +68,18 @@ if __name__ == "__main__":
         action="store_true",
         help="activate deployment serving mode",
     )
+    parser.add_argument(
+        "--fiftyone-only",
+        action="store_true",
+        help="activate deployment serving mode",
+    )
 
     args = parser.parse_args()
+
+    if args.fiftyone_only:
+        session = fo.launch_app(current_dataset)
+        session.wait()
+        exit(0)
 
     if not args.disable_flow:
         ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)

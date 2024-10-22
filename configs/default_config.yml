@@ -4,5 +4,8 @@ log_level: DEBUG
 shared_folder: /mnt/data/ZUG-Biodiversität
 
 image_path: data/images
+max_images: 2
 output_path: data/output
 debug_path: data/debug
+
+fiftyone_dataset: "mfn-dataset"
