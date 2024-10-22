@@ -48,8 +48,7 @@ def debug_writer(debug_path="", module=""):
             elif module == "text_recognition":
                 texts = func(*args, **kwargs)
 
-                # TODO save texts inside image
-                image = kwargs.get("image")
+                image_name = kwargs.get("filename", "default.png")
                 output_path = os.path.join(debug_path, image_name.split(".")[0] + ".json")
                 with open(output_path, "w") as f:
                     json.dump(texts, f, ensure_ascii=False, indent=4)
