@@ -3,12 +3,13 @@ import json
 
 import numpy as np
 from pathlib import Path
+import fiftyone as fo
 
 import cv2
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
-from kiebids import config
+from kiebids import config, current_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -36,6 +37,11 @@ def debug_writer(debug_path="", module=""):
                 image_output_path = Path(debug_path) / image_name
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
+
+                sample = fo.Sample(filepath=f"{image_output_path}")
+                sample["module"] = "preprocessed"
+                current_dataset.add_sample(sample)
+
                 return image
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
@@ -88,6 +94,10 @@ def plot_and_save_bbox_images(image, masks, image_name, output_dir):
         # Save the cropped image
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
         cv2.imwrite(output_path, cropped_image)
+
+        sample = fo.Sample(filepath=f"{output_path}")
+        sample["module"] = f"layout_analysis-{image_name}"
+        current_dataset.add_sample(sample)
 
         logger.info("Saved bounding box image to %s", output_path)
 

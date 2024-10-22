@@ -2,11 +2,12 @@ import os
 from tqdm import tqdm
 from pathlib import Path
 import argparse
+import fiftyone as fo
 
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
-from kiebids import config, pipeline_config, get_logger
+from kiebids import config, pipeline_config, get_logger, current_dataset
 
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
@@ -28,6 +29,11 @@ def ocr_flow():
             continue
 
         logger.info("Processing image %s from %s.", filename, config.image_path)
+
+        # TODO conditional fiftyone
+        sample = fo.Sample(filepath=f"{Path(config.image_path) / filename}", tags=["original"])
+        # sample["module"] = "original"
+        current_dataset.add_sample(sample)
 
         # accepts image path. outputs image
         preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
@@ -80,3 +86,5 @@ if __name__ == "__main__":
         )
     else:
         ocr_flow()
+        session = fo.launch_app(current_dataset)
+        session.wait()
