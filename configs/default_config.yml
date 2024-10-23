@@ -7,6 +7,10 @@ shared_folder: /mnt/data/ZUG-Biodiversität
 image_path: /mnt/data/ZUG-Biodiversität/data/fossInv_439415/Labels_fossInv_Insekten_20200723/
 output_path: data/output
 debug_path: data/debug
+max_images: 2
+
+fiftyone_dataset: "mfn-dataset"
+fiftyone_database_dir: data/debug/fifty-db
 
 evaluation: data/evaluation
 
