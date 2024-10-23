@@ -78,20 +78,18 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.fiftyone_only:
-        session = fo.launch_app(current_dataset)
-        session.wait()
-        exit(0)
+    if not args.fiftyone_only:
+        if not args.disable_flow:
+            ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
 
-    if not args.disable_flow:
-        ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
+        if args.serve_deployment:
+            ocr_flow.serve(
+                name=pipeline_config.deployment_name,
+                parameters={},
+            )
+        else:
+            ocr_flow()
 
-    if args.serve_deployment:
-        ocr_flow.serve(
-            name=pipeline_config.deployment_name,
-            parameters={},
-        )
-    else:
-        ocr_flow()
-        session = fo.launch_app(current_dataset)
-        session.wait()
+    if config.mode == "debug":
+        fiftyone_session = fo.launch_app(current_dataset)
+        fiftyone_session.wait()

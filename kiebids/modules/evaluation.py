@@ -105,17 +105,3 @@ def process_xml_files(folder_path, output_path):
         new_image.paste(caption_image, (0, image.height))
 
         new_image.save(f"{output_path}/polygons_{filename.replace('.xml', '.jpg')}")
-
-
-if __name__ == "__main__":
-    import fiftyone as fo
-
-    # datasets = fo.list_datasets()
-    # print(f"Datasets to be deleted: {datasets}")
-
-    # # Delete each dataset
-    # for dataset_name in datasets:
-    #     fo.delete_dataset(dataset_name)
-
-    session = fo.launch_app(current_dataset)
-    session.wait()

@@ -61,7 +61,7 @@ def debug_writer(debug_path="", module=""):
                 # Adding detections to the dataset
                 image_output_path = Path(config.image_path) / current_image
                 sample = fo.Sample(filepath=f"{image_output_path}", tags=["layout_analysis"])
-                sample["current_image"] = current_image
+                sample["image_name"] = current_image
                 sample["predictions"] = fol.Detections(
                     detections=[
                         fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
@@ -132,3 +132,13 @@ def draw_polygon_on_image(image, coordinates, i=-1):
         draw.text(label_position, str(i), fill="blue", font=font)
 
     return image
+
+
+def clear_fiftyone():
+    """
+    Clear all datasets from the FiftyOne database.
+    """
+    datasets = fo.list_datasets()
+
+    for dataset_name in datasets:
+        fo.delete_dataset(dataset_name)
