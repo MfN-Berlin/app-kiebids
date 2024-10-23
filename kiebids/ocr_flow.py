@@ -31,14 +31,16 @@ def ocr_flow():
         logger.info("Processing image %s from %s.", filename, config.image_path)
 
         # accepts image path. outputs image
-        preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
+        preprocessed_image = preprocessing(current_image_name=filename)
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
-        bb_labels = layout_analyzer.run(image=preprocessed_image, filename=filename)
+        bb_labels = layout_analyzer.run(image=preprocessed_image, current_image_name=filename)
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         recognized_text = text_recognizer.run(
-            image=preprocessed_image, bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels], filename=filename
+            image=preprocessed_image,
+            bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
+            current_image_name=filename,
         )
 
         # semantic_labeling.run
@@ -66,12 +68,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--disable-flow",
         action="store_true",
-        help="activate deployment serving mode",
+        help="Disables the prefect flow. Useful for debugging",
     )
     parser.add_argument(
         "--fiftyone-only",
         action="store_true",
-        help="activate deployment serving mode",
+        help="launches only the fo app. Assuming available datasets.",
     )
 
     args = parser.parse_args()

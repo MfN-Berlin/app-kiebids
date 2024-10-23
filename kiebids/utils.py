@@ -30,43 +30,43 @@ def debug_writer(debug_path="", module=""):
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
 
+            current_image = kwargs.get("current_image_name")
+
             if module == "preprocessing":
                 # add original image to dataset
-                image_name = kwargs.get("image_path").name if kwargs.get("image_path") else "default.png"
-                sample = fo.Sample(filepath=f"{Path(config.image_path) / image_name}", tags=["original"])
-                sample["image_name"] = image_name
+                sample = fo.Sample(filepath=f"{Path(config.image_path) / current_image}", tags=["original"])
+                sample["image_name"] = current_image
                 current_dataset.add_sample(sample)
 
-                # TODO write original?
                 image = func(*args, **kwargs)
 
-                image_output_path = Path(debug_path) / image_name
+                image_output_path = Path(debug_path) / current_image
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
-                # add preprocessed image to dataset
+                # add preprocessed image to fiftyone dataset
                 sample = fo.Sample(filepath=f"{image_output_path}", tags=["preprocessed"])
-                sample["image_name"] = image_name
+                sample["image_name"] = current_image
                 current_dataset.add_sample(sample)
 
                 return image
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
 
-                image_name = kwargs.get("filename", "default.png")
                 image = kwargs.get("image")
-                plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
 
-                # TODO this wont work if image_name is "default.png"
-                image_output_path = Path(config.image_path) / image_name
+                # TODO are the crops still needed somewhere?
+                crop_and_save_detections(image, label_masks, current_image.split(".")[0], debug_path)
+
+                # Adding detections to the dataset
+                image_output_path = Path(config.image_path) / current_image
                 sample = fo.Sample(filepath=f"{image_output_path}", tags=["layout_analysis"])
-                sample["image_name"] = image_name
-                detections = fol.Detections(
+                sample["current_image"] = current_image
+                sample["predictions"] = fol.Detections(
                     detections=[
                         fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
                     ]
                 )
-                sample["predictions"] = detections
 
                 current_dataset.add_sample(sample)
 
@@ -74,8 +74,7 @@ def debug_writer(debug_path="", module=""):
             elif module == "text_recognition":
                 texts = func(*args, **kwargs)
 
-                image_name = kwargs.get("filename", "default.png")
-                output_path = os.path.join(debug_path, image_name.split(".")[0] + ".json")
+                output_path = os.path.join(debug_path, current_image.split(".")[0] + ".json")
                 with open(output_path, "w") as f:
                     json.dump(texts, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
@@ -96,7 +95,7 @@ def crop_image(image: np.array, bounding_box: list[int]):
     return image[y : y + h, x : x + w]
 
 
-def plot_and_save_bbox_images(image, masks, image_name, output_dir):
+def crop_and_save_detections(image, masks, image_name, output_dir):
     """
     Plot and save individual images for each mask, using the bounding box to crop the image.
 

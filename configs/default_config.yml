@@ -9,3 +9,4 @@ output_path: data/output
 debug_path: data/debug
 
 fiftyone_dataset: "mfn-dataset"
+fiftyone_database_dir: data/debug/fifty-db

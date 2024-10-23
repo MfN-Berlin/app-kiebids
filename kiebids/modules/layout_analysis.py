@@ -18,7 +18,6 @@ class LayoutAnalyzer:
         model_path = module_config["model_path"]
         self.mask_generator = self.load_model(model_path)
 
-    # TODO Rename to something more suitable and self-explanatory
     @debug_writer(debug_path, module=module)
     @task(name=module)
     def run(self, image, **kwargs):
