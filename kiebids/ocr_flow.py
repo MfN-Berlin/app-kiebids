@@ -4,14 +4,14 @@ from pathlib import Path
 import argparse
 import fiftyone as fo
 
-from kiebids.modules.layout_analysis import LayoutAnalyzer
-from kiebids.modules.preprocessing import preprocessing
-from kiebids.modules.text_recognition import TextRecognizer
-from kiebids import config, pipeline_config, get_logger, current_dataset
-
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
 from prefect import flow
+
+from kiebids import config, current_dataset, get_logger, pipeline_config
+from kiebids.modules.layout_analysis import LayoutAnalyzer
+from kiebids.modules.preprocessing import preprocessing
+from kiebids.modules.text_recognition import TextRecognizer
 
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)

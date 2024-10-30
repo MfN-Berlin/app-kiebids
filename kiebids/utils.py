@@ -1,12 +1,11 @@
-import os
 import json
-
-import numpy as np
+import os
 from pathlib import Path
 import fiftyone as fo
 import fiftyone.core.labels as fol
 
 import cv2
+import numpy as np
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 

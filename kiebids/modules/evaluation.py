@@ -6,8 +6,8 @@ from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
-from kiebids.utils import draw_polygon_on_image
 from kiebids import config, get_logger, current_dataset
+from kiebids.utils import draw_polygon_on_image
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -40,18 +40,17 @@ def evaluate_module(module=""):
 
 def load_image_from_url(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=30)
         response.raise_for_status()
-
         image = Image.open(BytesIO(response.content))
-
+    except requests.exceptions.RequestException:
+        logger.exception("Error fetching image from URL")
+        return None
+    except OSError:
+        logger.exception("Error opening image")
+        return None
+    else:
         return image
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching image from URL: {e}")
-        return None
-    except OSError as e:
-        logger.error(f"Error opening image: {e}")
-        return None
 
 
 def process_xml_files(folder_path, output_path):
@@ -62,7 +61,7 @@ def process_xml_files(folder_path, output_path):
     files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
     for filename in tqdm(files, desc="Processing XML files"):
         file_path = os.path.join(folder_path, filename)
-        tree = etree.parse(file_path)
+        tree = etree.parse(file_path)  # noqa: S320
         root = tree.getroot()
         ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
