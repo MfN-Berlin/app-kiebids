@@ -6,7 +6,3 @@ shared_folder: /mnt/data/ZUG-Biodiversität
 image_path: data/images
 output_path: data/output
 debug_path: data/debug
-
-# defines the maximum image dimension for the input images. applied either to height or width
-# max HD as default
-max_image_dimension: 1920

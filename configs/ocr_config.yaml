@@ -7,6 +7,10 @@ preprocessing:
   threshold: false
   denoise: false
   contrast: false
+  # defines the maximum image dimension for the input images. applied either to height or width
+  # max HD as default
+  max_image_dimension: 1920
+
 
 layout_analysis:
   name: "sam_vit_b_01ec64.pth"

@@ -109,7 +109,7 @@ def draw_polygon_on_image(image, coordinates, i=-1):
     return image
 
 
-def resize(img, max_size=400):
+def resize(img, max_size):
     h, w, _ = img.shape
     if max(w, h) > max_size:
         aspect_ratio = h / w
