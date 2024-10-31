@@ -19,7 +19,7 @@ def preprocessing(image_path):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
-    image = resize(image, pipeline_config.preprocessing.max_image_dimension)
+    image = resize(image, module_config.max_image_dimension)
 
     if module_config["gray"]:
         image = gray(image)
