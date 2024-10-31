@@ -3,7 +3,7 @@ from prefect import task
 from pathlib import Path
 
 from kiebids import config, pipeline_config, get_logger
-from kiebids.utils import debug_writer
+from kiebids.utils import debug_writer, resize
 
 
 module = __name__.split(".")[-1]
@@ -20,6 +20,8 @@ def preprocessing(current_image_name):
     image_path = Path(config.image_path) / current_image_name
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
+
+    image = resize(image, module_config.max_image_dimension)
 
     if module_config["gray"]:
         image = gray(image)
