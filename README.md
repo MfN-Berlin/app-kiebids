@@ -33,7 +33,7 @@ bash run_flow.sh --serve-deployment
 
 ### Observe Debugging Results in FiftyOne App
 
-Run ocr flow in debug mode. After processing a fiftyone app is served at displayed url. It persists previous results of each module for each given image.
+Set ocr flow to debug mode inside [the config file](./configs/default_config.yml). After processing a fiftyone app is served at displayed url. It persists previous results of each module for each given image.
 You can also run only the app to inspect your previous runs by running
 ```
 python kiebids/ocr_flow.py --fiftyone-only   
