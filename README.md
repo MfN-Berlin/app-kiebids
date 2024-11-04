@@ -31,6 +31,17 @@ To start the server with a deployment (https://docs.prefect.io/3.0/deploy/index)
 bash run_flow.sh --serve-deployment
 ```
 
+### Observe Debugging Results in FiftyOne App
+
+Set ocr flow to debug mode inside [the config file](./configs/default_config.yml). After processing a fiftyone app is served at displayed url. It persists previous results of each module for each given image.
+You can also run only the app to inspect your previous runs by running
+```
+python kiebids/ocr_flow.py --fiftyone-only   
+```
+
+You can inspect the results for each image by filtering the `image_name` field inside the app.
+
+> This tracking is currently activated only in debug mode
 ----
 ### Run pytest:
 

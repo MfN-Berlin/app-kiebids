@@ -3,12 +3,14 @@ import json
 
 import numpy as np
 from pathlib import Path
+import fiftyone as fo
+import fiftyone.core.labels as fol
 
 import cv2
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
-from kiebids import config
+from kiebids import config, current_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -28,28 +30,51 @@ def debug_writer(debug_path="", module=""):
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
 
+            current_image = kwargs.get("current_image_name")
+
             if module == "preprocessing":
-                # TODO write original?
+                # add original image to dataset
+                sample = fo.Sample(filepath=f"{Path(config.image_path) / current_image}", tags=["original"])
+                sample["image_name"] = current_image
+                current_dataset.add_sample(sample)
+
                 image = func(*args, **kwargs)
 
-                image_name = kwargs.get("image_path").name if kwargs.get("image_path") else "default.png"
-                image_output_path = Path(debug_path) / image_name
+                image_output_path = Path(debug_path) / current_image
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
+
+                # add preprocessed image to fiftyone dataset
+                sample = fo.Sample(filepath=f"{image_output_path}", tags=["preprocessed"])
+                sample["image_name"] = current_image
+                current_dataset.add_sample(sample)
+
                 return image
             elif module == "layout_analysis":
                 label_masks = func(*args, **kwargs)
 
-                image_name = kwargs.get("filename", "default.png")
                 image = kwargs.get("image")
-                plot_and_save_bbox_images(image, label_masks, image_name.split(".")[0], debug_path)
+
+                # TODO are the crops still needed somewhere?
+                crop_and_save_detections(image, label_masks, current_image.split(".")[0], debug_path)
+
+                # Adding detections to the dataset
+                image_output_path = Path(config.image_path) / current_image
+                sample = fo.Sample(filepath=f"{image_output_path}", tags=["layout_analysis"])
+                sample["image_name"] = current_image
+                sample["predictions"] = fol.Detections(
+                    detections=[
+                        fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
+                    ]
+                )
+
+                current_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":
                 texts = func(*args, **kwargs)
 
-                image_name = kwargs.get("filename", "default.png")
-                output_path = os.path.join(debug_path, image_name.split(".")[0] + ".json")
+                output_path = os.path.join(debug_path, current_image.split(".")[0] + ".json")
                 with open(output_path, "w") as f:
                     json.dump(texts, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
@@ -70,7 +95,7 @@ def crop_image(image: np.array, bounding_box: list[int]):
     return image[y : y + h, x : x + w]
 
 
-def plot_and_save_bbox_images(image, masks, image_name, output_dir):
+def crop_and_save_detections(image, masks, image_name, output_dir):
     """
     Plot and save individual images for each mask, using the bounding box to crop the image.
 
@@ -107,6 +132,16 @@ def draw_polygon_on_image(image, coordinates, i=-1):
         draw.text(label_position, str(i), fill="blue", font=font)
 
     return image
+
+
+def clear_fiftyone():
+    """
+    Clear all datasets from the FiftyOne database.
+    """
+    datasets = fo.list_datasets()
+
+    for dataset_name in datasets:
+        fo.delete_dataset(dataset_name)
 
 
 def resize(img, max_size):

@@ -2,11 +2,12 @@ import os
 from tqdm import tqdm
 from pathlib import Path
 import argparse
+import fiftyone as fo
 
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
-from kiebids import config, pipeline_config, get_logger
+from kiebids import config, pipeline_config, get_logger, current_dataset
 
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
@@ -23,21 +24,23 @@ def ocr_flow():
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
-    for filename in tqdm(os.listdir(config.image_path)):
+    for filename in tqdm(os.listdir(config.image_path)[: config.max_images]):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
         logger.info("Processing image %s from %s.", filename, config.image_path)
 
         # accepts image path. outputs image
-        preprocessed_image = preprocessing(image_path=Path(config.image_path) / filename)
+        preprocessed_image = preprocessing(current_image_name=filename)
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
-        bb_labels = layout_analyzer.run(image=preprocessed_image, filename=filename)
+        bb_labels = layout_analyzer.run(image=preprocessed_image, current_image_name=filename)
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         recognized_text = text_recognizer.run(
-            image=preprocessed_image, bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels], filename=filename
+            image=preprocessed_image,
+            bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
+            current_image_name=filename,
         )
 
         # semantic_labeling.run
@@ -65,18 +68,28 @@ if __name__ == "__main__":
     parser.add_argument(
         "--disable-flow",
         action="store_true",
-        help="activate deployment serving mode",
+        help="Disables the prefect flow. Useful for debugging",
+    )
+    parser.add_argument(
+        "--fiftyone-only",
+        action="store_true",
+        help="launches only the fo app. Assuming available datasets.",
     )
 
     args = parser.parse_args()
 
-    if not args.disable_flow:
-        ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
+    if not args.fiftyone_only:
+        if not args.disable_flow:
+            ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
 
-    if args.serve_deployment:
-        ocr_flow.serve(
-            name=pipeline_config.deployment_name,
-            parameters={},
-        )
-    else:
-        ocr_flow()
+        if args.serve_deployment:
+            ocr_flow.serve(
+                name=pipeline_config.deployment_name,
+                parameters={},
+            )
+        else:
+            ocr_flow()
+
+    if config.mode == "debug":
+        fiftyone_session = fo.launch_app(current_dataset)
+        fiftyone_session.wait()

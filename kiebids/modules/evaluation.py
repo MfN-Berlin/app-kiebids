@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
 from kiebids.utils import draw_polygon_on_image
-from kiebids import config, get_logger
+from kiebids import config, get_logger, current_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -105,14 +105,3 @@ def process_xml_files(folder_path, output_path):
         new_image.paste(caption_image, (0, image.height))
 
         new_image.save(f"{output_path}/polygons_{filename.replace('.xml', '.jpg')}")
-
-
-if __name__ == "__main__":
-    # access points in xml
-    process_xml_files(
-        os.path.join(
-            config.shared_folder,
-            "hymdata_sample/20230511T160908__coll.mfn-berlin.de_u_78a081",
-        ),
-        os.path.join(config.shared_folder, "hymdata_overlayed"),
-    )

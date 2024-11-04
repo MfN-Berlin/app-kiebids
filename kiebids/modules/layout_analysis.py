@@ -18,11 +18,14 @@ class LayoutAnalyzer:
         model_path = module_config["model_path"]
         self.mask_generator = self.load_model(model_path)
 
-    # TODO Rename to something more suitable and self-explanatory
     @debug_writer(debug_path, module=module)
     @task(name=module)
     def run(self, image, **kwargs):
         masks = self.mask_generator.generate(image)
+        for mask in masks:
+            bbox = mask["bbox"]
+            height, width = image.shape[:2]
+            mask["normalized_bbox"] = [bbox[0] / width, bbox[1] / height, bbox[2] / width, bbox[3] / height]
 
         label_masks = self.filter_masks(masks)
 
@@ -60,6 +63,7 @@ class LayoutAnalyzer:
         total_area = sorted_masks[0]["segmentation"].size
         for mask in sorted_masks:
             area = mask["area"]
+
             # Filter by areas that cover more than 1% of the image
             if (area / total_area) > 0.01:
                 # Filter by areas where the segmentation mask covers most of the bbox area
