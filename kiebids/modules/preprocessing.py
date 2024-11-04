@@ -1,6 +1,7 @@
+from pathlib import Path
+
 import cv2
 from prefect import task
-from pathlib import Path
 
 from kiebids import config, get_logger, pipeline_config
 from kiebids.utils import debug_writer, resize

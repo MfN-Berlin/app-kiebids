@@ -1,10 +1,10 @@
 import json
 import os
 from pathlib import Path
-import fiftyone as fo
-import fiftyone.core.labels as fol
 
 import cv2
+import fiftyone as fo
+import fiftyone.core.labels as fol
 import numpy as np
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
@@ -105,7 +105,6 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
     """
 
     for i, mask in enumerate(masks, 1):
-
         # Crop the image using the bounding box
         cropped_image = crop_image(image=image, bounding_box=mask["bbox"])
 

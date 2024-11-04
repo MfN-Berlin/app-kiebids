@@ -12,8 +12,8 @@ repos:
   - repo: local
     hooks:
       - id: python-unit-tests
-        name: panama unit tests
-        entry: pytest -k tests
+        name: python unit tests
+        entry: pytest -s
         pass_filenames: false
         types: [python]
         language: system
@@ -25,8 +25,7 @@ repos:
       - id: black
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.5
+    rev: v0.7.2
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix, --ignore, S104]
-      - id: ruff-format

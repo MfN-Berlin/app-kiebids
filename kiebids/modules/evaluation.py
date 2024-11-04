@@ -6,7 +6,7 @@ from lxml import etree
 from PIL import Image, ImageDraw, ImageFont
 from tqdm import tqdm
 
-from kiebids import config, get_logger, current_dataset
+from kiebids import config, get_logger
 from kiebids.utils import draw_polygon_on_image
 
 logger = get_logger(__name__)
