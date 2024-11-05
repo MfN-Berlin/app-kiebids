@@ -1,4 +1,6 @@
 import os
+import editdistance
+import requests
 
 from lxml import etree
 
@@ -34,9 +36,73 @@ def evaluate_module(module=""):
     return decorator
 
 
-def get_ground_truth(filename):
-    xml_file = filename.replace(filename.split(".")[-1], "xml")
-    polygons = []
+class TextEvaluator:
+    """
+    Class to evaluate the text recognition performance of a model using the Character Error Rate (CER)
+    with leveinshtein distance.
+    """
+
+    def __init__(self, ground_truths, predictions):
+        """
+        :param ground_truth: List of ground truth strings.
+        :param predictions: List of predicted strings.
+        """
+        self.ground_truth = ground_truths
+        self.predictions = predictions
+
+    def calculate_cer(self, ground_truth, prediction):
+        """
+        Calculate the Character Error Rate (CER) between a ground truth string and a predicted string.
+
+        :param gt: Ground truth string.
+        :param pred: Predicted string.
+        :return: CER value.
+        """
+        distance = editdistance.eval(ground_truth, prediction)
+
+        if len(ground_truth) > 0:
+            cer = distance / len(ground_truth)
+        elif distance == 0:  # Cover for the case when both strings are empty
+            cer = 0
+        else:  # Cover for the case when ground truth is empty but prediction is not
+            cer = 1
+        return float(cer)
+
+    def evaluate(self):
+        """
+        Evaluate the CER for all ground truth and prediction pairs.
+
+        :return: List of CER values.
+        """
+        cer_values = [
+            self.calculate_cer(gt, pred) for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
+        ]
+        return cer_values
+
+    def average_cer(self):
+        """
+        Calculate the average CER over all ground truth and prediction pairs.
+
+        :return: Average CER value.
+        """
+        cer_values = self.evaluate()
+        avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
+        return avg_cer
+
+
+def load_image_from_url(url):
+    try:
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        image = Image.open(BytesIO(response.content))
+    except requests.exceptions.RequestException:
+        logger.exception("Error fetching image from URL")
+        return None
+    except OSError:
+        logger.exception("Error opening image")
+        return None
+    else:
+        return image
 
     # check if ground truth is available
     for ds in config.evaluation_datasets:
