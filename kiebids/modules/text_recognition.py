@@ -24,7 +24,6 @@ class TextRecognizer:
         self.model = easyocr.Reader([module_config.language], gpu=gpu)
 
     def get_text(self, image: np.array):
-
         # readtext() returns either an empty list if no text found or a list with only one element of text.
         # If detail=1 it would return a list of texts, but we are interested in evaluating the whole image.
         texts = self.model.readtext(
