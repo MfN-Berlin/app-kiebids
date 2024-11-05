@@ -1,10 +1,18 @@
 # Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
 
 ## Python environment setup
+
+Create conda environment and install dependencies:
 ```
 conda create -n zug-mfn python=3.10.13
 conda activate zug-mfn
 pip install -r requirements.txt
+```
+
+Install pre-commit hooks:
+```
+pip install pre-commit
+pre-commit install
 ```
 
 ## Usage
@@ -15,7 +23,7 @@ Create .env file containing port env variable:
 ```
 PREFECT_PORT=<some-port-number-between-4200-and-4300>
 ```
-Run: 
+Run:
 ```
 bash run_flow.sh
 ```
@@ -36,7 +44,7 @@ bash run_flow.sh --serve-deployment
 Set ocr flow to debug mode inside [the config file](./configs/default_config.yml). After processing a fiftyone app is served at displayed url. It persists previous results of each module for each given image.
 You can also run only the app to inspect your previous runs by running
 ```
-python kiebids/ocr_flow.py --fiftyone-only   
+python kiebids/ocr_flow.py --fiftyone-only
 ```
 
 You can inspect the results for each image by filtering the `image_name` field inside the app.
@@ -54,11 +62,11 @@ pytest -s
 
 
 ## Modules
-Overview of each module 
+Overview of each module
 
-1. Preprocessing 
-2. Layout Analysis 
+1. Preprocessing
+2. Layout Analysis
 3. Text Recognition
 4. Semantic Labeling
-5. Entity linking 
+5. Entity linking
 6. Evaluation

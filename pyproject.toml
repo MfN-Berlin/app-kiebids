@@ -41,7 +41,7 @@ exclude = ["*.ipynb"]
 target-version = "py310"
 line-length = 120
 fix = true
-select = [
+lint.select = [
     # flake8-2020
     "YTT",
     # flake8-bandit
@@ -73,7 +73,7 @@ select = [
     # tryceratops
     "TRY",
 ]
-ignore = [
+lint.ignore = [
     # LineTooLong
     "E501",
     # DoNotAssignLambda
@@ -87,7 +87,6 @@ ignore = [
     # Avoid specifying long messages outside the exception class
     "TRY003"
 ]
-
-[tool.ruff.per-file-ignores]
+[lint.per-file-ignores]
 "tests/*" = ["S101"]
 

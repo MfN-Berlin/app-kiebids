@@ -1,10 +1,10 @@
 import os
 
+import fiftyone.core.dataset as fod
 import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
 from prefect.logging import get_logger
-import fiftyone.core.dataset as fod
 
 load_dotenv()
 

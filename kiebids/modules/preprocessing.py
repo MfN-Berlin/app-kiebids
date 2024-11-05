@@ -1,10 +1,10 @@
-import cv2
-from prefect import task
 from pathlib import Path
 
-from kiebids import config, pipeline_config, get_logger
-from kiebids.utils import debug_writer, resize
+import cv2
+from prefect import task
 
+from kiebids import config, get_logger, pipeline_config
+from kiebids.utils import debug_writer, resize
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
