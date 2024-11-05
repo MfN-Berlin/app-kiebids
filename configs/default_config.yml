@@ -10,3 +10,8 @@ debug_path: data/debug
 
 fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
+
+evaluation: data/evaluation
+
+evaluation_paths:
+  hymdata: /mnt/data/ZUG-Biodiversität/data/hymdata_sample/20230511T160908__coll.mfn-berlin.de_u_78a081 # yamllint disable-line
