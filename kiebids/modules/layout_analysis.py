@@ -25,7 +25,12 @@ class LayoutAnalyzer:
         for mask in masks:
             bbox = mask["bbox"]
             height, width = image.shape[:2]
-            mask["normalized_bbox"] = [bbox[0] / width, bbox[1] / height, bbox[2] / width, bbox[3] / height]
+            mask["normalized_bbox"] = [
+                bbox[0] / width,
+                bbox[1] / height,
+                bbox[2] / width,
+                bbox[3] / height,
+            ]
 
         label_masks = self.filter_masks(masks)
 
