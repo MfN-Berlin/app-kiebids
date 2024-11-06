@@ -48,7 +48,9 @@ def get_ground_truth(filename):
             ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
             # transcriptions = ""
-            textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
+            textlines = root.xpath(
+                "//ns:TextLine" if ns else "//TextLine", namespaces=ns
+            )
             for textline in textlines:
                 coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
                 if coords is not None:
@@ -59,7 +61,3 @@ def get_ground_truth(filename):
                 #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
     return polygons
-
-
-if __name__ == "__main__":
-    get_ground_truth("0001_2c8b3b76-0237-4fb8-8d4b-6b9b783b6889_label_front_0001_label.tif")
