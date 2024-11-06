@@ -10,7 +10,9 @@ from tensorboardX import SummaryWriter
 
 load_dotenv()
 
-with open(os.path.join(os.path.dirname(__file__), "../configs/default_config.yml")) as f:
+with open(
+    os.path.join(os.path.dirname(__file__), "../configs/default_config.yml")
+) as f:
     config = DotMap(yaml.safe_load(f))
 
 with open(os.path.join(os.path.dirname(__file__), "../configs/ocr_config.yaml")) as f:
@@ -22,7 +24,9 @@ current_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=
 current_dataset.overwrite = True
 current_dataset.persistent = True
 
-log_dir = f"{config.evaluation}/tensorboard/layout_analysis_" + datetime.now().strftime("%Y%m%d-%H%M%S")
+log_dir = f"{config.evaluation}/tensorboard/layout_analysis_" + datetime.now().strftime(
+    "%Y%m%d-%H%M%S"
+)
 evaluation_writer = SummaryWriter(log_dir)
 
 __all__ = [

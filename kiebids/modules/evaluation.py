@@ -57,7 +57,9 @@ def get_ground_truth(filename):
             ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
             # transcriptions = ""
-            textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
+            textlines = root.xpath(
+                "//ns:TextLine" if ns else "//TextLine", namespaces=ns
+            )
             for textline in textlines:
                 coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
                 if coords is not None:
@@ -81,9 +83,13 @@ def compare_layouts(bb_labels: list, ground_truth: list, filename: str):
 
             # Log the image to TensorBoard
             padding = np.ones((gt_sum.shape[0], 50), dtype=np.uint8) * 255
-            combined_image = np.concatenate([gt_sum * 150, padding, pred_sum * 150], axis=1)
+            combined_image = np.concatenate(
+                [gt_sum * 150, padding, pred_sum * 150], axis=1
+            )
             evaluation_writer.add_image(
-                f"{filename}-gt-left_pred-right", combined_image[np.newaxis, ...], i * len(ground_truth) + j
+                f"{filename}-gt-left_pred-right",
+                combined_image[np.newaxis, ...],
+                i * len(ground_truth) + j,
             )
 
             # TODO should this be counted as an iou of 1?
@@ -187,7 +193,11 @@ def process_xml_files(folder_path, output_path):
             namespaces=ns,
         )
         # excluding some fields without assignment
-        comments = dict(item.split("=", 1) for item in comments.text.split(", ") if len(item.split("=", 1)) == 2)
+        comments = dict(
+            item.split("=", 1)
+            for item in comments.text.split(", ")
+            if len(item.split("=", 1)) == 2
+        )
 
         # loading from url
         image_url = comments.get("imgUrl")
@@ -200,7 +210,9 @@ def process_xml_files(folder_path, output_path):
             # Convert the grayscale PIL image to a NumPy array (of type uint8)
             grayscale_np = np.array(grayscale_image, dtype=np.uint8)
 
-            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_gs.jpg')}", grayscale_np)
+            cv2.imwrite(
+                f"{output_path}/{filename.replace('.xml', '_gs.jpg')}", grayscale_np
+            )
 
             # Apply adaptive thresholding using cv2.adaptiveThreshold
             thresholded_image = cv2.adaptiveThreshold(
@@ -217,10 +229,19 @@ def process_xml_files(folder_path, output_path):
             # resized_up = cv2.resize(binary, up_points, interpolation=cv2.INTER_LINEAR)
 
             image.save(f"{output_path}/{filename.replace('.xml', '_orig.jpg')}")
-            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_bw.jpg')}", thresholded_image)
-            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_open.jpg')}", opening)
-            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing)
-            cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary)
+            cv2.imwrite(
+                f"{output_path}/{filename.replace('.xml', '_bw.jpg')}",
+                thresholded_image,
+            )
+            cv2.imwrite(
+                f"{output_path}/{filename.replace('.xml', '_open.jpg')}", opening
+            )
+            cv2.imwrite(
+                f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing
+            )
+            cv2.imwrite(
+                f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary
+            )
 
         # # lookup for polygon coordinates and transcriptions
         # transcriptions = ""
@@ -251,5 +272,7 @@ def process_xml_files(folder_path, output_path):
 
 
 if __name__ == "__main__":
-    get_ground_truth("0001_2c8b3b76-0237-4fb8-8d4b-6b9b783b6889_label_front_0001_label.tif")
+    get_ground_truth(
+        "0001_2c8b3b76-0237-4fb8-8d4b-6b9b783b6889_label_front_0001_label.tif"
+    )
     # iou, weight = compute_iou(pred_sum, gt_sum)
