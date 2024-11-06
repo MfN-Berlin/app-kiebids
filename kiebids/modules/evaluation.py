@@ -39,7 +39,9 @@ def get_ground_truth(filename):
     polygons = []
 
     # check if ground truth is available
-    if config.evaluation_paths.hymdata and xml_file in os.listdir(config.evaluation_paths.hymdata):
+    if config.evaluation_paths.hymdata and xml_file in os.listdir(
+        config.evaluation_paths.hymdata
+    ):
         # get labels from xml file
         file_path = os.path.join(config.evaluation_paths.hymdata, xml_file)
         tree = etree.parse(file_path)  # noqa: S320
