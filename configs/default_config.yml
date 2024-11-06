@@ -14,7 +14,7 @@ fiftyone_database_dir: data/debug/fifty-db
 evaluation: data/evaluation
 
 # Datasets for evaluation
-datasets:
+evaluation_datasets:
   labels_fossinv_insekten_20200723:
     image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
     xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
