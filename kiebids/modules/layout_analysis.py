@@ -2,9 +2,9 @@ import torch
 from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
-from kiebids import config, pipeline_config, get_logger
-from kiebids.utils import debug_writer
+from kiebids import config, get_logger, pipeline_config
 from kiebids.modules.evaluation import evaluator
+from kiebids.utils import debug_writer
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)

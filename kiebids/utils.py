@@ -1,12 +1,11 @@
-import os
 import json
-
-import numpy as np
+import os
 from pathlib import Path
-import fiftyone as fo
-import fiftyone.core.labels as fol
 
 import cv2
+import fiftyone as fo
+import fiftyone.core.labels as fol
+import numpy as np
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
@@ -106,7 +105,6 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
     """
 
     for i, mask in enumerate(masks, 1):
-
         # Crop the image using the bounding box
         cropped_image = crop_image(image=image, bounding_box=mask["bbox"])
 
@@ -146,3 +144,15 @@ def clear_fiftyone():
 
     for dataset_name in datasets:
         fo.delete_dataset(dataset_name)
+
+
+def resize(img, max_size):
+    h, w, _ = img.shape
+    if max(w, h) > max_size:
+        aspect_ratio = h / w
+        if w >= h:
+            resized_img = cv2.resize(img, (max_size, int(max_size * aspect_ratio)))
+        else:
+            resized_img = cv2.resize(img, (int(max_size * aspect_ratio), max_size))
+        return resized_img
+    return img

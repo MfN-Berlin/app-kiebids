@@ -1,10 +1,10 @@
-import cv2
-from prefect import task
 from pathlib import Path
 
-from kiebids import config, pipeline_config, get_logger, evaluation_writer
-from kiebids.utils import debug_writer
+import cv2
+from prefect import task
 
+from kiebids import config, get_logger, pipeline_config
+from kiebids.utils import debug_writer, resize
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
@@ -21,12 +21,7 @@ def preprocessing(current_image_name):
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
-    evaluation_writer.add_image("_original", image.transpose(2, 0, 1), 0)
-
-    # TODO resizing only when needed
-    # scale = 1/6
-    # down_points = (int(image.shape[1]*scale), int(image.shape[0]*scale))
-    # image = cv2.resize(image, down_points, interpolation= cv2.INTER_LINEAR)
+    image = resize(image, module_config.max_image_dimension)
 
     if module_config["gray"]:
         image = gray(image)

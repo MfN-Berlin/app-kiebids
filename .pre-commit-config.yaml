@@ -1,12 +1,28 @@
 repos:
-  # - repo: https://github.com/charliermarsh/ruff-pre-commit
-  #   rev: "v0.6.5"
-  #   hooks:
-  #     - id: ruff
-  #       # autofix possible
-  #       args: [--ignore, S104]
-      
-  - repo: https://github.com/psf/black
-    rev: "24.8.0"
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
     hooks:
-      - id: black
+      - id: trailing-whitespace
+
+  - repo: https://github.com/adrienverge/yamllint
+    rev: v1.35.1
+    hooks:
+      - id: yamllint
+
+  # - repo: local
+  #   hooks:
+  #     - id: python-unit-tests
+  #       name: python unit tests
+  #       entry: pytest -s
+  #       pass_filenames: false
+  #       types: [python]
+  #       language: system
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.2
+    hooks:
+       # Run the linter
+      - id: ruff
+        args: [--fix, --exit-non-zero-on-fix, --ignore, S104]
+      # Run the formatter
+      - id: ruff-format

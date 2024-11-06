@@ -14,7 +14,7 @@ def semantic_labeling(image_dir, output_path, debug=False):
     OUTPUT_DIR_SEMANTIC_LABELING = Path(output_path) / "semantic_labeling"
     os.makedirs(OUTPUT_DIR_SEMANTIC_LABELING, exist_ok=True)
 
-    images = [image for image in os.listdir(image_dir)]
+    images = list(os.listdir(image_dir))
 
     # TODO: this is the handwritten/not handwritten classifier, loop for all the models
     model_path = script_path.parent.parent / "models" / "semantic_labeling" / "label_classifier_hp"
@@ -49,10 +49,12 @@ def load_model(model_path):
     return model
 
 
-def predict_label(image_path, model, class_names=["handwritten", "printed"]):
+def predict_label(image_path, model, class_names=None):
     """
     Predict the label of an image using a trained image classifier model.
     """
+    if class_names is None:
+        class_names = ["handwritten", "printed"]
     img_width = 180
     img_height = 180
 

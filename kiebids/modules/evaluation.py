@@ -1,14 +1,14 @@
 import os
-import cv2
 from io import BytesIO
 
+import cv2
 import numpy as np
 import requests
 from lxml import etree
 from PIL import Image
 from tqdm import tqdm
 
-from kiebids import config, get_logger, evaluation_writer
+from kiebids import config, evaluation_writer, get_logger
 from kiebids.utils import extract_polygon
 
 logger = get_logger(__name__)
@@ -44,33 +44,33 @@ def evaluator(module=""):
 
 
 def get_ground_truth(filename):
-    xml_file = filename.replace(".jpg", ".xml")
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
     polygons = []
 
     # check if ground truth is available
-    if config.evaluation_paths.hymdata and xml_file in os.listdir(config.evaluation_paths.hymdata):
-        # get labels from xml file
-        file_path = os.path.join(config.evaluation_paths.hymdata, xml_file)
-        tree = etree.parse(file_path)
-        root = tree.getroot()
-        ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
+    for ds in config.evaluation_datasets:
+        if xml_file in os.listdir(config.evaluation_datasets[ds].xml_path):
+            # get labels from xml file
+            file_path = os.path.join(config.evaluation_datasets[ds].xml_path, xml_file)
+            tree = etree.parse(file_path)  # noqa: S320
+            root = tree.getroot()
+            ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
-        transcriptions = ""
-        textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
-        for textline in textlines:
-            coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
-            if coords is not None:
-                polygons.append(extract_polygon(coords.get("points")))
+            # transcriptions = ""
+            textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
+            for textline in textlines:
+                coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
+                if coords is not None:
+                    polygons.append(extract_polygon(coords.get("points")))
 
-            # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
-            # if unicode_elem is not None:
-            #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
+                # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
+                # if unicode_elem is not None:
+                #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
     return polygons
 
 
 def compare_layouts(bb_labels: list, ground_truth: list, filename: str):
-
     ious = []
     # for now just assume 1 to 1 mapping
     for i, bb in enumerate(bb_labels):
@@ -155,17 +155,17 @@ def compute_iou(prediction: np.ndarray, ground_truth: np.ndarray):
 
 def load_image_from_url(url):
     try:
-        response = requests.get(url)
+        response = requests.get(url)  # noqa: S113
         response.raise_for_status()
 
         image = Image.open(BytesIO(response.content))
 
-        return image
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Error fetching image from URL: {e}")
+        return image  # noqa: TRY300
+    except requests.exceptions.RequestException:
+        logger.exception("Error fetching image from URL")
         return None
-    except OSError as e:
-        logger.error(f"Error opening image: {e}")
+    except OSError:
+        logger.exception("Error opening image")
         return None
 
 
@@ -178,7 +178,7 @@ def process_xml_files(folder_path, output_path):
     files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
     for filename in tqdm(files[:10], desc="Processing XML files"):
         file_path = os.path.join(folder_path, filename)
-        tree = etree.parse(file_path)
+        tree = etree.parse(file_path)  # noqa: S320
         root = tree.getroot()
         ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
@@ -213,8 +213,8 @@ def process_xml_files(folder_path, output_path):
             opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel)
             closing = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
 
-            up_points = (grayscale_np.shape[0] * 4, grayscale_np.shape[1] * 4)
-            resized_up = cv2.resize(binary, up_points, interpolation=cv2.INTER_LINEAR)
+            # up_points = (grayscale_np.shape[0] * 4, grayscale_np.shape[1] * 4)
+            # resized_up = cv2.resize(binary, up_points, interpolation=cv2.INTER_LINEAR)
 
             image.save(f"{output_path}/{filename.replace('.xml', '_orig.jpg')}")
             cv2.imwrite(f"{output_path}/{filename.replace('.xml', '_bw.jpg')}", thresholded_image)
@@ -251,5 +251,5 @@ def process_xml_files(folder_path, output_path):
 
 
 if __name__ == "__main__":
-    get_ground_truth("66fbd9dc-e75c-46f5-8072-af3a10865de4_label_front_0002_label.jpg")
+    get_ground_truth("0001_2c8b3b76-0237-4fb8-8d4b-6b9b783b6889_label_front_0001_label.tif")
     # iou, weight = compute_iou(pred_sum, gt_sum)

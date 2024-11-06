@@ -1,24 +1,23 @@
-import os
-from tqdm import tqdm
-from pathlib import Path
 import argparse
-import fiftyone as fo
+import os
 
-from kiebids.modules.layout_analysis import LayoutAnalyzer
-from kiebids.modules.preprocessing import preprocessing
-from kiebids.modules.text_recognition import TextRecognizer
-from kiebids import config, pipeline_config, get_logger, current_dataset
+import fiftyone as fo
 
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
 from prefect import flow
+from tqdm import tqdm
+
+from kiebids import config, current_dataset, get_logger, pipeline_config
+from kiebids.modules.layout_analysis import LayoutAnalyzer
+from kiebids.modules.preprocessing import preprocessing
+from kiebids.modules.text_recognition import TextRecognizer
 
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
 
 def ocr_flow():
-
     # init objects/models for every stage
     layout_analyzer = LayoutAnalyzer()
     text_recognizer = TextRecognizer()
@@ -37,7 +36,7 @@ def ocr_flow():
         bb_labels = layout_analyzer.run(image=preprocessed_image, current_image_name=filename)
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        recognized_text = text_recognizer.run(
+        recognized_text = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,
             bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
             current_image_name=filename,

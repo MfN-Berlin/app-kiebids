@@ -1,12 +1,10 @@
 import easyocr
-import torch
-
 import numpy as np
-
+import torch
 from prefect import task
 
+from kiebids import config, get_logger, pipeline_config
 from kiebids.utils import crop_image, debug_writer
-from kiebids import config, pipeline_config, get_logger
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
@@ -26,7 +24,6 @@ class TextRecognizer:
         self.model = easyocr.Reader([module_config.language], gpu=gpu)
 
     def get_text(self, image: np.array):
-
         # readtext() returns either an empty list if no text found or a list with only one element of text.
         # If detail=1 it would return a list of texts, but we are interested in evaluating the whole image.
         texts = self.model.readtext(
