@@ -142,6 +142,10 @@ def clear_fiftyone():
         fo.delete_dataset(dataset_name)
 
 
+def extract_polygon(coordinates):
+    return [tuple(map(int, point.split(","))) for point in coordinates.split()]
+
+
 def resize(img, max_size):
     h, w, _ = img.shape
     if max(w, h) > max_size:
