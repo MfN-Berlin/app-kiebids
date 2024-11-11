@@ -27,9 +27,13 @@ def evaluator(module=""):
                 bb_labels = func(*args, **kwargs)
                 # get ground truth for image
                 gt_labels = get_ground_truth(kwargs.get("current_image_name"))
+                logger.debug(f"image index: {kwargs.get('current_image_index')}")
                 if gt_labels:
                     compare_layouts(
-                        bb_labels, gt_labels, kwargs.get("current_image_name")
+                        bb_labels,
+                        gt_labels,
+                        image_index=kwargs.get("current_image_index"),
+                        filename=kwargs.get("current_image_name"),
                     )
 
                 return bb_labels
@@ -75,7 +79,9 @@ def get_ground_truth(filename):
     return polygons
 
 
-def compare_layouts(predictions: list, ground_truths: list, filename: str):
+def compare_layouts(
+    predictions: list, ground_truths: list, image_index: int, filename: str
+):
     # create confusion matrix with ious as values and gt + pred indices as axis
     cm_shape = (
         max(len(ground_truths), len(predictions)),
@@ -131,7 +137,7 @@ def compare_layouts(predictions: list, ground_truths: list, filename: str):
     # average ious
     avg_iou = np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
     logger.debug(f"average iou: {avg_iou}")
-    evaluation_writer.add_scalar("_average_ious", avg_iou)
+    evaluation_writer.add_scalar("_average_ious", avg_iou, image_index)
 
     evaluation_writer.flush()
 

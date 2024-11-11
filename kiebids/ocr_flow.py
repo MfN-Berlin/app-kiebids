@@ -23,7 +23,9 @@ def ocr_flow():
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
-    for filename in tqdm(os.listdir(config.image_path)[: config.max_images]):
+    for image_index, filename in enumerate(
+        tqdm(os.listdir(config.image_path)[: config.max_images])
+    ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
@@ -34,7 +36,9 @@ def ocr_flow():
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
         bb_labels = layout_analyzer.run(
-            image=preprocessed_image, current_image_name=filename
+            image=preprocessed_image,
+            current_image_name=filename,
+            current_image_index=image_index,
         )
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk

@@ -126,7 +126,7 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
         cv2.imwrite(output_path, cropped_image)
 
-        logger.info("Saved bounding box image to %s", output_path)
+        logger.debug("Saved bounding box image to %s", output_path)
 
 
 def extract_polygon(coordinates):
