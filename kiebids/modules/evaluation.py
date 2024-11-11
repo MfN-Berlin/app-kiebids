@@ -1,5 +1,6 @@
 import os
 from io import BytesIO
+import itertools
 
 import cv2
 import numpy as np
@@ -74,43 +75,63 @@ def get_ground_truth(filename):
     return polygons
 
 
-def compare_layouts(bb_labels: list, ground_truth: list, filename: str):
-    ious = []
-    # for now just assume 1 to 1 mapping
-    for i, bb in enumerate(bb_labels):
-        # iterate over all ground truth polygons and average the iou
-        for j, gt in enumerate(ground_truth):
-            pred_sum = bb["segmentation"]
-            gt_sum = create_polygon_mask(gt, pred_sum.shape)
+def compare_layouts(predictions: list, ground_truths: list, filename: str):
+    # create confusion matrix with ious as values and gt + pred indices as axis
+    cm_shape = (
+        max(len(ground_truths), len(predictions)),
+        max(len(ground_truths), len(predictions)),
+    )
+    gt_pred_confusion_matrix = np.zeros(cm_shape)
+    gt_pred_product = list(
+        itertools.product(range(len(ground_truths)), range(len(predictions)))
+    )
+
+    for gt_index, pred_index in gt_pred_product:
+        # if index is out of bounds leave iou at 0 => not enough preds or too many preds
+        if gt_index > (len(ground_truths) - 1) or pred_index > (len(predictions) - 1):
+            continue
+        else:
+            pred_sum = predictions[pred_index]["segmentation"]
+            gt_sum = create_polygon_mask(ground_truths[gt_index], pred_sum.shape)
 
             # Log the image to TensorBoard
-            padding = np.ones((gt_sum.shape[0], 50), dtype=np.uint8) * 255
-            combined_image = np.concatenate(
-                [gt_sum * 150, padding, pred_sum * 150], axis=1
-            )
-            evaluation_writer.add_image(
-                f"{filename}-gt-left_pred-right",
-                combined_image[np.newaxis, ...],
-                i * len(ground_truth) + j,
-            )
+            # padding = np.ones((gt_sum.shape[0], 50), dtype=np.uint8) * 255
+            # combined_image = np.concatenate(
+            #     [gt_sum * 150, padding, pred_sum * 150], axis=1
+            # )
+            # evaluation_writer.add_image(
+            #     f"{filename}-gt-left_pred-right",
+            #     combined_image[np.newaxis, ...],
+            #     i * len(ground_truth) + j,
+            # )
 
-            # TODO should this be counted as an iou of 1?
-            # no polygons in gt and in pred
-            if np.sum(pred_sum + gt_sum) == 0:
-                continue
+            iou, _ = compute_iou(pred_sum, gt_sum)
+            # update iou to confusion matrix
+            gt_pred_confusion_matrix[gt_index, pred_index] = iou
 
-            iou, weight = compute_iou(pred_sum, gt_sum)
+    ious = []
+    # get 1 to 1 mapping from max values of iou
+    while np.max(gt_pred_confusion_matrix) > 0:
+        logger.debug(f"max iou: {np.max(gt_pred_confusion_matrix)}")
+        max_iou_coordinates = np.unravel_index(
+            np.argmax(gt_pred_confusion_matrix), gt_pred_confusion_matrix.shape
+        )
 
-            logger.debug(f"iou: {iou}, weight: {weight}, i: {i}, j: {j}")
-            ious.append((iou, weight))
-            evaluation_writer.add_scalar("_iou", iou, i * len(ground_truth) + j)
-        ious = np.array(ious)
-        # average iou for all ground truth polygons
-        avg_iou = np.average(ious[:, 0], weights=ious[:, 1])
-        logger.info(f"Average IoU: {avg_iou}")
-        evaluation_writer.add_scalar("_avg_iou", avg_iou, i)
+        ious.append(gt_pred_confusion_matrix[max_iou_coordinates])
 
-        ious = []
+        # get max iou and create smaller conf matrix => match found => go on with next gt and pred
+        # remove gt row from confusion matrix => no more matches possible
+        gt_pred_confusion_matrix = np.delete(
+            gt_pred_confusion_matrix, max_iou_coordinates[0], axis=0
+        )
+
+    # account for false positives and false negatives
+    num_fp_fn = abs(len(ground_truths) - len(predictions))
+
+    # average ious
+    avg_iou = np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
+    logger.debug(f"average iou: {avg_iou}")
+    evaluation_writer.add_scalar("_average_ious", avg_iou)
 
     evaluation_writer.flush()
 
