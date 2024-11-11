@@ -25,9 +25,11 @@ def evaluator(module=""):
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
                 # get ground truth for image
-                gt_labels = get_ground_truth(kwargs.get("filename"))
+                gt_labels = get_ground_truth(kwargs.get("current_image_name"))
                 if gt_labels:
-                    compare_layouts(bb_labels, gt_labels, kwargs.get("filename"))
+                    compare_layouts(
+                        bb_labels, gt_labels, kwargs.get("current_image_name")
+                    )
 
                 return bb_labels
             elif module == "text_recognition":
