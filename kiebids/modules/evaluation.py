@@ -35,28 +35,29 @@ def evaluate_module(module=""):
 
 
 def get_ground_truth(filename):
-    xml_file = filename.replace(".jpg", ".xml")
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
     polygons = []
 
     # check if ground truth is available
-    if config.evaluation_paths.hymdata and xml_file in os.listdir(
-        config.evaluation_paths.hymdata
-    ):
-        # get labels from xml file
-        file_path = os.path.join(config.evaluation_paths.hymdata, xml_file)
-        tree = etree.parse(file_path)  # noqa: S320
-        root = tree.getroot()
-        ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
+    for ds in config.evaluation_datasets:
+        if xml_file in os.listdir(config.evaluation_datasets[ds].xml_path):
+            # get labels from xml file
+            file_path = os.path.join(config.evaluation_datasets[ds].xml_path, xml_file)
+            tree = etree.parse(file_path)  # noqa: S320
+            root = tree.getroot()
+            ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
-        # transcriptions = ""
-        textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
-        for textline in textlines:
-            coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
-            if coords is not None:
-                polygons.append(extract_polygon(coords.get("points")))
+            # transcriptions = ""
+            textlines = root.xpath(
+                "//ns:TextLine" if ns else "//TextLine", namespaces=ns
+            )
+            for textline in textlines:
+                coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
+                if coords is not None:
+                    polygons.append(extract_polygon(coords.get("points")))
 
-            # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
-            # if unicode_elem is not None:
-            #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
+                # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
+                # if unicode_elem is not None:
+                #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
     return polygons
