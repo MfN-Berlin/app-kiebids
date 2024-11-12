@@ -9,7 +9,7 @@ import numpy as np
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
-from kiebids import config, current_dataset
+from kiebids import config, fiftyone_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -38,7 +38,7 @@ def debug_writer(debug_path="", module=""):
                     tags=["original"],
                 )
                 sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 image = func(*args, **kwargs)
 
@@ -51,7 +51,7 @@ def debug_writer(debug_path="", module=""):
                     filepath=f"{image_output_path}", tags=["preprocessed"]
                 )
                 sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 return image
             elif module == "layout_analysis":
@@ -79,7 +79,7 @@ def debug_writer(debug_path="", module=""):
                     ]
                 )
 
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":

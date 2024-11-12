@@ -20,9 +20,9 @@ with open(os.path.join(os.path.dirname(__file__), "../configs/ocr_config.yaml"))
 
 os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
 
-current_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=True)
-current_dataset.overwrite = True
-current_dataset.persistent = True
+fiftyone_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=True)
+fiftyone_dataset.overwrite = True
+fiftyone_dataset.persistent = True
 
 log_dir = f"{config.evaluation}/tensorboard/layout_analysis_" + datetime.now().strftime(
     "%Y%m%d-%H%M%S"

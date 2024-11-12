@@ -82,6 +82,16 @@ def get_ground_truth(filename):
 def compare_layouts(
     predictions: list, ground_truths: list, image_index: int, filename: str
 ):
+    """
+    Compares predictions with ground truths based on highest iou.
+    Creates a confusion matrix with ious as values and gt + pred indices as axis.
+    Matches gt with pred based on highest iou.
+    If there are too many or too few predictions, the iou is set to 0 for the missing ones.
+    Logs the average iou to tensorboard.
+
+    :param ground_truths: List of ground truth polygons.
+    :param predictions: List of dictionaries containing the predicted bounding boxes.
+    """
     # create confusion matrix with ious as values and gt + pred indices as axis
     cm_shape = (
         max(len(ground_truths), len(predictions)),
@@ -175,17 +185,12 @@ def compute_iou(prediction: np.ndarray, ground_truth: np.ndarray):
 
     Returns:
         iou:
-        weight: weight of the iou
     """
     intersection = np.count_nonzero(prediction & ground_truth)
     union = np.count_nonzero(prediction | ground_truth)
 
-    # with this weighting we punish cases where pred is much bigger than gt
-    weight = union / ground_truth.size
-    # union == 0 should never occur because we must catching this case before calling compute_iou
-    iou = np.nan if union == 0 else intersection / union
-
-    return iou, weight
+    # union == 0 should never occur because we must catch this case before calling compute_iou => meaning no prediction and gt
+    return np.nan if union == 0 else intersection / union
 
 
 def load_image_from_url(url):

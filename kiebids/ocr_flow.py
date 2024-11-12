@@ -8,7 +8,7 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, current_dataset, get_logger, pipeline_config
+from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
@@ -96,5 +96,5 @@ if __name__ == "__main__":
             ocr_flow()
 
     if config.mode == "debug":
-        fiftyone_session = fo.launch_app(current_dataset)
+        fiftyone_session = fo.launch_app(fiftyone_dataset)
         fiftyone_session.wait()
