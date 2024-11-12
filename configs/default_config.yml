@@ -19,8 +19,8 @@ evaluation_datasets:
     image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
     xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
   readcoop_drawer_78a081:
-    image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
-    xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
+    image_path: /mnt/data/ZUG-Biodiversität/data/readcoop_drawer_78a081/images # yamllint disable-line
+    xml_path: /mnt/data/ZUG-Biodiversität/data/readcoop_drawer_78a081/page_xml # yamllint disable-line
   readcoop_random_sample_20240903:
     image_path: /mnt/data/ZUG-Biodiversität/data/readcoop_random_sample_20240903/images # yamllint disable-line
     xml_path: /mnt/data/ZUG-Biodiversität/data/readcoop_random_sample_20240903/page_xml # yamllint disable-line
