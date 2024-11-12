@@ -33,7 +33,10 @@ def debug_writer(debug_path="", module=""):
 
             if module == "preprocessing":
                 # add original image to dataset
-                sample = fo.Sample(filepath=f"{Path(config.image_path) / current_image}", tags=["original"])
+                sample = fo.Sample(
+                    filepath=f"{Path(config.image_path) / current_image}",
+                    tags=["original"],
+                )
                 sample["image_name"] = current_image
                 current_dataset.add_sample(sample)
 
@@ -44,7 +47,9 @@ def debug_writer(debug_path="", module=""):
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
                 # add preprocessed image to fiftyone dataset
-                sample = fo.Sample(filepath=f"{image_output_path}", tags=["preprocessed"])
+                sample = fo.Sample(
+                    filepath=f"{image_output_path}", tags=["preprocessed"]
+                )
                 sample["image_name"] = current_image
                 current_dataset.add_sample(sample)
 
@@ -55,15 +60,22 @@ def debug_writer(debug_path="", module=""):
                 image = kwargs.get("image")
 
                 # TODO are the crops still needed somewhere?
-                crop_and_save_detections(image, label_masks, current_image.split(".")[0], debug_path)
+                crop_and_save_detections(
+                    image, label_masks, current_image.split(".")[0], debug_path
+                )
 
                 # Adding detections to the dataset
                 image_output_path = Path(config.image_path) / current_image
-                sample = fo.Sample(filepath=f"{image_output_path}", tags=["layout_analysis"])
+                sample = fo.Sample(
+                    filepath=f"{image_output_path}", tags=["layout_analysis"]
+                )
                 sample["image_name"] = current_image
                 sample["predictions"] = fol.Detections(
                     detections=[
-                        fol.Detection(label="predicted_object", bounding_box=d["normalized_bbox"]) for d in label_masks
+                        fol.Detection(
+                            label="predicted_object", bounding_box=d["normalized_bbox"]
+                        )
+                        for d in label_masks
                     ]
                 )
 
@@ -73,7 +85,9 @@ def debug_writer(debug_path="", module=""):
             elif module == "text_recognition":
                 texts = func(*args, **kwargs)
 
-                output_path = os.path.join(debug_path, current_image.split(".")[0] + ".json")
+                output_path = os.path.join(
+                    debug_path, current_image.split(".")[0] + ".json"
+                )
                 with open(output_path, "w") as f:
                     json.dump(texts, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
@@ -140,6 +154,10 @@ def clear_fiftyone():
 
     for dataset_name in datasets:
         fo.delete_dataset(dataset_name)
+
+
+def extract_polygon(coordinates):
+    return [tuple(map(int, point.split(","))) for point in coordinates.split()]
 
 
 def resize(img, max_size):
