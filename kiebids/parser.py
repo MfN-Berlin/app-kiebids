@@ -1,4 +1,8 @@
 from lxml import etree
+import os
+from kiebids import get_logger
+
+logger = get_logger(__name__)
 
 
 def read_xml(file_path: str) -> dict:
@@ -91,3 +95,24 @@ def read_xml(file_path: str) -> dict:
         output["text_regions"] = text_regions_list
 
     return output
+
+
+def get_ground_truth_text(filename: str, xml_path: str):
+    """
+    params:
+    filename: name of file
+    xml_path: path to folder with xml_files
+    """
+    file_path = os.path.join(xml_path, filename + ".xml")
+
+    # get the xml file
+    if os.path.exists(file_path):
+        ground_truth_data = read_xml(file_path)
+    else:
+        logger.info("ground truth file not found at: %s ", {xml_path})
+        return None
+
+    # Return the text content of the text regions
+    text_result = [region["text"] for region in ground_truth_data["text_regions"]]
+
+    return text_result

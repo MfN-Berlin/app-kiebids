@@ -4,7 +4,8 @@ log_level: DEBUG
 shared_folder: /mnt/data/ZUG-Biodiversität
 
 image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
-max_images: 3
+xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml  # yamllint disable-line
+max_images: 20
 output_path: data/output
 debug_path: data/debug
 
@@ -12,6 +13,7 @@ fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
 
 evaluation: data/evaluation
+evaluation_run: id_of_run
 
 # Datasets for evaluation
 evaluation_datasets:
