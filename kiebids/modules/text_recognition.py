@@ -5,6 +5,7 @@ from prefect import task
 
 from kiebids import config, get_logger, pipeline_config
 from kiebids.utils import crop_image, debug_writer
+from kiebids.evaluation import evaluate_module
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
@@ -37,6 +38,9 @@ class TextRecognizer:
 
     @task(name=module)
     @debug_writer(debug_path, module=module)
+    @evaluate_module(
+        evaluation_path=config.debug_path + "/evaluation", module="text_recognition"
+    )
     def run(self, image: np.array, bounding_boxes: list, **kwargs):
         """
         Returns text for each bounding box in image
