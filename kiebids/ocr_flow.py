@@ -33,7 +33,9 @@ def ocr_flow():
         preprocessed_image = preprocessing(current_image_name=filename)
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
-        bb_labels = layout_analyzer.run(image=preprocessed_image, current_image_name=filename)
+        bb_labels = layout_analyzer.run(
+            image=preprocessed_image, current_image_name=filename
+        )
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         recognized_text = text_recognizer.run(  # noqa: F841

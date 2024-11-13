@@ -1,14 +1,10 @@
 import os
-from io import BytesIO
 
 import editdistance
-import requests
 from lxml import etree
-from PIL import Image, ImageDraw, ImageFont
-from tqdm import tqdm
 
 from kiebids import config, get_logger
-from kiebids.utils import draw_polygon_on_image
+from kiebids.utils import extract_polygon
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -78,7 +74,8 @@ class TextEvaluator:
         :return: List of CER values.
         """
         cer_values = [
-            self.calculate_cer(gt, pred) for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
+            self.calculate_cer(gt, pred)
+            for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
         ]
         return cer_values
 
@@ -93,69 +90,30 @@ class TextEvaluator:
         return avg_cer
 
 
-def load_image_from_url(url):
-    try:
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        image = Image.open(BytesIO(response.content))
-    except requests.exceptions.RequestException:
-        logger.exception("Error fetching image from URL")
-        return None
-    except OSError:
-        logger.exception("Error opening image")
-        return None
-    else:
-        return image
+def get_ground_truth(filename):
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
+    polygons = []
 
+    # check if ground truth is available
+    for ds in config.evaluation_datasets:
+        if xml_file in os.listdir(config.evaluation_datasets[ds].xml_path):
+            # get labels from xml file
+            file_path = os.path.join(config.evaluation_datasets[ds].xml_path, xml_file)
+            tree = etree.parse(file_path)  # noqa: S320
+            root = tree.getroot()
+            ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
 
-def process_xml_files(folder_path, output_path):
-    """
-    Process XML files in the given folder path and
-    save the images with polygons and transcriptions in the output path.
-    """
-    files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
-    for filename in tqdm(files, desc="Processing XML files"):
-        file_path = os.path.join(folder_path, filename)
-        tree = etree.parse(file_path)  # noqa: S320
-        root = tree.getroot()
-        ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
+            # transcriptions = ""
+            textlines = root.xpath(
+                "//ns:TextLine" if ns else "//TextLine", namespaces=ns
+            )
+            for textline in textlines:
+                coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
+                if coords is not None:
+                    polygons.append(extract_polygon(coords.get("points")))
 
-        comments = root.find(
-            ".//ns:Metadata/ns:Comments" if ns else ".//Metadata/Comments",
-            namespaces=ns,
-        )
-        # excluding some fields without assignment
-        comments = dict(item.split("=", 1) for item in comments.text.split(", ") if len(item.split("=", 1)) == 2)
+                # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
+                # if unicode_elem is not None:
+                #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
 
-        # loading from url
-        image_url = comments.get("imgUrl")
-        image = None
-        if image_url:
-            image = load_image_from_url(image_url)
-
-        # lookup for polygon coordinates and transcriptions
-        transcriptions = ""
-        textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
-        for i, textline in enumerate(textlines):
-            coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
-            if coords is not None:
-                points = coords.get("points")
-                image = draw_polygon_on_image(image, points, i + 1)
-
-            unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
-            if unicode_elem is not None:
-                transcriptions += f"{i+1}. {unicode_elem.text}\n"
-
-        # Add transcriptions as caption to the image
-        font = ImageFont.load_default(size=16)
-        caption_height = 50 + (20 * len(transcriptions.splitlines()))
-        caption_image = Image.new("RGB", (image.width, caption_height), color="black")
-        draw = ImageDraw.Draw(caption_image)
-        draw.text((10, 10), transcriptions, fill="white", font=font)
-
-        # Combine the original image with the caption image
-        new_image = Image.new("RGB", (image.width, image.height + caption_height))
-        new_image.paste(image, (0, 0))
-        new_image.paste(caption_image, (0, image.height))
-
-        new_image.save(f"{output_path}/polygons_{filename.replace('.xml', '.jpg')}")
+    return polygons

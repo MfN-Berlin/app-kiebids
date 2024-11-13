@@ -17,7 +17,12 @@ def semantic_labeling(image_dir, output_path, debug=False):
     images = list(os.listdir(image_dir))
 
     # TODO: this is the handwritten/not handwritten classifier, loop for all the models
-    model_path = script_path.parent.parent / "models" / "semantic_labeling" / "label_classifier_hp"
+    model_path = (
+        script_path.parent.parent
+        / "models"
+        / "semantic_labeling"
+        / "label_classifier_hp"
+    )
 
     print("Loading model: ", model_path)
     model = load_model(model_path)
@@ -32,7 +37,9 @@ def semantic_labeling(image_dir, output_path, debug=False):
 
         # TODO: Do something with the score from the prediction
         entry = predict_label(image_path, model, class_names=class_names)
-        shutil.copy(image_path, str(OUTPUT_DIR_SEMANTIC_LABELING / entry["class"] / image))
+        shutil.copy(
+            image_path, str(OUTPUT_DIR_SEMANTIC_LABELING / entry["class"] / image)
+        )
 
 
 def load_model(model_path):
@@ -64,7 +71,9 @@ def predict_label(image_path, model, class_names=None):
     predictions = model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
     entry = {}
-    entry["filename"] = os.path.basename(image_path)  # Get the filename without the directory
+    entry["filename"] = os.path.basename(
+        image_path
+    )  # Get the filename without the directory
     entry["class"] = class_names[np.argmax(score)]
     entry["score"] = 100 * np.max(score)
 
