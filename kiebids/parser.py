@@ -52,11 +52,15 @@ def read_xml(file_path: str) -> dict:
         text_region_dict = {}
         text_region_dict["id"] = text_region.get("id")
         text_region_dict["orientation"] = text_region.get("orientation")
-        text_region_dict["coords"] = text_region.find(".//ns:Coords", namespaces=ns).get("points")
+        text_region_dict["coords"] = text_region.find(
+            ".//ns:Coords", namespaces=ns
+        ).get("points")
 
         text = text_region.findall(".//ns:TextEquiv", namespaces=ns)[-1]
 
-        text = text.find(".//ns:Unicode", namespaces=ns).text if text is not None else ""
+        text = (
+            text.find(".//ns:Unicode", namespaces=ns).text if text is not None else ""
+        )
         text_region_dict["text"] = text
 
         text_lines = text_region.findall(".//ns:TextLine", namespaces=ns)
@@ -65,10 +69,18 @@ def read_xml(file_path: str) -> dict:
         for text_line in text_lines:
             text_line_dict = {}
             text_line_dict["id"] = text_line.get("id")
-            text_line_dict["coords"] = text_line.find(".//ns:Coords", namespaces=ns).get("points")
-            text_line_dict["baseline"] = text_line.find(".//ns:Baseline", namespaces=ns).get("points")
+            text_line_dict["coords"] = text_line.find(
+                ".//ns:Coords", namespaces=ns
+            ).get("points")
+            text_line_dict["baseline"] = text_line.find(
+                ".//ns:Baseline", namespaces=ns
+            ).get("points")
             text = text_line.find(".//ns:TextEquiv", namespaces=ns)
-            text = text.find(".//ns:Unicode", namespaces=ns).text if text is not None else ""
+            text = (
+                text.find(".//ns:Unicode", namespaces=ns).text
+                if text is not None
+                else ""
+            )
             text_line_dict["text"] = text
             text_line_list.append(text_line_dict)
 
