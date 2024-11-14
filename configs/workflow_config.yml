@@ -1,5 +1,5 @@
-mode: debug
-log_level: DEBUG
+mode:  # debug
+log_level: INFO  # DEBUG
 
 shared_folder: /mnt/data/ZUG-Biodiversität
 
