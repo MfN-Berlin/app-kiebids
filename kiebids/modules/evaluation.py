@@ -1,5 +1,4 @@
 import os
-import csv
 
 import editdistance
 from itertools import permutations
@@ -30,7 +29,10 @@ class TextEvaluator:
             self.predictions = self.order_prediction(predictions, ground_truth)
         else:
             self.ground_truth = "".join(ground_truth)
-            self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
+            self.predictions = "".join(predictions)
+
+            # TODO: Takes too long to run
+            # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
 
     def calculate_cer(self, ground_truth, prediction):
         """
@@ -117,21 +119,14 @@ class TextEvaluator:
         return best_concatenation
 
 
-def evaluate_module(evaluation_path="", module=""):
+def evaluate_module(module=""):
     """
     Decorator to evaluate the performance of a module
     """
-    if not os.path.exists(evaluation_path):
-        os.makedirs(evaluation_path, exist_ok=True)
-        with open(
-            os.path.join(evaluation_path, "Evaluation.csv"), mode="w", newline=""
-        ) as file:
-            writer = csv.writer(file)
-            writer.writerow(["Image", "CER"])
 
     def decorator(func):
         def wrapper(*args, **kwargs):
-            current_image_name = kwargs.get("current_image_name")
+            current_image_name = kwargs.get("current_image_name").split(".")[0]
             if not module:
                 return func(*args, **kwargs)
 
@@ -145,18 +140,15 @@ def evaluate_module(evaluation_path="", module=""):
                 ground_truth = get_ground_truth_text(
                     current_image_name, config.xml_path
                 )
+                if ground_truth is None:
+                    return texts_and_bb, None
 
+                logger.info("Evaluating text recognition performance...")
                 text_evaluator = TextEvaluator(ground_truth, predictions)
+
                 avg_cer = text_evaluator.average_cer()
-                logger.info("Average CER: %s", avg_cer)
-                with open(
-                    os.path.join(evaluation_path, "Evaluation.csv"),
-                    mode="a",
-                    newline="",
-                ) as file:
-                    writer = csv.writer(file)
-                    writer.writerow([current_image_name, avg_cer])
-                return avg_cer
+                breakpoint()
+                return texts_and_bb, avg_cer
 
             elif module == "semantic_labeling":
                 # do something here

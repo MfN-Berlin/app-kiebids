@@ -1,5 +1,6 @@
 import argparse
 import os
+import csv
 
 import fiftyone as fo
 
@@ -16,10 +17,15 @@ from kiebids.modules.text_recognition import TextRecognizer
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
+breakpoint()
+text_evaluation = [["Image", "Cer"]] if config.evaluation else None
+
 
 def ocr_flow():
     # init objects/models for every stage
+    logger.info("Loading Layout analysis Model...")
     layout_analyzer = LayoutAnalyzer()
+    logger.info("Loading Text recognition Model...")
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
@@ -38,12 +44,14 @@ def ocr_flow():
         )
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        recognized_text = text_recognizer.run(  # noqa: F841
+        recognized_text, avg_cer = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,
             bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
             current_image_name=filename,
         )
 
+        if config.evaluation:
+            text_evaluation.append([filename, avg_cer])
         # semantic_labeling.run
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, output_path)
 
@@ -51,6 +59,16 @@ def ocr_flow():
         # entity_linking(image_path, output_path)
 
         # write results to PAGE Format
+
+    breakpoint()
+    if config.evaluation:
+        evaluation_path = os.path.join(config.evaluation_path, config.run_id)
+        os.makedirs(evaluation_path, exist_ok=True)
+        with open(
+            os.path.join(evaluation_path, "Text_evaluation.csv"), mode="w", newline=""
+        ) as file:
+            writer = csv.writer(file)
+            writer.writerows(text_evaluation)
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)
