@@ -18,7 +18,6 @@ from kiebids.modules.page_xml import write_page_xml
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
-breakpoint()
 text_evaluation = [["Image", "Cer"]] if config.evaluation else None
 
 
@@ -64,7 +63,6 @@ def ocr_flow():
         # write results to PAGE XML
         write_page_xml(config.output_path, filename, results)
 
-    breakpoint()
     if config.evaluation:
         evaluation_path = os.path.join(config.evaluation_path, config.run_id)
         os.makedirs(evaluation_path, exist_ok=True)

@@ -147,7 +147,6 @@ def evaluate_module(module=""):
                 text_evaluator = TextEvaluator(ground_truth, predictions)
 
                 avg_cer = text_evaluator.average_cer()
-                breakpoint()
                 return texts_and_bb, avg_cer
 
             elif module == "semantic_labeling":
