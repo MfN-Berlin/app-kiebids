@@ -17,7 +17,6 @@ from kiebids.modules.text_recognition import TextRecognizer
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
-breakpoint()
 text_evaluation = [["Image", "Cer"]] if config.evaluation else None
 
 
@@ -60,7 +59,6 @@ def ocr_flow():
 
         # write results to PAGE Format
 
-    breakpoint()
     if config.evaluation:
         evaluation_path = os.path.join(config.evaluation_path, config.run_id)
         os.makedirs(evaluation_path, exist_ok=True)
