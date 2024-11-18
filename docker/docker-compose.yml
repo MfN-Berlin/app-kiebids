@@ -1,30 +1,25 @@
 services:
-  # prefect:
-  #   image: prefecthq/prefect:2-python3.10
-  #   container_name: prefect
-  #   ports:
-  #     - "4200:4200"
-  #   command: prefect server start --host 0.0.0.0 --port 4200
-  #   environment:
-  #     - PREFECT_API_SERVICES_FLOW_RUN_NOTIFICATIONS_ENABLED=false
-    # volumes:
-    #   - ./prefect-data:/root/.prefect
-
-  # agent:
-  #   image: prefecthq/prefect:2-python3.10
-  #   command: prefect worker start --pool default
-  #   depends_on:
-  #     - prefect
-  #   environment:
-  #     - PREFECT_API_URL=http://host.docker.internal:4200/api
+  prefect:
+    image: prefecthq/prefect:2-python3.10
+    container_name: prefect
+    ports:
+      - "4200:4200"
+    command: prefect server start
+    environment:
+      - PREFECT_API_SERVICES_FLOW_RUN_NOTIFICATIONS_ENABLED=false
+      - PREFECT_SERVER_HOST="0.0.0.0"
+      - PREFECT_SERVER_PORT="4200"
+    volumes:
+      - ./prefect-data:/root/.prefect
+    networks:
+      - prefect_network
 
   kiebids_ocr:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
-    # depends_on:
-    #   - prefect
-      # - agent
+    depends_on:
+      - prefect
     container_name: kiebids_ocr
     ports:
       - "5151:5151"
@@ -35,5 +30,11 @@ services:
       - ../data/models/craft_mlt_25k.pth:/root/.EasyOCR/model/craft_mlt_25k.pth
       - ../data/models/latin_g2.pth:/root/.EasyOCR/model/latin_g2.pth
     environment:
-      - PREFECT_API_URL=http://host.docker.internal:4200/api
+      - PREFECT_API_URL=http://prefect:4200/api
       - PYTHONPATH=/app
+    networks:
+      - prefect_network
+
+networks:
+  prefect_network:
+    driver: bridge
