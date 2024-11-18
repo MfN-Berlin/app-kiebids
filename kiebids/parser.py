@@ -92,7 +92,7 @@ def get_ground_truth_text(filename: str, xml_path: str):
 
     # get the xml file
     if os.path.exists(file_path):
-        ground_truth_data = read_xml(file_path)
+        ground_truth_data = parse_xml(file_path)
     else:
         logger.info("ground truth file not found at: %s ", {xml_path})
         return None
