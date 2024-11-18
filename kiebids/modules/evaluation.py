@@ -2,7 +2,6 @@ import os
 
 import editdistance
 from itertools import permutations
-
 from lxml import etree
 
 from kiebids import config, get_logger
@@ -60,7 +59,8 @@ class TextEvaluator:
         :return: List of CER values.
         """
         cer_values = [
-            self.calculate_cer(gt, pred) for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
+            self.calculate_cer(gt, pred)
+            for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
         ]
         return cer_values
 
@@ -158,19 +158,9 @@ def evaluate_module(module=""):
     return decorator
 
 
-def load_image_from_url(url):
-    try:
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        image = Image.open(BytesIO(response.content))
-    except requests.exceptions.RequestException:
-        logger.exception("Error fetching image from URL")
-        return None
-    except OSError:
-        logger.exception("Error opening image")
-        return None
-    else:
-        return image
+def get_ground_truth(filename):
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
+    polygons = []
 
     # check if ground truth is available
     for ds in config.evaluation_datasets:
