@@ -16,11 +16,13 @@ with open(
 with open(os.path.join(os.path.dirname(__file__), "../configs/ocr_config.yaml")) as f:
     pipeline_config = DotMap(yaml.safe_load(f))
 
-os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
+current_dataset = None
+if not config.disable_fiftyone:
+    os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
 
-current_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=True)
-current_dataset.overwrite = True
-current_dataset.persistent = True
+    current_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=True)
+    current_dataset.overwrite = True
+    current_dataset.persistent = True
 
 __all__ = [
     "get_logger",

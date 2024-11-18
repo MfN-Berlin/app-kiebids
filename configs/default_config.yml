@@ -10,6 +10,7 @@ debug_path: data/debug
 
 fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
+disable_fiftyone: false
 
 evaluation: data/evaluation
 

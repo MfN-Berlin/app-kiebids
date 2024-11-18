@@ -23,4 +23,5 @@ COPY ./configs/docker_config.yml /app/configs/default_config.yml
 # TODO put this to the other installs
 RUN apt-get install -y curl libcurl4
 
-CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]
+CMD ["python", "kiebids/ocr_flow.py", "--disable-flow"]
+# CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]

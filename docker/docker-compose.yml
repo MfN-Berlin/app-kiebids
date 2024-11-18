@@ -1,10 +1,12 @@
 services:
-  prefect:
-    image: prefecthq/prefect:2-python3.10
-    container_name: prefect
-    ports:
-      - "4200:4200"
-    command: prefect server start --host 0.0.0.0 --port 4200
+  # prefect:
+  #   image: prefecthq/prefect:2-python3.10
+  #   container_name: prefect
+  #   ports:
+  #     - "4200:4200"
+  #   command: prefect server start --host 0.0.0.0 --port 4200
+  #   environment:
+  #     - PREFECT_API_SERVICES_FLOW_RUN_NOTIFICATIONS_ENABLED=false
     # volumes:
     #   - ./prefect-data:/root/.prefect
 
@@ -20,17 +22,18 @@ services:
     build:
       context: ..
       dockerfile: ./docker/Dockerfile
-    depends_on:
-      - prefect
+    # depends_on:
+    #   - prefect
       # - agent
     container_name: kiebids_ocr
     ports:
       - "5151:5151"
       - "5152:5152"
-    # volumes:
-      # - ../data:/app/data
-      # - ../configs:/app/configs
-      # - ../kiebids:/app/kiebids
+    volumes:
+      - ../data:/app/data
+      - ../kiebids:/app/kiebids
+      - ../data/models/craft_mlt_25k.pth:/root/.EasyOCR/model/craft_mlt_25k.pth
+      - ../data/models/latin_g2.pth:/root/.EasyOCR/model/latin_g2.pth
     environment:
       - PREFECT_API_URL=http://host.docker.internal:4200/api
       - PYTHONPATH=/app

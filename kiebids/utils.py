@@ -32,13 +32,14 @@ def debug_writer(debug_path="", module=""):
             current_image = kwargs.get("current_image_name")
 
             if module == "preprocessing":
-                # add original image to dataset
-                sample = fo.Sample(
-                    filepath=f"{Path(config.image_path) / current_image}",
-                    tags=["original"],
-                )
-                sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                # add original image to fiftyone dataset
+                if current_dataset is not None:
+                    sample = fo.Sample(
+                        filepath=f"{Path(config.image_path) / current_image}",
+                        tags=["original"],
+                    )
+                    sample["image_name"] = current_image
+                    current_dataset.add_sample(sample)
 
                 image = func(*args, **kwargs)
 
@@ -47,14 +48,16 @@ def debug_writer(debug_path="", module=""):
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
                 # add preprocessed image to fiftyone dataset
-                sample = fo.Sample(
-                    filepath=f"{image_output_path}", tags=["preprocessed"]
-                )
-                sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                if current_dataset is not None:
+                    sample = fo.Sample(
+                        filepath=f"{image_output_path}", tags=["preprocessed"]
+                    )
+                    sample["image_name"] = current_image
+                    current_dataset.add_sample(sample)
 
                 return image
             elif module == "layout_analysis":
+                logger.debug("Running layout analysis on %s", current_image)
                 label_masks = func(*args, **kwargs)
 
                 image = kwargs.get("image")
@@ -64,22 +67,22 @@ def debug_writer(debug_path="", module=""):
                     image, label_masks, current_image.split(".")[0], debug_path
                 )
 
-                # Adding detections to the dataset
-                image_output_path = Path(config.image_path) / current_image
-                sample = fo.Sample(
-                    filepath=f"{image_output_path}", tags=["layout_analysis"]
-                )
-                sample["image_name"] = current_image
-                sample["predictions"] = fol.Detections(
-                    detections=[
-                        fol.Detection(
-                            label="predicted_object", bounding_box=d["normalized_bbox"]
-                        )
-                        for d in label_masks
-                    ]
-                )
-
-                current_dataset.add_sample(sample)
+                if current_dataset is not None:
+                    # Adding detections to the dataset
+                    image_output_path = Path(config.image_path) / current_image
+                    sample = fo.Sample(
+                        filepath=f"{image_output_path}", tags=["layout_analysis"]
+                    )
+                    sample["image_name"] = current_image
+                    sample["predictions"] = fol.Detections(
+                        detections=[
+                            fol.Detection(
+                                label="predicted_object", bounding_box=d["normalized_bbox"]
+                            )
+                            for d in label_masks
+                        ]
+                    )
+                    current_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":
