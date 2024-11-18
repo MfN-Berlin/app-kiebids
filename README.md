@@ -2,7 +2,7 @@
 
 [Insert description]
 
-## Modules
+## Modules and modes
 
 Overview of each module
 
@@ -11,8 +11,11 @@ Overview of each module
 3. Text Recognition
 4. Semantic Labeling
 5. Entity linking
-6. Evaluation
-7. Debugging
+
+The pipeline can be run in three different modes:
+1. Prediction
+2. Evaluation
+3. Debugging
 
 
 ## Usage
