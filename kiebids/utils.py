@@ -22,9 +22,14 @@ def debug_writer(debug_path="", module=""):
 
     def decorator(func):
         def wrapper(*args, **kwargs):
-            # When debug path not given, no need to do anything
-            if not debug_path or not module:
+            # If we're not in debug mode, don't do anything
+            if not config.mode == "debug":
                 return func(*args, **kwargs)
+
+            if not debug_path:
+                raise ValueError("Debug path not provided")
+            if not module:
+                raise ValueError("Module not provided")
 
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
