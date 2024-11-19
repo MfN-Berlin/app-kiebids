@@ -1,4 +1,4 @@
-FROM prefecthq/prefect:2-python3.10
+FROM prefecthq/prefect:3-python3.10
 WORKDIR /app
 
 # Install Tesseract OCR dependencies and OpenCV dependencies
@@ -14,6 +14,7 @@ COPY ./requirements.txt /app/requirements.txt
 
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
+Run pip install "prefect[docker]"
 
 COPY ./data /app/data
 COPY ./kiebids /app/kiebids
@@ -23,5 +24,4 @@ COPY ./configs/docker_config.yml /app/configs/default_config.yml
 # TODO put this to the other installs
 RUN apt-get install -y curl libcurl4
 
-CMD ["python", "kiebids/ocr_flow.py", "--disable-flow"]
-# CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]
+CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]
