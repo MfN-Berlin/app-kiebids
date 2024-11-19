@@ -15,7 +15,7 @@ evaluation_dataset:
 
 
 # Debug configs
-mode:  # debug
+mode: # debug
 debug_path: data/debug
 max_images: 5  # number of images to process, useful for debugging
 

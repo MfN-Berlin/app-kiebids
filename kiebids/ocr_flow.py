@@ -8,7 +8,7 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, current_dataset, get_logger, pipeline_config
+from kiebids import config, get_logger, pipeline_config
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
@@ -83,9 +83,28 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if not args.fiftyone_only:
-        if not args.disable_flow:
-            ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
+    if config.mode == "debug":
+        # load and launch fiftyone related matters
+        from kiebids import current_dataset
+
+        fiftyone_session = fo.launch_app(current_dataset)
+        fiftyone_session.wait()
+
+        if args.fiftyone_only:
+            exit()
+
+        if args.disable_flow and args.serve_deployment:
+            raise ValueError(
+                "Cannot disable flow and serve deployment at the same time"
+            )
+        elif args.disable_flow:
+            ocr_flow()
+
+    else:  # default mode, not debug
+        if args.fiftyone_only:
+            raise ValueError("Cannot launch fiftyone only in non-debug mode")
+
+        ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
 
         if args.serve_deployment:
             ocr_flow.serve(
@@ -94,7 +113,3 @@ if __name__ == "__main__":
             )
         else:
             ocr_flow()
-
-    if config.mode == "debug":
-        fiftyone_session = fo.launch_app(current_dataset)
-        fiftyone_session.wait()
