@@ -6,7 +6,8 @@ image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/i
 
 # Path to output directories
 output_path: data/output
-eval_path: data/evaluation
+evaluation_path: data/evaluation
+evaluation: True
 
 # Path to evaluation data
 evaluation_dataset:

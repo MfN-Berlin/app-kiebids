@@ -11,6 +11,7 @@ from tqdm import tqdm
 
 from kiebids import config, evaluation_writer, get_logger
 from kiebids.utils import extract_polygon
+from kiebids.parser import parse_xml
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -52,31 +53,17 @@ def evaluator(module=""):
 
 def get_ground_truth(filename):
     xml_file = filename.replace(filename.split(".")[-1], "xml")
-    polygons = []
 
     # check if ground truth is available
-    for ds in config.evaluation_datasets:
-        if xml_file in os.listdir(config.evaluation_datasets[ds].xml_path):
-            # get labels from xml file
-            file_path = os.path.join(config.evaluation_datasets[ds].xml_path, xml_file)
-            tree = etree.parse(file_path)  # noqa: S320
-            root = tree.getroot()
-            ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
+    if xml_file in os.listdir(config.evaluation_dataset.xml_path):
+        # get labels from xml file
+        file_path = os.path.join(config.evaluation_dataset.xml_path, xml_file)
+        parsed_dict = parse_xml(file_path)
 
-            # transcriptions = ""
-            textlines = root.xpath(
-                "//ns:TextLine" if ns else "//TextLine", namespaces=ns
-            )
-            for textline in textlines:
-                coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
-                if coords is not None:
-                    polygons.append(extract_polygon(coords.get("points")))
+        return [extract_polygon(tr["coords"]) for tr in parsed_dict.get("text_regions")]
 
-                # unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
-                # if unicode_elem is not None:
-                #     transcriptions += f"{i+1}. {unicode_elem.text}\n"
-
-    return polygons
+    logger.warning(f"Ground truth not found for {filename}")
+    return None
 
 
 def compare_layouts(
@@ -121,7 +108,7 @@ def compare_layouts(
             #     i * len(ground_truth) + j,
             # )
 
-            iou, _ = compute_iou(pred_sum, gt_sum)
+            iou = compute_iou(pred_sum, gt_sum)
             # update iou to confusion matrix
             gt_pred_confusion_matrix[gt_index, pred_index] = iou
 

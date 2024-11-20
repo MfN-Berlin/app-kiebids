@@ -24,8 +24,9 @@ fiftyone_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary
 fiftyone_dataset.overwrite = True
 fiftyone_dataset.persistent = True
 
-log_dir = f"{config.evaluation}/tensorboard/layout_analysis_" + datetime.now().strftime(
-    "%Y%m%d-%H%M%S"
+log_dir = (
+    f"{config.evaluation_path}/tensorboard/layout_analysis_"
+    + datetime.now().strftime("%Y%m%d-%H%M%S")
 )
 evaluation_writer = SummaryWriter(log_dir)
 
