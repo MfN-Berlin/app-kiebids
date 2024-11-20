@@ -23,7 +23,7 @@ def debug_writer(debug_path="", module=""):
     def decorator(func):
         def wrapper(*args, **kwargs):
             # If we're not in debug mode, don't do anything
-            if not config.mode == "debug":
+            if config.mode != "debug":
                 return func(*args, **kwargs)
 
             if not debug_path:
