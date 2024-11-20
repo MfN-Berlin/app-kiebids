@@ -5,12 +5,10 @@ import itertools
 import cv2
 import numpy as np
 import requests
-from lxml import etree
 from PIL import Image
-from tqdm import tqdm
 
-from kiebids import config, evaluation_writer, get_logger
-from kiebids.utils import extract_polygon
+from kiebids import config, evaluation_writer, get_logger, pipeline_config
+from kiebids.utils import extract_polygon, resize
 from kiebids.parser import parse_xml
 
 logger = get_logger(__name__)
@@ -26,15 +24,26 @@ def evaluator(module=""):
 
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
+
                 # get ground truth for image
-                gt_labels = get_ground_truth(kwargs.get("current_image_name"))
-                logger.debug(f"image index: {kwargs.get('current_image_index')}")
-                if gt_labels:
+                parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
+                if parsed_dict:
+                    gt_regions = [
+                        extract_polygon(tr["coords"])
+                        for tr in parsed_dict.get("text_regions")
+                    ]
+                    # TODO make this casting safe
+                    original_resolution = (
+                        int(parsed_dict.get("image_height")),
+                        int(parsed_dict.get("image_width")),
+                    )
+                    logger.debug(f"image index: {kwargs.get('current_image_index')}")
                     compare_layouts(
                         bb_labels,
-                        gt_labels,
+                        gt_regions,
                         image_index=kwargs.get("current_image_index"),
                         filename=kwargs.get("current_image_name"),
+                        original_resolution=original_resolution,
                     )
 
                 return bb_labels
@@ -51,23 +60,24 @@ def evaluator(module=""):
     return decorator
 
 
-def get_ground_truth(filename):
+def get_ground_truth_data(filename):
     xml_file = filename.replace(filename.split(".")[-1], "xml")
 
     # check if ground truth is available
     if xml_file in os.listdir(config.evaluation_dataset.xml_path):
-        # get labels from xml file
         file_path = os.path.join(config.evaluation_dataset.xml_path, xml_file)
-        parsed_dict = parse_xml(file_path)
+        return parse_xml(file_path)
 
-        return [extract_polygon(tr["coords"]) for tr in parsed_dict.get("text_regions")]
-
-    logger.warning(f"Ground truth not found for {filename}")
+    logger.warning(f"GT File not found for {filename}")
     return None
 
 
 def compare_layouts(
-    predictions: list, ground_truths: list, image_index: int, filename: str
+    predictions: list,
+    ground_truths: list,
+    image_index: int,
+    filename: str,
+    original_resolution: tuple,
 ):
     """
     Compares predictions with ground truths based on highest iou.
@@ -95,18 +105,10 @@ def compare_layouts(
             continue
         else:
             pred_sum = predictions[pred_index]["segmentation"]
-            gt_sum = create_polygon_mask(ground_truths[gt_index], pred_sum.shape)
-
-            # Log the image to TensorBoard
-            # padding = np.ones((gt_sum.shape[0], 50), dtype=np.uint8) * 255
-            # combined_image = np.concatenate(
-            #     [gt_sum * 150, padding, pred_sum * 150], axis=1
-            # )
-            # evaluation_writer.add_image(
-            #     f"{filename}-gt-left_pred-right",
-            #     combined_image[np.newaxis, ...],
-            #     i * len(ground_truth) + j,
-            # )
+            gt_sum = create_polygon_mask(ground_truths[gt_index], original_resolution)
+            gt_sum = resize(
+                gt_sum, pipeline_config["preprocessing"].max_image_dimension
+            )
 
             iou = compute_iou(pred_sum, gt_sum)
             # update iou to confusion matrix
@@ -114,7 +116,7 @@ def compare_layouts(
 
     ious = []
     # get 1 to 1 mapping from max values of iou
-    while np.max(gt_pred_confusion_matrix) > 0:
+    while gt_pred_confusion_matrix.any() and np.max(gt_pred_confusion_matrix) > 0:
         logger.debug(f"max iou: {np.max(gt_pred_confusion_matrix)}")
         max_iou_coordinates = np.unravel_index(
             np.argmax(gt_pred_confusion_matrix), gt_pred_confusion_matrix.shape
@@ -135,8 +137,6 @@ def compare_layouts(
     avg_iou = np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
     logger.debug(f"average iou: {avg_iou}")
     evaluation_writer.add_scalar("_average_ious", avg_iou, image_index)
-
-    evaluation_writer.flush()
 
 
 def create_polygon_mask(polygon_points, image_shape):
@@ -194,106 +194,3 @@ def load_image_from_url(url):
     except OSError:
         logger.exception("Error opening image")
         return None
-
-
-def process_xml_files(folder_path, output_path):
-    """
-    Process XML files in the given folder path and
-    save the images with polygons and transcriptions in the output path.
-    """
-
-    files = [f for f in os.listdir(folder_path) if f.endswith(".xml")]
-    for filename in tqdm(files[:10], desc="Processing XML files"):
-        file_path = os.path.join(folder_path, filename)
-        tree = etree.parse(file_path)  # noqa: S320
-        root = tree.getroot()
-        ns = {"ns": root.nsmap[None]} if None in root.nsmap else {}
-
-        comments = root.find(
-            ".//ns:Metadata/ns:Comments" if ns else ".//Metadata/Comments",
-            namespaces=ns,
-        )
-        # excluding some fields without assignment
-        comments = dict(
-            item.split("=", 1)
-            for item in comments.text.split(", ")
-            if len(item.split("=", 1)) == 2
-        )
-
-        # loading from url
-        image_url = comments.get("imgUrl")
-        image = None
-        if image_url:
-            image = load_image_from_url(image_url)
-            grayscale_image = image.convert("L")
-
-            kernel = np.ones((5, 5), np.uint8)
-            # Convert the grayscale PIL image to a NumPy array (of type uint8)
-            grayscale_np = np.array(grayscale_image, dtype=np.uint8)
-
-            cv2.imwrite(
-                f"{output_path}/{filename.replace('.xml', '_gs.jpg')}", grayscale_np
-            )
-
-            # Apply adaptive thresholding using cv2.adaptiveThreshold
-            thresholded_image = cv2.adaptiveThreshold(
-                grayscale_np, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 17, 2
-            )
-
-            ret, binary = cv2.threshold(grayscale_np, 100, 255, cv2.THRESH_BINARY)
-
-            kernel = np.ones((3, 3), np.uint8)
-            opening = cv2.morphologyEx(thresholded_image, cv2.MORPH_OPEN, kernel)
-            closing = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-
-            # up_points = (grayscale_np.shape[0] * 4, grayscale_np.shape[1] * 4)
-            # resized_up = cv2.resize(binary, up_points, interpolation=cv2.INTER_LINEAR)
-
-            image.save(f"{output_path}/{filename.replace('.xml', '_orig.jpg')}")
-            cv2.imwrite(
-                f"{output_path}/{filename.replace('.xml', '_bw.jpg')}",
-                thresholded_image,
-            )
-            cv2.imwrite(
-                f"{output_path}/{filename.replace('.xml', '_open.jpg')}", opening
-            )
-            cv2.imwrite(
-                f"{output_path}/{filename.replace('.xml', '_closing.jpg')}", closing
-            )
-            cv2.imwrite(
-                f"{output_path}/{filename.replace('.xml', '_binary.jpg')}", binary
-            )
-
-        # # lookup for polygon coordinates and transcriptions
-        # transcriptions = ""
-        # textlines = root.xpath("//ns:TextLine" if ns else "//TextLine", namespaces=ns)
-        # for i, textline in enumerate(textlines):
-        #     coords = textline.find("ns:Coords" if ns else "Coords", namespaces=ns)
-        #     if coords is not None:
-        #         points = coords.get("points")
-        #         image = draw_polygon_on_image(image, points, i + 1)
-
-        #     unicode_elem = textline.find(".//ns:Unicode" if ns else ".//Unicode", namespaces=ns)
-        #     if unicode_elem is not None:
-        #         transcriptions += f"{i+1}. {unicode_elem.text}\n"
-
-        # # Add transcriptions as caption to the image
-        # font = ImageFont.load_default(size=16)
-        # caption_height = 50 + (20 * len(transcriptions.splitlines()))
-        # caption_image = Image.new("RGB", (image.width, caption_height), color="black")
-        # draw = ImageDraw.Draw(caption_image)
-        # draw.text((10, 10), transcriptions, fill="white", font=font)
-
-        # # Combine the original image with the caption image
-        # new_image = Image.new("RGB", (image.width, image.height + caption_height))
-        # new_image.paste(image, (0, 0))
-        # new_image.paste(caption_image, (0, image.height))
-
-        # new_image.save(f"{output_path}/polygons_{filename.replace('.xml', '.jpg')}")
-
-
-if __name__ == "__main__":
-    get_ground_truth(
-        "0001_2c8b3b76-0237-4fb8-8d4b-6b9b783b6889_label_front_0001_label.tif"
-    )
-    # iou, weight = compute_iou(pred_sum, gt_sum)

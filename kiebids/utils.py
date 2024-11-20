@@ -161,7 +161,7 @@ def clear_fiftyone():
 
 
 def resize(img, max_size):
-    h, w, _ = img.shape
+    h, w = img.shape[:2]
     if max(w, h) > max_size:
         aspect_ratio = h / w
         if w >= h:
