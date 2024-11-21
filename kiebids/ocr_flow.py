@@ -17,6 +17,7 @@ pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
 
 
+@flow(name=pipeline_name, log_prints=True)
 def ocr_flow():
     # init objects/models for every stage
     layout_analyzer = LayoutAnalyzer()
@@ -67,11 +68,6 @@ if __name__ == "__main__":
         help="activate deployment serving mode",
     )
     parser.add_argument(
-        "--disable-flow",
-        action="store_true",
-        help="Disables the prefect flow. Useful for debugging",
-    )
-    parser.add_argument(
         "--fiftyone-only",
         action="store_true",
         help="launches only the fo app. Assuming available datasets.",
@@ -80,9 +76,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.fiftyone_only:
-        if not args.disable_flow:
-            ocr_flow = flow(ocr_flow, name=pipeline_name, log_prints=True, retries=3)
-
         if args.serve_deployment:
             ocr_flow.serve(
                 name=pipeline_config.deployment_name,
