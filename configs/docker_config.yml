@@ -4,13 +4,13 @@ log_level: DEBUG
 shared_folder: /mnt/data/ZUG-Biodiversität
 
 image_path: data/images
-max_images: 3
+max_images: 10
 output_path: data/output
 debug_path: data/debug
 
 fiftyone_dataset: "mfn-dataset"
-fiftyone_database_dir: /app/fifty-db
-disable_fiftyone: true
+fiftyone_database_dir: data/debug/fifty-db
+disable_fiftyone: false
 
 evaluation: data/evaluation
 

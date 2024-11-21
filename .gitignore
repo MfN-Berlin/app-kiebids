@@ -161,9 +161,15 @@ cython_debug/
 .DS_Store
 
 # Project specific
-data/
+# data/
+data/models/*
+data/debug/
+data/images/*
+models/*
+
 weights/
 
 prefect-data
-data
 **/__pycache__/
+
+!.gitkeep

@@ -7,8 +7,6 @@ services:
     command: prefect server start --host 0.0.0.0 --port 4200
     environment:
       - PREFECT_API_SERVICES_FLOW_RUN_NOTIFICATIONS_ENABLED=false
-    # volumes:
-    #   - ./prefect-data:/root/.prefect
   kiebids_ocr:
     build:
       context: ..
@@ -21,9 +19,11 @@ services:
       - "5152:5152"
     volumes:
       - ../data:/app/data
-      - ../kiebids:/app/kiebids
-      - ../data/models/craft_mlt_25k.pth:/root/.EasyOCR/model/craft_mlt_25k.pth
-      - ../data/models/latin_g2.pth:/root/.EasyOCR/model/latin_g2.pth
+      - ../models/sam_vit_b_01ec64.pth:/app/models/sam_vit_b_01ec64.pth
+      - ../models/craft_mlt_25k.pth:/root/.EasyOCR/model/craft_mlt_25k.pth
+      - ../models/latin_g2.pth:/root/.EasyOCR/model/latin_g2.pth
     environment:
       - PREFECT_API_URL=http://host.docker.internal:4200/api
       - PYTHONPATH=/app
+    # command: python kiebids/ocr_flow.py
+    command: python kiebids/ocr_flow.py --serve-deployment

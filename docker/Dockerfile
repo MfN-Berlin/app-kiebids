@@ -10,9 +10,8 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 Run pip install "prefect[docker]"
 
-COPY ./data /app/data
 COPY ./kiebids /app/kiebids
-COPY ./configs /app/configs
+COPY ./configs/docker_ocr_config.yaml /app/configs/ocr_config.yaml
 COPY ./configs/docker_config.yml /app/configs/default_config.yml
 
 CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]
