@@ -20,7 +20,9 @@ current_dataset = None
 if not config.disable_fiftyone:
     os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
 
-    current_dataset = fod.load_dataset(config.fiftyone_dataset, create_if_necessary=True)
+    current_dataset = fod.load_dataset(
+        config.fiftyone_dataset, create_if_necessary=True
+    )
     current_dataset.overwrite = True
     current_dataset.persistent = True
 

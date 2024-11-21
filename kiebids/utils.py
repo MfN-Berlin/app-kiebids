@@ -82,7 +82,8 @@ def debug_writer(debug_path="", module=""):
                     sample["predictions"] = fol.Detections(
                         detections=[
                             fol.Detection(
-                                label="predicted_object", bounding_box=d["normalized_bbox"]
+                                label="predicted_object",
+                                bounding_box=d["normalized_bbox"],
                             )
                             for d in label_masks
                         ]
