@@ -1,4 +1,5 @@
 import os
+import csv
 
 import editdistance
 from itertools import permutations
@@ -10,6 +11,16 @@ from kiebids.parser import get_ground_truth_text
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
+
+if config.evaluation is True:
+    evaluation_path = os.path.join(config.evaluation_path, config.run_id)
+    os.makedirs(evaluation_path, exist_ok=True)
+    headers = ["image", "avg_CER", "n_gt", "n_pred", "level"]
+    with open(
+        os.path.join(evaluation_path, "text_evaluation.csv"), "w", newline=""
+    ) as f:
+        writer = csv.writer(f)
+        writer.writerow(headers)
 
 
 class TextEvaluator:
@@ -136,18 +147,33 @@ def evaluate_module(module=""):
                 return bb_labels
             elif module == "text_recognition":
                 texts_and_bb = func(*args, **kwargs)
+
                 predictions = [text["text"] for text in texts_and_bb]
                 ground_truth = get_ground_truth_text(
                     current_image_name, config.xml_path
                 )
-                if ground_truth is None:
-                    return texts_and_bb, None
-
                 logger.info("Evaluating text recognition performance...")
-                text_evaluator = TextEvaluator(ground_truth, predictions)
-
-                avg_cer = text_evaluator.average_cer()
-                return texts_and_bb, avg_cer
+                if ground_truth is None:
+                    avg_cer = "no gt found"
+                else:
+                    text_evaluator = TextEvaluator(ground_truth, predictions)
+                    avg_cer = text_evaluator.average_cer()
+                with open(
+                    os.path.join(evaluation_path, "text_evaluation.csv"),
+                    "a",
+                    newline="",
+                ) as f:
+                    writer = csv.writer(f)
+                    writer.writerow(
+                        [
+                            current_image_name,
+                            avg_cer,
+                            len(ground_truth),
+                            len(predictions),
+                            "region",
+                        ]
+                    )
+                return texts_and_bb
 
             elif module == "semantic_labeling":
                 # do something here
