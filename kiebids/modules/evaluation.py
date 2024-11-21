@@ -1,4 +1,3 @@
-import os
 from io import BytesIO
 import itertools
 
@@ -8,8 +7,7 @@ import requests
 from PIL import Image
 
 from kiebids import config, evaluation_writer, get_logger, pipeline_config
-from kiebids.utils import extract_polygon, resize
-from kiebids.parser import parse_xml
+from kiebids.utils import extract_polygon, resize, get_ground_truth_data
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -58,18 +56,6 @@ def evaluator(module=""):
         return wrapper
 
     return decorator
-
-
-def get_ground_truth_data(filename):
-    xml_file = filename.replace(filename.split(".")[-1], "xml")
-
-    # check if ground truth is available
-    if xml_file in os.listdir(config.evaluation_dataset.xml_path):
-        file_path = os.path.join(config.evaluation_dataset.xml_path, xml_file)
-        return parse_xml(file_path)
-
-    logger.warning(f"GT File not found for {filename}")
-    return None
 
 
 def compare_layouts(
