@@ -166,7 +166,6 @@ data/models/*
 data/debug/
 data/images/*
 models/*
-!0071__MB_I_0034_label_00001.JPG
 
 weights/
 
