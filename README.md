@@ -1,19 +1,22 @@
 # Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
 
-## Python environment setup
+[Insert description]
 
-Create conda environment and install dependencies:
-```
-conda create -n zug-mfn python=3.10.13
-conda activate zug-mfn
-pip install -r requirements.txt
-```
+## Modules and modes
 
-Install pre-commit hooks:
-```
-pip install pre-commit
-pre-commit install
-```
+Overview of each module
+
+1. Preprocessing
+2. Layout Analysis
+3. Text Recognition
+4. Semantic Labeling (not yet implemented)
+5. Entity linking (not yet implemented)
+
+The pipeline can be run in three different modes:
+1. Prediction (work in progress)
+2. Evaluation (work in progress)
+3. Debugging
+
 
 ## Usage
 
@@ -39,31 +42,111 @@ Behaviour:
 - The produced results of each respective module can be inspected inside the `data/debug` directory. 
 
 ### Run ocr flow locally
+1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
+   e.g., set `image_path` to the path of your input images, etc.
+2. Follow the installation instructions for your preferred method.
+3. Run the workflow.
+4. Inspect the results – PAGE XML files by default, images when in debug mode.
 
-Create .env file containing port env variable:
+
+## Installation
+
+There are two ways to run this application:
+
+1. from the command line in a local Python environment that will run the workflow automatically.
+2. as dockerized application which allows you to start workflow runs from the Prefect frontend.
+
+The dockerized variant is preferred in the long run but is not yet fully functional.
+For the time being, use the local variant.
+
+### Local Python environment
+
+Set up a virtual environment using your preferred Python management tool.
+
+**barebones `venv` example:** Make sure you have Python 3.10(.13) installed.
+```bash
+python3.10 -m venv app-kiebids
+source app-kiebids/bin/activate
+pip install -U pip
+pip install -r requirements.txt
 ```
-PREFECT_PORT=<some-port-number-between-4200-and-4300>
+
+**`conda` example:**
+See [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) for further information on installing conda.
+```bash
+conda create -n app-kiebids python=3.10.13
+conda activate app-kiebids
+pip install -U pip
+pip install -r requirements.txt
 ```
-Run:
+
+**`uv` example:**
+(See [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for further information on installing uv.)
+
+```bash
+uv venv --python 3.10.13
+source .venv/bin/activate
+uv pip install -U pip
+uv pip install -r requirements.txt
 ```
+
+**Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:**
+
+```bash
 bash run_flow.sh
 ```
+
 This will start the prefect server in background (if not started so far) and execute the basic flow.
-
-If you'd like to kill the prefect server at execution end then run:
+For further script options, see:
 ```
-bash run_flow.sh --stop_prefect
-```
-
-To start the server with a deployment (https://docs.prefect.io/3.0/deploy/index) you can run:
-```
-bash run_flow.sh --serve-deployment
+bash run_flow.sh --help
 ```
 
-### Observe Debugging Results in FiftyOne App
 
-Set ocr flow to debug mode inside [the config file](./configs/default_config.yml). After processing a fiftyone app is served at displayed url. It persists previous results of each module for each given image.
-You can also run only the app to inspect your previous runs by running
+**Alternatively you can start the work flow by running the `ocr_flow.py` script directly:**
+
+```bash
+prefect cloud login  # if not already logged in; will provide a link to log in
+python kiebids/ocr_flow.py
+```
+
+
+### Dockerized application
+
+Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
+See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
+
+TODO: Add instructions for installing `docker compose`.
+
+**Start the application by running the following command in your terminal:**
+
+```bash
+docker compose up
+```
+
+**You can now access the frontend at [http://localhost:4200](http://localhost:4200).**
+
+**To stop the application:**
+```bash
+docker compose stop  # stops the application
+docker compose down  # stops the application and removes the containers
+```
+
+
+## Testing
+
+Run pytests:
+```bash
+pytest -s
+```
+
+## Debugging
+
+### Observe debugging results in the FiftyOne app
+
+Set ocr flow to debug mode inside the [workflow config file](./configs/workflow_config.yaml).
+After processing a fiftyone app is served at the displayed URL. It persists previous results of each module for each given image.
+You can also run the app standalone to inspect your previous runs by running
 ```
 python kiebids/ocr_flow.py --fiftyone-only
 ```
@@ -71,23 +154,5 @@ python kiebids/ocr_flow.py --fiftyone-only
 You can inspect the results for each image by filtering the `image_name` field inside the app.
 
 > This tracking is currently activated only in debug mode
-----
-### Run pytest:
-
-```
-pytest -s
-```
 
 -----
-
-
-
-## Modules
-Overview of each module
-
-1. Preprocessing
-2. Layout Analysis
-3. Text Recognition
-4. Semantic Labeling
-5. Entity linking
-6. Evaluation

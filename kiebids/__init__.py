@@ -9,7 +9,7 @@ from prefect.logging import get_logger
 load_dotenv()
 
 with open(
-    os.path.join(os.path.dirname(__file__), "../configs/default_config.yml")
+    os.path.join(os.path.dirname(__file__), "../configs/workflow_config.yaml")
 ) as f:
     config = DotMap(yaml.safe_load(f))
 
