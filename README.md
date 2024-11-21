@@ -23,7 +23,7 @@ The pipeline can be run in three different modes:
 ### Run with docker
 > **Tested on macos with M1 Chip and Docker Desktop v4.35.1**
 
-1. [Download necessary models](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) into [./models](./models/) directory.
+1. [Download necessary SAM model](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) and put it into [./models](./models/) directory.
 <!-- only sam model downloaden? -->
 <!-- TODO put one image as test image -->
 2. One test image is available inside `data/images` directory. You are free to add more images into this directory. As for now only 10 images will be processed. If you would like to process more just change the `max_images` parameter inside [docker_workflow_config.yaml](./configs/docker_workflow_config.yaml)
