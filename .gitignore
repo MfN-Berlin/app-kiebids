@@ -165,6 +165,7 @@ cython_debug/
 data/models/*
 data/debug/
 data/images/*
+data/output/*
 models/*
 !0071__MB_I_0034_label_00001.JPG
 

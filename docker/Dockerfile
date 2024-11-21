@@ -12,6 +12,6 @@ Run pip install "prefect[docker]"
 
 COPY ./kiebids /app/kiebids
 COPY ./configs/docker_ocr_config.yaml /app/configs/ocr_config.yaml
-COPY ./configs/docker_config.yml /app/configs/default_config.yml
+COPY ./configs/docker_workflow_config.yaml /app/configs/workflow_config.yaml
 
 CMD ["python", "kiebids/ocr_flow.py", "--serve-deployment"]
