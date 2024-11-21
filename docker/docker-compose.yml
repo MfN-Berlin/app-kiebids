@@ -20,8 +20,7 @@ services:
     volumes:
       - ../data:/app/data
       - ../models/sam_vit_b_01ec64.pth:/app/models/sam_vit_b_01ec64.pth
-      - ../models/craft_mlt_25k.pth:/root/.EasyOCR/model/craft_mlt_25k.pth
-      - ../models/latin_g2.pth:/root/.EasyOCR/model/latin_g2.pth
+      - ../models/easyocr:/root/.EasyOCR/model
     environment:
       - PREFECT_API_URL=http://host.docker.internal:4200/api
       - PYTHONPATH=/app

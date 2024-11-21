@@ -26,7 +26,7 @@ pre-commit install
 2. One test image is available inside `data/images` directory. You are free to add more images into this directory. As for now only 10 images will be processed. If you would like to process more just change the `max_images` parameter inside [docker_config.yml](./configs/docker_config.yml)
 3. Run the containers to serve prefect and workflow (prefect deployments):
     ```
-    docker-compose -f docker/docker-compose.yml up --build
+    docker compose -f docker/docker-compose.yml up --build
     ```
     At first execution this will download further necessary models.
 4. Wait until the `kiebids_ocr` container started (indicated by message `You can also run your flow via the Prefect UI ...`) and open the prefect UI in your browser `http://0.0.0.0:4200/`
