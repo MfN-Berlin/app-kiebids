@@ -1,6 +1,5 @@
 import argparse
 import os
-import csv
 
 
 # commented out for now to avoid tensorflow loading
@@ -16,8 +15,6 @@ from kiebids.modules.page_xml import write_page_xml
 
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
-
-text_evaluation = [["Image", "Cer"]] if config.evaluation else None
 
 
 def ocr_flow():
@@ -44,14 +41,12 @@ def ocr_flow():
             image=preprocessed_image, current_image_name=filename
         )
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        results, avg_cer = text_recognizer.run(  # noqa: F841
+        results = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,
             bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
             current_image_name=filename,
         )
 
-        if config.evaluation:
-            text_evaluation.append([filename, avg_cer])
         # semantic_labeling.run
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, config.output_path)
 
@@ -60,15 +55,6 @@ def ocr_flow():
 
         # write results to PAGE XML
         write_page_xml(config.output_path, filename, results)
-
-    if config.evaluation:
-        evaluation_path = os.path.join(config.evaluation_path, config.run_id)
-        os.makedirs(evaluation_path, exist_ok=True)
-        with open(
-            os.path.join(evaluation_path, "Text_evaluation.csv"), mode="w", newline=""
-        ) as file:
-            writer = csv.writer(file)
-            writer.writerows(text_evaluation)
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)
