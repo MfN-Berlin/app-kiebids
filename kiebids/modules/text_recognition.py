@@ -4,20 +4,14 @@ import torch
 from prefect import task
 
 from kiebids import config, get_logger, pipeline_config
+from kiebids.modules.evaluation import evaluator
 from kiebids.utils import crop_image, debug_writer
-from kiebids.modules.evaluation import evaluate_module
 
 module = __name__.split(".")[-1]
 logger = get_logger(module)
 logger.setLevel(config.log_level)
 
 debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}"
-
-# TODO: Where should this be set?
-evaluation = True
-evaluation_path = config.evaluation
-
-
 module_config = pipeline_config[module]
 
 
@@ -44,7 +38,7 @@ class TextRecognizer:
 
     @task(name=module)
     @debug_writer(debug_path, module=module)
-    @evaluate_module(module=module)
+    @evaluator(module=module)
     def run(self, image: np.array, bounding_boxes: list, **kwargs):
         """
         Returns text for each bounding box in image

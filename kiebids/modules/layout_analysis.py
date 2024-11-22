@@ -3,6 +3,7 @@ from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
 from kiebids import config, get_logger, pipeline_config
+from kiebids.modules.evaluation import evaluator
 from kiebids.utils import debug_writer
 
 module = __name__.split(".")[-1]
@@ -19,8 +20,9 @@ class LayoutAnalyzer:
         self.mask_generator = self.load_model(model_path)
 
     @debug_writer(debug_path, module=module)
+    @evaluator(module=module)
     @task(name=module)
-    def run(self, image, **kwargs):
+    def run(self, image, **kwargs):  # pylint: disable=unused-argument
         masks = self.mask_generator.generate(image)
         for mask in masks:
             bbox = mask["bbox"]

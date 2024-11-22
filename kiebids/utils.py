@@ -9,7 +9,8 @@ import numpy as np
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
-from kiebids import config, current_dataset
+from kiebids import config, fiftyone_dataset
+from kiebids.parser import parse_xml
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -38,7 +39,7 @@ def debug_writer(debug_path="", module=""):
                     tags=["original"],
                 )
                 sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 image = func(*args, **kwargs)
 
@@ -51,7 +52,7 @@ def debug_writer(debug_path="", module=""):
                     filepath=f"{image_output_path}", tags=["preprocessed"]
                 )
                 sample["image_name"] = current_image
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 return image
             elif module == "layout_analysis":
@@ -79,7 +80,7 @@ def debug_writer(debug_path="", module=""):
                     ]
                 )
 
-                current_dataset.add_sample(sample)
+                fiftyone_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":
@@ -126,7 +127,7 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
         cv2.imwrite(output_path, cropped_image)
 
-        logger.info("Saved bounding box image to %s", output_path)
+        logger.debug("Saved bounding box image to %s", output_path)
 
 
 def draw_polygon_on_image(image, coordinates, i=-1):
@@ -161,7 +162,7 @@ def extract_polygon(coordinates):
 
 
 def resize(img, max_size):
-    h, w, _ = img.shape
+    h, w = img.shape[:2]
     if max(w, h) > max_size:
         aspect_ratio = h / w
         if w >= h:
@@ -170,3 +171,15 @@ def resize(img, max_size):
             resized_img = cv2.resize(img, (int(max_size * aspect_ratio), max_size))
         return resized_img
     return img
+
+
+def get_ground_truth_data(filename):
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
+
+    # check if ground truth is available
+    if xml_file in os.listdir(config.evaluation_dataset.xml_path):
+        file_path = os.path.join(config.evaluation_dataset.xml_path, xml_file)
+        return parse_xml(file_path)
+
+    logger.warning(f"GT File not found for {filename}")
+    return None

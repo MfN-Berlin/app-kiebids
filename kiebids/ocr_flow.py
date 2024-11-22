@@ -1,13 +1,14 @@
 import argparse
 import os
 
+import fiftyone as fo
 
 # commented out for now to avoid tensorflow loading
 # from modules.semantic_labeling import semantic_labeling
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, get_logger, pipeline_config
+from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
@@ -27,7 +28,9 @@ def ocr_flow():
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
-    for filename in tqdm(os.listdir(config.image_path)[: config.max_images]):
+    for image_index, filename in enumerate(
+        tqdm(os.listdir(config.image_path)[: config.max_images])
+    ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
@@ -38,7 +41,9 @@ def ocr_flow():
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
         bb_labels = layout_analyzer.run(
-            image=preprocessed_image, current_image_name=filename
+            image=preprocessed_image,
+            current_image_name=filename,
+            current_image_index=image_index,
         )
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         results = text_recognizer.run(  # noqa: F841
@@ -95,6 +100,6 @@ if __name__ == "__main__":
         else:
             ocr_flow()
 
-    # if config.mode == "debug":
-    # fiftyone_session = fo.launch_app(current_dataset)
-    # fiftyone_session.wait()
+    if config.mode == "debug":
+        fiftyone_session = fo.launch_app(fiftyone_dataset)
+        fiftyone_session.wait()

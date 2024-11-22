@@ -9,12 +9,12 @@ Overview of each module
 1. Preprocessing
 2. Layout Analysis
 3. Text Recognition
-4. Semantic Labeling
-5. Entity linking
+4. Semantic Labeling (not yet implemented)
+5. Entity linking (not yet implemented)
 
 The pipeline can be run in three different modes:
-1. Prediction
-2. Evaluation
+1. Prediction (work in progress)
+2. Evaluation (work in progress)
 3. Debugging
 
 
@@ -31,34 +31,23 @@ The pipeline can be run in three different modes:
 
 There are two ways to run this application:
 
-1. as dockerized application which allows you to start workflow runs from the prefect frontend.
-2. from the command line in a local Python environment that will run the workflow automatically.
+1. from the command line in a local Python environment that will run the workflow automatically.
+2. as dockerized application which allows you to start workflow runs from the Prefect frontend.
 
+The dockerized variant is preferred in the long run but is not yet fully functional.
+For the time being, use the local variant.
 
-### Dockerized application (preferred)
-
-Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
-See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
-
-TODO: Add instructions for installing `docker compose`.
-
-**Start the application by running the following command in your terminal:**
-
-```bash
-docker compose up
-```
-
-**You can now access the frontend at [http://localhost:4200](http://localhost:4200).**
-
-**To stop the application:**
-```bash
-docker compose stop  # stops the application
-docker compose down  # stops the application and removes the containers
-```
-
-### Local Python environment (developers)
+### Local Python environment
 
 Set up a virtual environment using your preferred Python management tool.
+
+**barebones `venv` example:** Make sure you have Python 3.10(.13) installed.
+```bash
+python3.10 -m venv app-kiebids
+source app-kiebids/bin/activate
+pip install -U pip
+pip install -r requirements.txt
+```
 
 **`conda` example:**
 See [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) for further information on installing conda.
@@ -79,7 +68,7 @@ uv pip install -U pip
 uv pip install -r requirements.txt
 ```
 
-**Now you can run the application by executing the following command in your terminal:**
+**Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:**
 
 ```bash
 bash run_flow.sh
@@ -97,6 +86,28 @@ bash run_flow.sh --help
 ```bash
 prefect cloud login  # if not already logged in; will provide a link to log in
 python kiebids/ocr_flow.py
+```
+
+
+### Dockerized application
+
+Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
+See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
+
+TODO: Add instructions for installing `docker compose`.
+
+**Start the application by running the following command in your terminal:**
+
+```bash
+docker compose up
+```
+
+**You can now access the frontend at [http://localhost:4200](http://localhost:4200).**
+
+**To stop the application:**
+```bash
+docker compose stop  # stops the application
+docker compose down  # stops the application and removes the containers
 ```
 
 

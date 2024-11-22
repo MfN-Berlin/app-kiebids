@@ -10,14 +10,16 @@ prefect==3.0.0
 pre-commit==3.8.0
 pytesseract==0.3.13
 pytest==8.3.3
-pytest>=7.4.0
 python-dotenv==1.0.1
 requests==2.32.3
 ruff==0.7.2
 segment-anything-py==1.0.1
 sty==1.0.6
+tensorboardX==2.6.2.2
 tensorflow==2.17.0
 torch==2.4.1
 torchaudio==2.4.1
 torchvision==0.19.1
 tqdm==4.66.5
+
+
