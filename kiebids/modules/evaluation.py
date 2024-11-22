@@ -16,6 +16,7 @@ from kiebids.utils import extract_polygon, resize, get_ground_truth_data
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
+# Fix
 if config.evaluation is True:
     evaluation_path = os.path.join(config.evaluation_path, config.run_id)
     os.makedirs(evaluation_path, exist_ok=True)
@@ -25,113 +26,6 @@ if config.evaluation is True:
     ) as f:
         writer = csv.writer(f)
         writer.writerow(headers)
-
-
-class TextEvaluator:
-    """
-    Class to evaluate the text recognition performance of a model using the Character Error Rate (CER)
-    with leveinshtein distance.
-    """
-
-    def __init__(self, ground_truth, predictions):
-        """
-        :param ground_truth: List of ground truth strings.
-        :param predictions: List of predicted strings.
-        """
-        # order predictions to minimize the total edit distance
-        if len(ground_truth) == len(predictions):
-            self.ground_truth = ground_truth
-            self.predictions = self.order_prediction(predictions, ground_truth)
-        else:
-            self.ground_truth = "".join(ground_truth)
-            self.predictions = "".join(predictions)
-
-            # TODO: Takes too long to run
-            # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
-
-    def calculate_cer(self, ground_truth, prediction):
-        """
-        Calculate the Character Error Rate (CER) between a ground truth string and a predicted string.
-
-        :param gt: Ground truth string.
-        :param pred: Predicted string.
-        :return: CER value.
-        """
-        distance = editdistance.eval(ground_truth, prediction)
-
-        if len(ground_truth) > 0:
-            cer = distance / len(ground_truth)
-        elif distance == 0:  # Cover for the case when both strings are empty
-            cer = 0
-        else:  # Cover for the case when ground truth is empty but prediction is not
-            cer = 1
-        return float(cer)
-
-    def evaluate(self):
-        """
-        Evaluate the CER for all ground truth and prediction pairs.
-
-        :return: List of CER values.
-        """
-        cer_values = [
-            self.calculate_cer(gt, pred)
-            for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
-        ]
-        return cer_values
-
-    def average_cer(self):
-        """
-        Calculate the average CER over all ground truth and prediction pairs.
-
-        :return: Average CER value.
-        """
-        cer_values = self.evaluate()
-        avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
-        return avg_cer
-
-    def order_prediction(self, predictions, ground_truth):
-        """
-        Orders predictions to minimize the total edit distance.
-
-        :param predictions: List of predicted text.
-        :param  ground_truth: List of ground truth.
-        :return: Ordered predictions
-        """
-        if len(predictions) != len(ground_truth):
-            return None
-
-        min_distance = float("inf")
-        best_permutation = ground_truth
-
-        for perm in permutations(predictions):
-            total_distance = sum(
-                editdistance.eval(a, b) for a, b in zip(ground_truth, perm)
-            )
-            if total_distance < min_distance:
-                min_distance = total_distance
-                best_permutation = perm
-
-        return list(best_permutation)
-
-    def concatenate_to_match(self, target, strings):
-        """
-        Concatenates a list of strings in an order that makes them as similar as possible to a target string.
-
-        :param target: The target string to match.
-        :param strings: List of strings to concatenate.
-        :return: Concatenated string that is most similar to the target string.
-        """
-        min_distance = float("inf")
-        best_concatenation = None
-
-        for perm in permutations(strings):
-            concatenated = "".join(perm)
-            distance = editdistance.eval(target, concatenated)
-            if distance < min_distance:
-                min_distance = distance
-                best_concatenation = concatenated
-
-        return best_concatenation
 
 
 def evaluator(module=""):
@@ -328,3 +222,110 @@ def load_image_from_url(url):
     except OSError:
         logger.exception("Error opening image")
         return None
+
+
+class TextEvaluator:
+    """
+    Class to evaluate the text recognition performance of a model using the Character Error Rate (CER)
+    with leveinshtein distance.
+    """
+
+    def __init__(self, ground_truth, predictions):
+        """
+        :param ground_truth: List of ground truth strings.
+        :param predictions: List of predicted strings.
+        """
+        # order predictions to minimize the total edit distance
+        if len(ground_truth) == len(predictions):
+            self.ground_truth = ground_truth
+            self.predictions = self.order_prediction(predictions, ground_truth)
+        else:
+            self.ground_truth = "".join(ground_truth)
+            self.predictions = "".join(predictions)
+
+            # TODO: Takes too long to run
+            # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
+
+    def calculate_cer(self, ground_truth, prediction):
+        """
+        Calculate the Character Error Rate (CER) between a ground truth string and a predicted string.
+
+        :param gt: Ground truth string.
+        :param pred: Predicted string.
+        :return: CER value.
+        """
+        distance = editdistance.eval(ground_truth, prediction)
+
+        if len(ground_truth) > 0:
+            cer = distance / len(ground_truth)
+        elif distance == 0:  # Cover for the case when both strings are empty
+            cer = 0
+        else:  # Cover for the case when ground truth is empty but prediction is not
+            cer = 1
+        return float(cer)
+
+    def evaluate(self):
+        """
+        Evaluate the CER for all ground truth and prediction pairs.
+
+        :return: List of CER values.
+        """
+        cer_values = [
+            self.calculate_cer(gt, pred)
+            for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
+        ]
+        return cer_values
+
+    def average_cer(self):
+        """
+        Calculate the average CER over all ground truth and prediction pairs.
+
+        :return: Average CER value.
+        """
+        cer_values = self.evaluate()
+        avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
+        return avg_cer
+
+    def order_prediction(self, predictions, ground_truth):
+        """
+        Orders predictions to minimize the total edit distance.
+
+        :param predictions: List of predicted text.
+        :param  ground_truth: List of ground truth.
+        :return: Ordered predictions
+        """
+        if len(predictions) != len(ground_truth):
+            return None
+
+        min_distance = float("inf")
+        best_permutation = ground_truth
+
+        for perm in permutations(predictions):
+            total_distance = sum(
+                editdistance.eval(a, b) for a, b in zip(ground_truth, perm)
+            )
+            if total_distance < min_distance:
+                min_distance = total_distance
+                best_permutation = perm
+
+        return list(best_permutation)
+
+    def concatenate_to_match(self, target, strings):
+        """
+        Concatenates a list of strings in an order that makes them as similar as possible to a target string.
+
+        :param target: The target string to match.
+        :param strings: List of strings to concatenate.
+        :return: Concatenated string that is most similar to the target string.
+        """
+        min_distance = float("inf")
+        best_concatenation = None
+
+        for perm in permutations(strings):
+            concatenated = "".join(perm)
+            distance = editdistance.eval(target, concatenated)
+            if distance < min_distance:
+                min_distance = distance
+                best_concatenation = concatenated
+
+        return best_concatenation
