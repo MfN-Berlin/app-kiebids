@@ -50,6 +50,7 @@ def ocr_flow():
             image=preprocessed_image,
             bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
             current_image_name=filename,
+            current_image_index=image_index,
         )
 
         # semantic_labeling.run

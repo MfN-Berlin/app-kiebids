@@ -1,7 +1,5 @@
 from io import BytesIO
 import itertools
-import csv
-import os
 
 import cv2
 import numpy as np
@@ -16,23 +14,11 @@ from kiebids.utils import extract_polygon, resize, get_ground_truth_data
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
-# Fix
-if config.evaluation is True:
-    evaluation_path = os.path.join(config.evaluation_path, config.run_id)
-    os.makedirs(evaluation_path, exist_ok=True)
-    headers = ["image", "avg_CER", "n_gt", "n_pred", "level"]
-    with open(
-        os.path.join(evaluation_path, "text_evaluation.csv"), "w", newline=""
-    ) as f:
-        writer = csv.writer(f)
-        writer.writerow(headers)
-
 
 def evaluator(module=""):
     def decorator(func):
         def wrapper(*args, **kwargs):
             # skip evaluation if not enabled
-            current_image_name = kwargs.get("current_image_name").split(".")[0]
             if not module or not config.evaluation:
                 return func(*args, **kwargs)
 
@@ -73,22 +59,22 @@ def evaluator(module=""):
                     text_evaluator = TextEvaluator(ground_truth, predictions)
                     avg_cer = text_evaluator.average_cer()
                 else:
-                    avg_cer = "no gt found"
-                with open(
-                    os.path.join(evaluation_path, "text_evaluation.csv"),
-                    "a",
-                    newline="",
-                ) as f:
-                    writer = csv.writer(f)
-                    writer.writerow(
-                        [
-                            current_image_name,
-                            avg_cer,
-                            len(ground_truth),
-                            len(predictions),
-                            "region",  # Only region level evaluation is supported for now
-                        ]
-                    )
+                    return texts_and_bb
+                evaluation_writer.add_scalar(
+                    "Text_recognition/_average_CER",
+                    avg_cer,
+                    kwargs.get("current_image_index"),
+                )
+                evaluation_writer.add_scalar(
+                    "Text_recognition/_n_gt",
+                    len(ground_truth),
+                    kwargs.get("current_image_index"),
+                )
+                evaluation_writer.add_scalar(
+                    "Text_recognition/_n_pred",
+                    len(predictions),
+                    kwargs.get("current_image_index"),
+                )
                 return texts_and_bb
 
             elif module == "semantic_labeling":
@@ -164,7 +150,7 @@ def compare_layouts(
     # average ious
     avg_iou = np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
     logger.debug(f"average iou: {avg_iou}")
-    evaluation_writer.add_scalar("_average_ious", avg_iou, image_index)
+    evaluation_writer.add_scalar("Layout_analysis/_average_ious", avg_iou, image_index)
 
 
 def create_polygon_mask(polygon_points, image_shape):

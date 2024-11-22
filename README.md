@@ -26,6 +26,11 @@ The pipeline can be run in three different modes:
 3. Run the workflow.
 4. Inspect the results – PAGE XML files by default, images when in debug mode.
 
+### Evaluation
+To view evaluation tensorboard, run:
+```bash
+tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+```
 
 ## Installation
 
