@@ -17,3 +17,7 @@ segment-anything-py==1.0.1
 tensorflow==2.17.0
 easyocr==1.7.2
 fiftyone==1.0.1
+pydantic==2.9.2
+pydantic-extra-types==2.10.0
+pydantic-settings==2.6.1
+pydantic_core==2.23.4
