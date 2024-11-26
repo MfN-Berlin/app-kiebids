@@ -23,3 +23,4 @@ log_level: INFO  # DEBUG
 
 fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
+disable_fiftyone: true
