@@ -1,19 +1,19 @@
 #!/bin/bash
 
 usage() {
-    echo "Usage: $0 [--serve-deployment] [--stop-prefect] [--help]"
+    echo "Usage: $0 [--serve-deployment] [--continue-prefect] [--help]"
     echo
     echo "Options:"
     echo "  --serve-deployment    serve the prefect deployment"
-    echo "  --stop-prefect     stop the prefect server after running the flow"
+    echo "  --continue-prefect     continue the prefect server after running the flow"
     echo "  --help        Display this help message."
     exit 1
 }
 serve_deployment=0
-stop_prefect=0
+continue_prefect=0
 
 # Parse command-line options using getopt
-OPTIONS=$(getopt -o "" --long "serve-deployment,stop-prefect,help" -- "$@")
+OPTIONS=$(getopt -o "" --long "serve-deployment,continue-prefect,help" -- "$@")
 if [ $? -ne 0 ]; then
     usage
 fi
@@ -27,8 +27,8 @@ while true; do
             serve_deployment=1
             shift
             ;;
-        --stop-prefect)
-            stop_prefect=1
+        --continue-prefect)
+            continue_prefect=1
             shift
             ;;
         --help)
@@ -50,17 +50,20 @@ export PYTHONPATH=$PYTHONPATH:.
 source .env
 
 if [ -z "$PREFECT_PORT" ]; then
-    echo "PREFECT_PORT is not set. please define PREFECT_PORT in .env file"
-    exit 1
+    echo "defaulting PREFECT_PORT to 4200"
+    PREFECT_PORT=4200
 fi
 
 export PREFECT_API_URL=http://localhost:$PREFECT_PORT/api
 
 # Function to gracefully stop the first process
 stop_prefect() {
-    echo "Stopping prefect process..."
-    # kill $PREFECT_PROCESS_PID  # Kill the first process using its PID
-    kill $(lsof -i :$PREFECT_PORT | awk 'NR>1 {print $2}')
+    PREFECT_PID=$(lsof -i :$PREFECT_PORT | awk 'NR>1 {print $2}')
+
+    if [ -n "$PREFECT_PID" ]; then
+        echo "Stopping prefect process..."
+        kill $PREFECT_PID
+    fi
     exit 0
 }
 
@@ -73,8 +76,6 @@ PYTHON_PATH=$(which /usr/bin/env python)
 # Check if port $PREFECT_PORT is in use
 if ! lsof -i :$PREFECT_PORT > /dev/null; then
     prefect server start --port $PREFECT_PORT &
-    # Capturing PID of prefect server
-    PREFECT_PROCESS_PID=$!
 
     # wait for prefect server to start
     sleep 5
@@ -85,7 +86,7 @@ if [ $serve_deployment -eq 1 ]; then
     $PYTHON_PATH kiebids/ocr_flow.py --serve-deployment
 else
     $PYTHON_PATH kiebids/ocr_flow.py
-    if [ $stop_prefect -eq 1 ]; then
+    if [ $continue_prefect -eq 0 ]; then
         stop_prefect
     fi
 fi
