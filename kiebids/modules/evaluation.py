@@ -1,15 +1,15 @@
-from io import BytesIO
 import itertools
+from io import BytesIO
+from itertools import permutations
 
 import cv2
+import editdistance
 import numpy as np
 import requests
-import editdistance
-from itertools import permutations
 from PIL import Image
 
 from kiebids import config, evaluation_writer, get_logger, pipeline_config
-from kiebids.utils import extract_polygon, resize, get_ground_truth_data
+from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)

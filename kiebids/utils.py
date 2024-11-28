@@ -1,12 +1,12 @@
 import json
 import os
 from pathlib import Path
-from lxml import etree
 
 import cv2
 import fiftyone as fo
 import fiftyone.core.labels as fol
 import numpy as np
+from lxml import etree
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
