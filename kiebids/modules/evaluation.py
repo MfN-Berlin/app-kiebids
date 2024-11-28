@@ -19,7 +19,7 @@ def evaluator(module=""):
     def decorator(func):
         def wrapper(*args, **kwargs):
             # skip evaluation if not enabled
-            if not module or not config.evaluation:
+            if not module or not evaluation_writer:
                 return func(*args, **kwargs)
 
             if module == "layout_analysis":
@@ -224,7 +224,7 @@ class TextEvaluator:
         # order predictions to minimize the total edit distance
         if len(ground_truth) == len(predictions):
             self.ground_truth = ground_truth
-            self.predictions = self.order_prediction(predictions, ground_truth)
+            self.predictions = self.order_predictions(predictions, ground_truth)
         else:
             self.ground_truth = "".join(ground_truth)
             self.predictions = "".join(predictions)
@@ -272,7 +272,7 @@ class TextEvaluator:
         avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
         return avg_cer
 
-    def order_prediction(self, predictions, ground_truth):
+    def order_predictions(self, predictions, ground_truth):
         """
         Orders predictions to minimize the total edit distance.
 
