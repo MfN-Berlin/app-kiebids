@@ -161,9 +161,17 @@ cython_debug/
 .DS_Store
 
 # Project specific
-data/
+# data/
+data/models/*
+data/debug/
+data/images/*
+data/output/*
+models/*
+!0071__MB_I_0034_label_00001.JPG
+
 weights/
 
 prefect-data
-data
 **/__pycache__/
+
+!.gitkeep
