@@ -8,12 +8,18 @@ from prefect.logging import get_logger
 
 load_dotenv()
 
+# if not set then default to prd
+environment = os.getenv("ENVIRONMENT", "prd")
 with open(
-    os.path.join(os.path.dirname(__file__), "../configs/workflow_config.yaml")
+    os.path.join(
+        os.path.dirname(__file__), f"../configs/workflow_{environment}_config.yaml"
+    )
 ) as f:
     config = DotMap(yaml.safe_load(f))
 
-with open(os.path.join(os.path.dirname(__file__), "../configs/ocr_config.yaml")) as f:
+with open(
+    os.path.join(os.path.dirname(__file__), f"../configs/ocr_{environment}_config.yaml")
+) as f:
     pipeline_config = DotMap(yaml.safe_load(f))
 
 current_dataset = None

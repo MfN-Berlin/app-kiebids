@@ -161,11 +161,12 @@ cython_debug/
 .DS_Store
 
 # Project specific
-# data/
 data/models/*
 data/debug/
 data/images/*
 data/output/*
+data/evaluation/*
+data/tmp
 models/*
 !0071__MB_I_0034_label_00001.JPG
 
