@@ -1,5 +1,6 @@
 pipeline_name: "KIEBIDS pipeline"
 deployment_name: "KIEBIDS deployment"
+
 preprocessing:
   gray: false
   smooth: false

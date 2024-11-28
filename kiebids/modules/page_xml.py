@@ -1,9 +1,9 @@
 import os
-
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from pathlib import Path
+
 from prefect import task
-import xml.etree.ElementTree as ET
 
 
 def create_page_content(filename: str, bbox_text: list[dict]):
