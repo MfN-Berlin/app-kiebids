@@ -4,6 +4,7 @@ import torch
 from prefect import task
 
 from kiebids import config, get_logger, pipeline_config
+from kiebids.modules.evaluation import evaluator
 from kiebids.utils import crop_image, debug_writer
 
 module = __name__.split(".")[-1]
@@ -37,6 +38,7 @@ class TextRecognizer:
 
     @task(name=module)
     @debug_writer(debug_path, module=module)
+    @evaluator(module=module)
     def run(self, image: np.array, bounding_boxes: list, **kwargs):
         """
         Returns text for each bounding box in image

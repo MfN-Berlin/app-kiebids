@@ -48,6 +48,11 @@ Behaviour:
 3. Run the workflow.
 4. Inspect the results – PAGE XML files by default, images when in debug mode.
 
+### Evaluation
+To view evaluation tensorboard, run:
+```bash
+tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+```
 
 ## Installation
 
@@ -140,7 +145,14 @@ Run pytests:
 pytest -s
 ```
 
-## Debugging
+## Development Mode
+### Config behaviour
+Inside the your local `.env` file (see [.example.env](.example.env)) set the following two variables to ensure that the development configs are initialized with paths to our shared directories.
+```
+OCR_CONFIG="ocr_dev_config.yaml"
+WORKFLOW_CONFIG="workflow_dev_config.yaml"
+```
+If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
 
 ### Observe debugging results in the FiftyOne app
 

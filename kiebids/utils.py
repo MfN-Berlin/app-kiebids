@@ -6,10 +6,11 @@ import cv2
 import fiftyone as fo
 import fiftyone.core.labels as fol
 import numpy as np
+from lxml import etree
 from PIL import ImageDraw, ImageFont
 from prefect.logging import get_logger
 
-from kiebids import config, current_dataset
+from kiebids import config, fiftyone_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -38,13 +39,13 @@ def debug_writer(debug_path="", module=""):
 
             if module == "preprocessing":
                 # add original image to fiftyone dataset
-                if current_dataset is not None:
+                if fiftyone_dataset is not None:
                     sample = fo.Sample(
                         filepath=f"{Path(config.image_path) / current_image}",
                         tags=["original"],
                     )
                     sample["image_name"] = current_image
-                    current_dataset.add_sample(sample)
+                    fiftyone_dataset.add_sample(sample)
 
                 image = func(*args, **kwargs)
 
@@ -53,12 +54,12 @@ def debug_writer(debug_path="", module=""):
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
                 # add preprocessed image to fiftyone dataset
-                if current_dataset is not None:
+                if fiftyone_dataset is not None:
                     sample = fo.Sample(
                         filepath=f"{image_output_path}", tags=["preprocessed"]
                     )
                     sample["image_name"] = current_image
-                    current_dataset.add_sample(sample)
+                    fiftyone_dataset.add_sample(sample)
 
                 return image
             elif module == "layout_analysis":
@@ -72,7 +73,7 @@ def debug_writer(debug_path="", module=""):
                     image, label_masks, current_image.split(".")[0], debug_path
                 )
 
-                if current_dataset is not None:
+                if fiftyone_dataset is not None:
                     # Adding detections to the dataset
                     image_output_path = Path(config.image_path) / current_image
                     sample = fo.Sample(
@@ -88,7 +89,7 @@ def debug_writer(debug_path="", module=""):
                             for d in label_masks
                         ]
                     )
-                    current_dataset.add_sample(sample)
+                    fiftyone_dataset.add_sample(sample)
 
                 return label_masks
             elif module == "text_recognition":
@@ -135,7 +136,7 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
         output_path = os.path.join(output_dir, f"{image_name}_{i}.png")
         cv2.imwrite(output_path, cropped_image)
 
-        logger.info("Saved bounding box image to %s", output_path)
+        logger.debug("Saved bounding box image to %s", output_path)
 
 
 def draw_polygon_on_image(image, coordinates, i=-1):
@@ -170,7 +171,7 @@ def extract_polygon(coordinates):
 
 
 def resize(img, max_size):
-    h, w, _ = img.shape
+    h, w = img.shape[:2]
     if max(w, h) > max_size:
         aspect_ratio = h / w
         if w >= h:
@@ -179,3 +180,92 @@ def resize(img, max_size):
             resized_img = cv2.resize(img, (int(max_size * aspect_ratio), max_size))
         return resized_img
     return img
+
+
+def read_xml(file_path: str) -> dict:
+    """
+    Parses an XML file and extracts information about pages, text regions, and text lines.
+    Args:
+        file_path (str): The path to the XML file to be parsed.
+    Returns:
+        dict: A dictionary containing the extracted information with the following structure:
+            {
+                "image_filename": str,  # The filename of the image associated with the page
+                "image_width": str,     # The width of the image
+                "image_height": str,    # The height of the image
+                "text_regions": [       # A list of text regions
+                    {
+                        "id": str,           # The ID of the text region
+                        "orientation": str,  # The orientation of the text region
+                        "coords": str,       # The coordinates of the text region
+                        "text": str,         # The text content of the whole text region
+                        "text_lines": [      # A list of text lines within the text region
+                            {
+                                "id": str,        # The ID of the text line
+                                "coords": str,    # The coordinates of the text line
+                                "baseline": str,  # The baseline coordinates of the text line
+                                "text": str       # The text content of the text line
+                            }
+                        ]
+                    }
+                ]
+            }
+    """
+
+    tree = etree.parse(file_path)  # noqa: S320  # Using `lxml` to parse untrusted data is known to be vulnerable to XML attacks
+    ns = {"ns": tree.getroot().nsmap.get(None, "")}
+
+    page = tree.find(".//ns:Page", namespaces=ns)
+    output = {
+        "image_filename": page.get("imageFilename"),
+        "image_width": page.get("imageWidth"),
+        "image_height": page.get("imageHeight"),
+        "text_regions": [],
+    }
+
+    for region in page.findall(".//ns:TextRegion", namespaces=ns):
+        text_region = {
+            "id": region.get("id"),
+            "orientation": region.get("orientation"),
+            "coords": region.find(".//ns:Coords", namespaces=ns).get("points"),
+            "text": (
+                region.findall(".//ns:TextEquiv", namespaces=ns)[-1]
+                .find(".//ns:Unicode", namespaces=ns)
+                .text
+                or ""
+            ),
+            "text_lines": [],
+        }
+
+        for line in region.findall(".//ns:TextLine", namespaces=ns):
+            text_region["text_lines"].append(
+                {
+                    "id": line.get("id"),
+                    "coords": line.find(".//ns:Coords", namespaces=ns).get("points"),
+                    "baseline": line.find(".//ns:Baseline", namespaces=ns).get(
+                        "points"
+                    ),
+                    "text": (
+                        line.find(".//ns:TextEquiv", namespaces=ns)
+                        .find(".//ns:Unicode", namespaces=ns)
+                        .text
+                        or ""
+                    ),
+                }
+            )
+
+        output["text_regions"].append(text_region)
+
+    return output
+
+
+def get_ground_truth_data(filename):
+    xml_file = filename.replace(filename.split(".")[-1], "xml")
+
+    # check if ground truth is available
+    if xml_file in os.listdir(config.xml_path):
+        file_path = os.path.join(config.xml_path, xml_file)
+        return read_xml(file_path)
+
+    logger.warning(f"GT File not found for {filename}")
+    return None
