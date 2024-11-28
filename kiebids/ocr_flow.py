@@ -8,11 +8,11 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, current_dataset, get_logger, pipeline_config
+from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
 from kiebids.modules.layout_analysis import LayoutAnalyzer
+from kiebids.modules.page_xml import write_page_xml
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
-from kiebids.modules.page_xml import write_page_xml
 
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
@@ -23,11 +23,15 @@ def ocr_flow():
     os.makedirs(config.output_path, exist_ok=True)
 
     # init objects/models for every stage
+    logger.info("Loading Layout analysis Model...")
     layout_analyzer = LayoutAnalyzer()
+    logger.info("Loading Text recognition Model...")
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
-    for filename in tqdm(os.listdir(config.image_path)[: config.max_images]):
+    for image_index, filename in enumerate(
+        tqdm(os.listdir(config.image_path)[: config.max_images])
+    ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
@@ -38,14 +42,16 @@ def ocr_flow():
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
         bb_labels = layout_analyzer.run(
-            image=preprocessed_image, current_image_name=filename
+            image=preprocessed_image,
+            current_image_name=filename,
+            current_image_index=image_index,
         )
-
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         results = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,
             bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
             current_image_name=filename,
+            current_image_index=image_index,
         )
 
         # semantic_labeling.run
@@ -89,5 +95,5 @@ if __name__ == "__main__":
             ocr_flow()
 
     if not config.disable_fiftyone:
-        fiftyone_session = fo.launch_app(current_dataset)
+        fiftyone_session = fo.launch_app(fiftyone_dataset)
         fiftyone_session.wait()

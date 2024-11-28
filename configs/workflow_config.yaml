@@ -5,12 +5,11 @@ image_path: data/images
 
 # Path to output directories
 output_path: data/output
-eval_path: data/evaluation
 
-# Path to evaluation data
-evaluation_dataset:
-  image_path: ""
-  xml_path: ""
+# Evaluation settings
+evaluation: False
+evaluation_path: data/evaluation
+xml_path: ""
 
 # Debug configs
 mode:  # debug
