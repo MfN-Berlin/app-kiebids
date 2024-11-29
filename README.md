@@ -99,22 +99,8 @@ python kiebids/ocr_flow.py
 Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
 See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
 
-TODO: Add instructions for installing `docker compose`.
-
-**Start the application by running the following command in your terminal:**
-
-```bash
-docker compose up
-```
-
-**You can now access the frontend at [http://localhost:4200](http://localhost:4200).**
-
-**To stop the application:**
-```bash
-docker compose stop  # stops the application
-docker compose down  # stops the application and removes the containers
-```
-
+Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
+> The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
 
 ## Testing
 
