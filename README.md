@@ -37,7 +37,7 @@ The pipeline can be run in three different modes:
 Behaviour:
 - This will trigger a deployment run
 - You can follow the progress in your terminal for more detailed logs.
-- If the `mode` flag is set to `debug` inside [workflow_config.yaml](./configs/workflow_config.yaml) the produced results of each respective module can be inspected inside the `data/debug` directory.
+- If the `mode` flag is set to `debug` inside [workflow_config.yaml](./configs/workflow_config.yaml) the produced intermediate results of each respective module can be inspected inside the `data/debug` directory.
 
 ### Run ocr flow locally
 1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
