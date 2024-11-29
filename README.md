@@ -24,17 +24,15 @@ The pipeline can be run in three different modes:
 > **Tested on macos with M1 Chip and Docker Desktop v4.35.1**
 
 1. [Download necessary SAM model](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) and put it into [./models](./models/) directory.
-<!-- only sam model downloaden? -->
-<!-- TODO put one image as test image -->
-2. One test image is available inside `data/images` directory. You are free to add more images into this directory. As for now only 10 images will be processed. If you would like to process more just change the `max_images` parameter inside [docker_workflow_config.yaml](./configs/docker_workflow_config.yaml)
-3. Run the containers to serve prefect and workflow (prefect deployments):
+1. One test image is available inside `data/images` directory. You are free to add more images into this directory. As for now only 10 images will be processed. If you would like to process more just change the `max_images` parameter inside [workflow_config.yaml](./configs/workflow_config.yaml)
+2. Run the containers to serve prefect and workflow (prefect deployments):
     ```
     docker compose -f docker/docker-compose.yml up --build
     ```
     At first execution this will download further necessary models.
-4. Wait until the `kiebids_ocr` container started (indicated by message `You can also run your flow via the Prefect UI ...`) and open the prefect UI in your browser `http://0.0.0.0:4200/`
-5. On the left sidebar click on `Deployments` and select the `KIEBIDS deployment`
-6. Click upper right button `Run` and select `Quick run`
+3. Wait until the `kiebids_ocr` container started (indicated by message `You can also run your flow via the Prefect UI ...`) and open the prefect UI in your browser `http://0.0.0.0:4200/`
+4. On the left sidebar click on `Deployments` and select the `KIEBIDS deployment`
+5. Click upper right button `Run` and select `Quick run`
 
 Behaviour:
 - This will trigger a deployment run
