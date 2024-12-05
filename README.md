@@ -22,22 +22,17 @@ The pipeline can be run in three different modes:
 
 1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
    e.g., set `image_path` to the path of your input images, etc.
-2. Follow the installation instructions for your preferred method.
-3. Run the workflow.
-4. Inspect the results – PAGE XML files by default, images when in debug mode.
-
-### Evaluation
-To view evaluation tensorboard, run:
-```bash
-tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
-```
+2. Make a folder called `models` in the root directory (next to `data` etc.) and put the [SAM](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) model there.
+3. Follow the [installation instructions](#installation) for your preferred method.
+4. Run the workflow.
+5. Inspect the results – PAGE XML files by default, images when in debug mode.
 
 ## Installation
 
 There are two ways to run this application:
 
-1. from the command line in a local Python environment that will run the workflow automatically.
-2. as dockerized application which allows you to start workflow runs from the Prefect frontend.
+1. From the command line in a local Python environment that will run the workflow automatically.
+2. As a dockerized application which allows you to start workflow runs from the Prefect frontend.
 
 The dockerized variant is preferred in the long run but is not yet fully functional.
 For the time being, use the local variant.
@@ -102,6 +97,12 @@ See [docker installation guide](https://docs.docker.com/get-docker/) for further
 Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
 > The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
 
+## Evaluation
+To view evaluation tensorboard, run:
+```bash
+tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+```
+
 ## Testing
 
 Run pytests:
@@ -110,11 +111,13 @@ pytest -s
 ```
 
 ## Development Mode
+
 ### Config behaviour
+
 Inside the your local `.env` file (see [.example.env](.example.env)) set the following two variables to ensure that the development configs are initialized with paths to our shared directories.
 ```
-OCR_CONFIG="ocr_dev_config.yaml"
-WORKFLOW_CONFIG="workflow_dev_config.yaml"
+OCR_CONFIG="dev_ocr_config.yaml"
+WORKFLOW_CONFIG="dev_workflow_config.yaml"
 ```
 If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
 
