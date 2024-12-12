@@ -108,10 +108,12 @@ def debug_writer(debug_path="", module=""):
 
 
 def crop_image(image: np.array, bounding_box: list[int]):
-    """get the cropped image from bounding boxes.
-    Parameters:
-        image: he original image as a numpy array (height, width, 3)
-        bounding_box: coordinates to crop [x_min,y_min,width,height]
+    """
+    Get the cropped image from bounding boxes.
+
+    Args:
+        image: the original image as a numpy array (height, width, 3)
+        bounding_box: coordinates to crop [x_min, y_min, width,height]
     """
     x, y, w, h = bounding_box
     return image[y : y + h, x : x + w]
@@ -122,9 +124,9 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
     Plot and save individual images for each mask, using the bounding box to crop the image.
 
     Args:
-    image (numpy.ndarray): The original image as a numpy array (height, width, 3).
-    masks (list): A list of dictionaries, each containing a 'bbox' key with [x, y, width, height].
-    output_dir (str): Directory to save the output images.
+        image (numpy.ndarray): The original image as a numpy array (height, width, 3).
+        masks (list): A list of dictionaries, each containing a 'bbox' key with [x, y, width, height].
+        output_dir (str): Directory to save the output images.
     """
 
     for i, mask in enumerate(masks, 1):
@@ -156,9 +158,7 @@ def draw_polygon_on_image(image, coordinates, i=-1):
 
 
 def clear_fiftyone():
-    """
-    Clear all datasets from the FiftyOne database.
-    """
+    """Clear all datasets from the FiftyOne database."""
     datasets = fo.list_datasets()
 
     for dataset_name in datasets:
@@ -184,8 +184,10 @@ def resize(img, max_size):
 def read_xml(file_path: str) -> dict:
     """
     Parses an XML file and extracts information about pages, text regions, and text lines.
+
     Args:
         file_path (str): The path to the XML file to be parsed.
+
     Returns:
         dict: A dictionary containing the extracted information with the following structure:
             {

@@ -46,6 +46,7 @@ def ocr_flow():
             current_image_name=filename,
             current_image_index=image_index,
         )
+
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
         results = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,

@@ -5,12 +5,11 @@ image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/i
 
 # Path to output directories
 output_path: data/output
-eval_path: data/evaluation
 
-# Path to evaluation data
-evaluation_dataset:
-  image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
-  xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
+# Evaluation settings
+evaluation: False
+evaluation_path: data/evaluation
+xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
 
 # Debug configs
 mode: debug

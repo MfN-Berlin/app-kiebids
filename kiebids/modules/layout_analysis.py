@@ -25,7 +25,9 @@ class LayoutAnalyzer:
     def run(self, image, **kwargs):  # pylint: disable=unused-argument
         masks = self.mask_generator.generate(image)
         for mask in masks:
-            bbox = mask["bbox"]
+            # ensure bbox coords are ints; leider the model sometimes returns floats
+            bbox = [int(coord) for coord in mask["bbox"]]
+            mask["bbox"] = bbox
             height, width = image.shape[:2]
             mask["normalized_bbox"] = [
                 bbox[0] / width,
