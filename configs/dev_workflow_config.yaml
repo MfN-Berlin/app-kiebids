@@ -14,7 +14,7 @@ xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/pag
 # Debug configs
 mode: debug
 debug_path: data/debug
-max_images: # 5  # number of images to process, useful for debugging
+max_images: 5  # number of images to process, useful for debugging
 
 log_level: DEBUG
 
