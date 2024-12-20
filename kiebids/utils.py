@@ -94,11 +94,16 @@ def debug_writer(debug_path="", module=""):
             elif module == "text_recognition":
                 texts = func(*args, **kwargs)
 
+                output = {
+                    "image_index": kwargs.get("current_image_index"),
+                    "regions": texts,
+                }
+
                 output_path = os.path.join(
                     debug_path, current_image.split(".")[0] + ".json"
                 )
                 with open(output_path, "w") as f:
-                    json.dump(texts, f, ensure_ascii=False, indent=4)
+                    json.dump(output, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
                 return texts
 
