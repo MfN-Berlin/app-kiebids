@@ -34,7 +34,7 @@ class TextRecognizer:
             paragraph=True,
             detail=0,
         )
-        return texts[0] if texts else ""
+        return " ".join(texts) if texts else ""
 
     @task(name=module)
     @debug_writer(debug_path, module=module)
