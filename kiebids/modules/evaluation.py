@@ -226,8 +226,12 @@ class TextEvaluator:
             self.ground_truth = ground_truth
             self.predictions = self.order_predictions(predictions, ground_truth)
         else:
-            self.ground_truth = "".join(ground_truth)
-            self.predictions = "".join(predictions)
+            # if the number of predictions does not match the number of ground truth strings,
+            # we don't evaluate the CER
+            logger.info(
+                "Number of predictions does not match number of ground truth strings."
+            )
+            self.ground_truth = None
 
             # TODO: Takes too long to run
             # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
@@ -256,6 +260,9 @@ class TextEvaluator:
 
         :return: List of CER values.
         """
+        if not self.ground_truth:
+            return np.nan
+
         cer_values = [
             self.calculate_cer(gt, pred)
             for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
@@ -268,6 +275,10 @@ class TextEvaluator:
 
         :return: Average CER value.
         """
+        # If the number of predictions does not match the number of ground truth strings,
+        # we don't evaluate the CER
+        if not self.ground_truth:
+            return np.nan
         cer_values = self.evaluate()
         avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
         return avg_cer
@@ -295,23 +306,3 @@ class TextEvaluator:
                 best_permutation = perm
 
         return list(best_permutation)
-
-    def concatenate_to_match(self, target, strings):
-        """
-        Concatenates a list of strings in an order that makes them as similar as possible to a target string.
-
-        :param target: The target string to match.
-        :param strings: List of strings to concatenate.
-        :return: Concatenated string that is most similar to the target string.
-        """
-        min_distance = float("inf")
-        best_concatenation = None
-
-        for perm in permutations(strings):
-            concatenated = "".join(perm)
-            distance = editdistance.eval(target, concatenated)
-            if distance < min_distance:
-                min_distance = distance
-                best_concatenation = concatenated
-
-        return best_concatenation
