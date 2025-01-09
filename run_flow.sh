@@ -12,16 +12,8 @@ usage() {
 serve_deployment=0
 continue_prefect=0
 
-# Parse command-line options using getopt
-OPTIONS=$(getopt -o "" --long "serve-deployment,continue-prefect,help" -- "$@")
-if [ $? -ne 0 ]; then
-    usage
-fi
-
-eval set -- "$OPTIONS"
-
-# Process the arguments
-while true; do
+# Parse and process command-line options manually for cross-platform compatibility
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --serve-deployment)
             serve_deployment=1
@@ -39,8 +31,7 @@ while true; do
             break
             ;;
         *)
-            echo "Error: Invalid option"
-            echo $1
+            echo "Error: Invalid option: $1"
             usage
             ;;
     esac
