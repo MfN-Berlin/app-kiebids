@@ -1,7 +1,9 @@
 import easyocr
 import numpy as np
 import torch
+from PIL import Image
 from prefect import task
+from transformers import AutoModelForCausalLM
 
 from kiebids import config, get_logger, pipeline_config
 from kiebids.modules.evaluation import evaluator
@@ -60,3 +62,31 @@ class TextRecognizer:
             output.append({"bbox": bounding_box, "text": text})
 
         return output
+
+
+class Moondream(TextRecognizer):
+    """
+    Moondream 1.9B 2025-01-09 Release
+    Huggingface: https://huggingface.co/vikhyatk/moondream2
+    Documentation: https://docs.moondream.ai/
+    Blog post: https://moondream.ai/blog/introducing-a-new-moondream-1-9b-and-gpu-support
+    """
+
+    def __init__(self):
+        gpu = torch.cuda.is_available()
+        self.model = AutoModelForCausalLM.from_pretrained(
+            "vikhyatk/moondream2",
+            revision="2025-01-09",
+            trust_remote_code=True,
+            device_map={"": "cuda"} if gpu else None,
+        )
+        self.prompt = """
+            Transcribe all printed and handwritten text on this label of a specimen
+            from a collection of a museum for natural history, being especially
+            careful to preserve any scientific names, dates, and location information.
+            Maintain the original formatting and line breaks. Most text is in German.
+            """
+
+    def get_text(self, image: np.array):
+        pil_image = Image.fromarray(image)
+        return self.model.query(pil_image, self.prompt)["answer"]

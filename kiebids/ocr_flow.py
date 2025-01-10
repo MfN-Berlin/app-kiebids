@@ -1,7 +1,6 @@
 import argparse
 import os
 
-import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
@@ -11,7 +10,10 @@ from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
 from kiebids.modules.preprocessing import preprocessing
-from kiebids.modules.text_recognition import TextRecognizer
+from kiebids.modules.text_recognition import Moondream
+
+# commented out for now to avoid tensorflow loading
+# from kiebids.modules.semantic_labeling import semantic_labeling
 
 # from kiebids.modules.semantic_labeling import semantic_labeling
 
@@ -27,7 +29,7 @@ def ocr_flow():
     logger.info("Loading Layout analysis Model...")
     layout_analyzer = LayoutAnalyzer()
     logger.info("Loading Text recognition Model...")
-    text_recognizer = TextRecognizer()
+    text_recognizer = Moondream()
 
     # Process images sequentially
     for image_index, filename in enumerate(
@@ -97,5 +99,7 @@ if __name__ == "__main__":
             ocr_flow()
 
     if not config.disable_fiftyone:
+        import fiftyone as fo
+
         fiftyone_session = fo.launch_app(fiftyone_dataset)
         fiftyone_session.wait()
