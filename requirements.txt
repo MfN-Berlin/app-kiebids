@@ -23,8 +23,6 @@ pyvips==2.2.3
 requests==2.32.3
 ruff==0.8.6
 segment-anything-py==1.0.1
-
-
 tensorboardX==2.6.2.2
 torch==2.4.1
 tqdm==4.66.5
