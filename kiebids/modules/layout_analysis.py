@@ -38,7 +38,7 @@ class LayoutAnalyzer:
                 bbox[3] / height,
             ]
 
-        label_masks = self.filter_masks(masks, filename=kwargs["current_image_name"])
+        label_masks = self.filter_masks(masks)
 
         return label_masks
 
@@ -61,43 +61,42 @@ class LayoutAnalyzer:
         )
         return mask_generator
 
-    def filter_masks(self, masks, filename="test"):
+    def filter_masks(self, masks):
         """Sort masks by area in descending order and keep only those that mask labels :)"""
         # If there is only one mask, return it
         if len(masks) == 1:
             return masks
 
+        kernel = np.ones(
+            (pipeline_config.closing_kernel, pipeline_config.closing_kernel), np.uint8
+        )
         sorted_masks = sorted(masks, key=(lambda x: x["area"]), reverse=True)
 
         # Keep only masks that cover more than 1% of the image
         label_masks = []
         total_area = sorted_masks[0]["segmentation"].size
-        for i, mask in enumerate(sorted_masks):
+        for mask in sorted_masks:
             area = mask["area"]
 
             # Filter by areas that cover more than 1% of the image
             if (area / total_area) > 0.01:
-                # Filter by areas where the segmentation mask covers most of the bbox area
                 [x, y, w, h] = mask["bbox"]
                 bbox_area = w * h
 
                 binary_mask = np.array(mask["segmentation"].copy() * 1, dtype=np.uint8)
+
+                # Closing little holes in mask
+                binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
+
                 contours, hierarchy = cv2.findContours(
                     binary_mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
                 )
                 holes_present = any(
                     hierarchy[0][i][3] != -1 for i in range(len(contours))
                 )
-                # excluding masks with holes and differences in bb and masks
-                if (area / bbox_area) > 0.9 and not holes_present:
-                    if debug_path:
-                        cv2.rectangle(
-                            binary_mask, (x, y), (x + w, y + h), 255, thickness=3
-                        )
-                        cv2.imwrite(
-                            f"data/tmp/masks/{filename}_mask{i}.jpg", binary_mask * 100
-                        )
 
+                # excluding masks with holes and masks with 10% differences to bb
+                if (area / bbox_area) > 0.9 and not holes_present:
                     label_masks.append(mask)
 
         if label_masks == []:

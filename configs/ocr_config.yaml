@@ -21,6 +21,7 @@ layout_analysis:
   crop_n_layers: 0
   min_mask_region_area: 100
   output_mode: "binary_mask"  # "uncompressed_rle
+  closing_kernel: 20
 
 text_recognition:  # easyocr module
   language: 'de'
