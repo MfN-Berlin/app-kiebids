@@ -10,7 +10,6 @@ lxml==5.3.0
 numpy==2.2.1
 opencv_python==4.10.0.84
 opencv_python_headless==4.10.0.84
-ruff==0.8.6
 Pillow==11.1.0
 pydantic==2.9.2
 pydantic-extra-types==2.10.0
@@ -22,7 +21,7 @@ python-dotenv==1.0.1
 PyYAML==6.0.2
 pyvips==2.2.3
 requests==2.32.3
-ruff==0.7.2
+ruff==0.8.6
 segment-anything-py==1.0.1
 
 
