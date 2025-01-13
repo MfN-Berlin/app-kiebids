@@ -68,7 +68,7 @@ class LayoutAnalyzer:
             return masks
 
         kernel = np.ones(
-            (pipeline_config.closing_kernel, pipeline_config.closing_kernel), np.uint8
+            (module_config.closing_kernel, module_config.closing_kernel), np.uint8
         )
         sorted_masks = sorted(masks, key=(lambda x: x["area"]), reverse=True)
 

@@ -49,7 +49,9 @@ def debug_writer(debug_path="", module=""):
 
                 image = func(*args, **kwargs)
 
-                image_output_path = Path(debug_path) / current_image
+                # ensure jpg
+                filename = f"{current_image.split('.')[0]}.jpg"
+                image_output_path = Path(debug_path) / filename
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
@@ -67,10 +69,21 @@ def debug_writer(debug_path="", module=""):
 
                 image = kwargs.get("image")
 
-                # TODO are the crops still needed somewhere?
-                crop_and_save_detections(
-                    image, label_masks, current_image.split(".")[0], debug_path
-                )
+                filename = current_image.split(".")[0]
+                crop_and_save_detections(image, label_masks, filename, debug_path)
+
+                mask_path = Path(debug_path) / "masks"
+                os.makedirs(mask_path, exist_ok=True)
+                for i, mask in enumerate(label_masks):
+                    [x, y, w, h] = mask["bbox"]
+                    binary_mask = np.array(
+                        mask["segmentation"].copy() * 1, dtype=np.uint8
+                    )
+
+                    cv2.rectangle(binary_mask, (x, y), (x + w, y + h), 255, thickness=3)
+                    cv2.imwrite(
+                        f"{mask_path}/{filename}_mask{i}.jpg", binary_mask * 100
+                    )
 
                 if fiftyone_dataset is not None:
                     # Adding detections to the dataset
