@@ -2,17 +2,18 @@ import argparse
 import os
 
 import fiftyone as fo
-
-# commented out for now to avoid tensorflow loading
-# from modules.semantic_labeling import semantic_labeling
 from prefect import flow
 from tqdm import tqdm
 
 from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
+
+# from kiebids.modules.entity_linking import entity_linking
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.text_recognition import TextRecognizer
+
+# from kiebids.modules.semantic_labeling import semantic_labeling
 
 pipeline_name = pipeline_config.pipeline_name
 logger = get_logger(pipeline_name)
