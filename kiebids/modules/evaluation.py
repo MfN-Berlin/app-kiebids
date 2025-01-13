@@ -8,7 +8,13 @@ import numpy as np
 import requests
 from PIL import Image
 
-from kiebids import config, evaluation_writer, get_logger, pipeline_config
+from kiebids import (
+    config,
+    evaluation_writer,
+    event_accumulator,
+    get_logger,
+    pipeline_config,
+)
 from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
@@ -59,7 +65,12 @@ def evaluator(module=""):
                     text_evaluator = TextEvaluator(ground_truth, predictions)
                     avg_cer = text_evaluator.average_cer()
                 else:
+                    logger.warning(
+                        "No ground truth found for image: {}",
+                        kwargs.get("current_image_name"),
+                    )
                     return texts_and_bb
+
                 evaluation_writer.add_scalar(
                     "Text_recognition/_average_CER",
                     avg_cer,
@@ -75,6 +86,27 @@ def evaluator(module=""):
                     len(predictions),
                     kwargs.get("current_image_index"),
                 )
+
+                if np.isnan(avg_cer):
+                    event_accumulator.Reload()
+                    logger.info(
+                        "Did not evaluate text in image: %s",
+                        kwargs.get("current_image_name"),
+                    )
+                    logger.info(
+                        "Evaluated images: %s/%s",
+                        len(
+                            [
+                                scalar.value
+                                for scalar in event_accumulator.Scalars(
+                                    "Text_recognition/_average_CER"
+                                )
+                                if not np.isnan(scalar.value)
+                            ]
+                        ),
+                        len(event_accumulator.Scalars("Text_recognition/_average_CER")),
+                    )
+
                 return texts_and_bb
 
             elif module == "semantic_labeling":

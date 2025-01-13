@@ -6,6 +6,7 @@ import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
 from prefect.logging import get_logger
+from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 from tensorboardX import SummaryWriter
 
 load_dotenv()
@@ -33,6 +34,7 @@ if not config.disable_fiftyone:
 if config.evaluation:
     log_dir = f"{config.evaluation_path}/tensorboard/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
     evaluation_writer = SummaryWriter(log_dir)
+    event_accumulator = EventAccumulator(log_dir)
 else:
     evaluation_writer = None
 
