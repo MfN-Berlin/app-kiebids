@@ -49,8 +49,7 @@ def debug_writer(debug_path="", module=""):
 
                 image = func(*args, **kwargs)
 
-                # ensure jpg
-                filename = f"{current_image.split('.')[0]}.jpg"
+                filename = Path(current_image).with_suffix(".jpg")
                 image_output_path = Path(debug_path) / filename
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
@@ -69,7 +68,7 @@ def debug_writer(debug_path="", module=""):
 
                 image = kwargs.get("image")
 
-                filename = current_image.split(".")[0]
+                filename = Path(current_image).stem
                 crop_and_save_detections(image, label_masks, filename, debug_path)
 
                 mask_path = Path(debug_path) / "masks"
