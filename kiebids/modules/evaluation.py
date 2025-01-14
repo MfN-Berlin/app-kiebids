@@ -66,7 +66,7 @@ def evaluator(module=""):
                     avg_cer = text_evaluator.average_cer()
                 else:
                     logger.warning(
-                        "No ground truth found for image: {}",
+                        "No ground truth found for image: %s",
                         kwargs.get("current_image_name"),
                     )
                     return texts_and_bb
