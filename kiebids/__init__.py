@@ -37,6 +37,7 @@ if config.evaluation:
     event_accumulator = EventAccumulator(log_dir)
 else:
     evaluation_writer = None
+    event_accumulator = None
 
 __all__ = [
     "get_logger",
