@@ -15,6 +15,7 @@ requests==2.32.3
 ruff==0.7.2
 segment-anything-py==1.0.1
 sty==1.0.6
+tensorboard==2.17.1
 tensorboardX==2.6.2.2
 tensorflow==2.17.0
 torch==2.4.1
