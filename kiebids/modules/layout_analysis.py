@@ -1,3 +1,5 @@
+import cv2
+import numpy as np
 import torch
 from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
@@ -65,6 +67,9 @@ class LayoutAnalyzer:
         if len(masks) == 1:
             return masks
 
+        kernel = np.ones(
+            (module_config.closing_kernel, module_config.closing_kernel), np.uint8
+        )
         sorted_masks = sorted(masks, key=(lambda x: x["area"]), reverse=True)
 
         # Keep only masks that cover more than 1% of the image
@@ -75,11 +80,23 @@ class LayoutAnalyzer:
 
             # Filter by areas that cover more than 1% of the image
             if (area / total_area) > 0.01:
-                # Filter by areas where the segmentation mask covers most of the bbox area
                 [x, y, w, h] = mask["bbox"]
                 bbox_area = w * h
 
-                if (area / bbox_area) > 0.9:
+                binary_mask = np.array(mask["segmentation"].copy() * 1, dtype=np.uint8)
+
+                # Closing little holes in mask
+                binary_mask = cv2.morphologyEx(binary_mask, cv2.MORPH_CLOSE, kernel)
+
+                contours, hierarchy = cv2.findContours(
+                    binary_mask, cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE
+                )
+                holes_present = any(
+                    hierarchy[0][i][3] != -1 for i in range(len(contours))
+                )
+
+                # excluding masks with holes and masks with 10% differences to bb
+                if (area / bbox_area) > 0.9 and not holes_present:
                     label_masks.append(mask)
 
         if label_masks == []:
