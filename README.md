@@ -102,6 +102,7 @@ To view evaluation tensorboard, run:
 ```bash
 tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
 ```
+The tensorboard updates every 1 minute during the pipeline process.
 
 ## Testing
 

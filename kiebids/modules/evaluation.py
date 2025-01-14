@@ -89,24 +89,28 @@ def evaluator(module=""):
 
                 if np.isnan(avg_cer):
                     event_accumulator.Reload()
-                    logger.info(
-                        "Did not evaluate text in image: %s",
-                        kwargs.get("current_image_name"),
-                    )
-                    logger.info(
-                        "Evaluated images: %s/%s",
-                        len(
-                            [
-                                scalar.value
-                                for scalar in event_accumulator.Scalars(
+                    if (
+                        "Text_recognition/_average_CER"
+                        in event_accumulator.scalars.Keys()
+                    ):
+                        logger.warning(
+                            "Did not evaluate text in image. Evaluated images in TB: %s/%s (%s)",
+                            len(
+                                [
+                                    scalar.value
+                                    for scalar in event_accumulator.Scalars(
+                                        "Text_recognition/_average_CER"
+                                    )
+                                    if not np.isnan(scalar.value)
+                                ]
+                            ),
+                            len(
+                                event_accumulator.Scalars(
                                     "Text_recognition/_average_CER"
                                 )
-                                if not np.isnan(scalar.value)
-                            ]
-                        ),
-                        len(event_accumulator.Scalars("Text_recognition/_average_CER")),
-                    )
-
+                            ),
+                            kwargs.get("current_image_name"),
+                        )
                 return texts_and_bb
 
             elif module == "semantic_labeling":
