@@ -7,6 +7,7 @@ image_path: data/images
 output_path: data/output
 
 # Evaluation settings
+run_id: # Specify a name to identify the run
 evaluation: False
 evaluation_path: data/evaluation
 xml_path: ""
