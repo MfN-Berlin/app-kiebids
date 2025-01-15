@@ -31,9 +31,19 @@ if not config.disable_fiftyone:
     fiftyone_dataset.overwrite = True
     fiftyone_dataset.persistent = True
 
-run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+logger = get_logger(__name__)
+logger.setLevel(config.log_level)
+
+run_id = (
+    datetime.now().strftime("%Y%m%d-%H%M%S")
+    if config.run_id is None
+    else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_id}"
+)
 
 if config.evaluation:
+    logger.info(
+        "Evaluation enabled - Tensorboard logs will be saved with run_id: %s", run_id
+    )
     log_dir = f"{config.evaluation_path}/tensorboard/{run_id}"
     evaluation_writer = SummaryWriter(log_dir)
     event_accumulator = EventAccumulator(log_dir)
