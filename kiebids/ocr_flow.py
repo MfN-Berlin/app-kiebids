@@ -26,7 +26,9 @@ def ocr_flow():
     # init objects/models for every stage
     logger.info("Loading Layout analysis Model...")
     layout_analyzer = LayoutAnalyzer()
-    logger.info("Loading Text recognition Model...")
+    logger.info(
+        f"Loading text recognition model ({pipeline_config.text_recognition.model})..."
+    )
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
