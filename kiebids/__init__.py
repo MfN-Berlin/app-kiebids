@@ -31,8 +31,10 @@ if not config.disable_fiftyone:
     fiftyone_dataset.overwrite = True
     fiftyone_dataset.persistent = True
 
+run_id = datetime.now().strftime("%Y%m%d-%H%M%S")
+
 if config.evaluation:
-    log_dir = f"{config.evaluation_path}/tensorboard/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    log_dir = f"{config.evaluation_path}/tensorboard/{run_id}"
     evaluation_writer = SummaryWriter(log_dir)
     event_accumulator = EventAccumulator(log_dir)
 else:

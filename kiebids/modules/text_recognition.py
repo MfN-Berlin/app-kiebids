@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from prefect import task
 
-from kiebids import config, get_logger, pipeline_config
+from kiebids import config, get_logger, pipeline_config, run_id
 from kiebids.modules.evaluation import evaluator
 from kiebids.utils import crop_image, debug_writer
 
@@ -11,7 +11,9 @@ module = __name__.split(".")[-1]
 logger = get_logger(module)
 logger.setLevel(config.log_level)
 
-debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}"
+debug_path = (
+    "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
+)
 module_config = pipeline_config[module]
 
 
