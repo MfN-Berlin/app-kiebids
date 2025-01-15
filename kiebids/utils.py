@@ -104,15 +104,20 @@ def debug_writer(debug_path="", module=""):
 
                 return label_masks
             elif module == "text_recognition":
-                texts = func(*args, **kwargs)
+                texts_and_bb = func(*args, **kwargs)
+
+                output = {
+                    "image_index": kwargs.get("current_image_index"),
+                    "regions": texts_and_bb,
+                }
 
                 output_path = os.path.join(
                     debug_path, current_image.split(".")[0] + ".json"
                 )
                 with open(output_path, "w") as f:
-                    json.dump(texts, f, ensure_ascii=False, indent=4)
+                    json.dump(output, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
-                return texts
+                return texts_and_bb
 
         return wrapper
 

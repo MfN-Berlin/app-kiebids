@@ -8,7 +8,13 @@ import numpy as np
 import requests
 from PIL import Image
 
-from kiebids import config, evaluation_writer, get_logger, pipeline_config
+from kiebids import (
+    config,
+    evaluation_writer,
+    event_accumulator,
+    get_logger,
+    pipeline_config,
+)
 from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
@@ -59,7 +65,12 @@ def evaluator(module=""):
                     text_evaluator = TextEvaluator(ground_truth, predictions)
                     avg_cer = text_evaluator.average_cer()
                 else:
+                    logger.warning(
+                        "No ground truth found for image: %s",
+                        kwargs.get("current_image_name"),
+                    )
                     return texts_and_bb
+
                 evaluation_writer.add_scalar(
                     "Text_recognition/_average_CER",
                     avg_cer,
@@ -75,6 +86,31 @@ def evaluator(module=""):
                     len(predictions),
                     kwargs.get("current_image_index"),
                 )
+
+                if np.isnan(avg_cer):
+                    event_accumulator.Reload()
+                    if (
+                        "Text_recognition/_average_CER"
+                        in event_accumulator.scalars.Keys()
+                    ):
+                        logger.warning(
+                            "Did not evaluate text in image. Evaluated images in TB: %s/%s (%s)",
+                            len(
+                                [
+                                    scalar.value
+                                    for scalar in event_accumulator.Scalars(
+                                        "Text_recognition/_average_CER"
+                                    )
+                                    if not np.isnan(scalar.value)
+                                ]
+                            ),
+                            len(
+                                event_accumulator.Scalars(
+                                    "Text_recognition/_average_CER"
+                                )
+                            ),
+                            kwargs.get("current_image_name"),
+                        )
                 return texts_and_bb
 
             elif module == "semantic_labeling":
@@ -226,8 +262,12 @@ class TextEvaluator:
             self.ground_truth = ground_truth
             self.predictions = self.order_predictions(predictions, ground_truth)
         else:
-            self.ground_truth = "".join(ground_truth)
-            self.predictions = "".join(predictions)
+            # if the number of predictions does not match the number of ground truth strings,
+            # we don't evaluate the CER
+            logger.info(
+                "Number of predictions does not match number of ground truth strings."
+            )
+            self.ground_truth = None
 
             # TODO: Takes too long to run
             # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
@@ -256,6 +296,9 @@ class TextEvaluator:
 
         :return: List of CER values.
         """
+        if not self.ground_truth:
+            return np.nan
+
         cer_values = [
             self.calculate_cer(gt, pred)
             for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
@@ -268,6 +311,10 @@ class TextEvaluator:
 
         :return: Average CER value.
         """
+        # If the number of predictions does not match the number of ground truth strings,
+        # we don't evaluate the CER
+        if not self.ground_truth:
+            return np.nan
         cer_values = self.evaluate()
         avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
         return avg_cer
@@ -295,23 +342,3 @@ class TextEvaluator:
                 best_permutation = perm
 
         return list(best_permutation)
-
-    def concatenate_to_match(self, target, strings):
-        """
-        Concatenates a list of strings in an order that makes them as similar as possible to a target string.
-
-        :param target: The target string to match.
-        :param strings: List of strings to concatenate.
-        :return: Concatenated string that is most similar to the target string.
-        """
-        min_distance = float("inf")
-        best_concatenation = None
-
-        for perm in permutations(strings):
-            concatenated = "".join(perm)
-            distance = editdistance.eval(target, concatenated)
-            if distance < min_distance:
-                min_distance = distance
-                best_concatenation = concatenated
-
-        return best_concatenation
