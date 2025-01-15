@@ -33,7 +33,7 @@ def ocr_flow():
 
     # Process images sequentially
     for image_index, filename in enumerate(
-        tqdm(os.listdir(config.image_path)[: config.max_images])
+        tqdm(sorted(os.listdir(config.image_path))[: config.max_images])
     ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
