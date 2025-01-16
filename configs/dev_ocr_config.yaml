@@ -28,6 +28,8 @@ text_recognition:  # easyocr module
     language: "de"
     text_threshold: 0.7  # Text confidence threshold
     decoder: "greedy"  # Options: 'greedy', 'beamsearch', 'wordbeamsearch'
+    paragraph: false
+    y_ths: 0.3 # Vertical distance for text grouping
   moondream:
     name: "vikhyatk/moondream2"
     revision: "2025-01-09"

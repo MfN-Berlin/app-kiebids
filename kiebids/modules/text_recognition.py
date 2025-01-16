@@ -78,10 +78,11 @@ class EasyOcr:
             image,
             decoder=module_config.easyocr.decoder,
             text_threshold=module_config.easyocr.text_threshold,
-            paragraph=True,
+            paragraph=module_config.easyocr.paragraph,
             detail=0,
+            y_ths=module_config.easyocr.y_ths,
         )
-        return " ".join(texts) if texts else ""
+        return "\n".join(texts) if texts else ""
 
 
 class Moondream:
@@ -104,4 +105,11 @@ class Moondream:
 
     def get_text(self, image: np.array):
         pil_image = Image.fromarray(image)
-        return self.model.query(pil_image, self.prompt)["answer"]
+        text = self.model.query(pil_image, self.prompt)["answer"]
+        return self.clean_text(text)
+
+    def clean_text(self, text):
+        """
+        Moondream specific text cleaning.
+        """
+        return text.replace("\n\n", "\n").strip()

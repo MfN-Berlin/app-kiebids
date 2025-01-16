@@ -61,6 +61,11 @@ def evaluator(module=""):
 
                 if parsed_dict:
                     gt_texts = [tr["text"] for tr in parsed_dict.get("text_regions")]
+
+                    # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
+                    # For fair comparison we replace all \r\n with \n
+                    gt_texts = [text.replace("\r\n", "\n") for text in gt_texts]
+
                     compare_texts(
                         predictions=predictions,
                         ground_truths=gt_texts,
