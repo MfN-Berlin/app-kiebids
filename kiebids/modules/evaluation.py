@@ -58,59 +58,15 @@ def evaluator(module=""):
 
                 predictions = [text["text"] for text in texts_and_bb]
                 parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
+
                 if parsed_dict:
-                    ground_truth = [
-                        tr["text"] for tr in parsed_dict.get("text_regions")
-                    ]
-                    text_evaluator = TextEvaluator(ground_truth, predictions)
-                    avg_cer = text_evaluator.average_cer()
-                else:
-                    logger.warning(
-                        "No ground truth found for image: %s",
-                        kwargs.get("current_image_name"),
+                    gt_texts = [tr["text"] for tr in parsed_dict.get("text_regions")]
+                    compare_texts(
+                        predictions=predictions,
+                        ground_truths=gt_texts,
+                        image_index=kwargs.get("current_image_index"),
                     )
-                    return texts_and_bb
 
-                evaluation_writer.add_scalar(
-                    "Text_recognition/_average_CER",
-                    avg_cer,
-                    kwargs.get("current_image_index"),
-                )
-                evaluation_writer.add_scalar(
-                    "Text_recognition/_n_gt",
-                    len(ground_truth),
-                    kwargs.get("current_image_index"),
-                )
-                evaluation_writer.add_scalar(
-                    "Text_recognition/_n_pred",
-                    len(predictions),
-                    kwargs.get("current_image_index"),
-                )
-
-                if np.isnan(avg_cer):
-                    event_accumulator.Reload()
-                    if (
-                        "Text_recognition/_average_CER"
-                        in event_accumulator.scalars.Keys()
-                    ):
-                        logger.warning(
-                            "Did not evaluate text in image. Evaluated images in TB: %s/%s (%s)",
-                            len(
-                                [
-                                    scalar.value
-                                    for scalar in event_accumulator.Scalars(
-                                        "Text_recognition/_average_CER"
-                                    )
-                                    if not np.isnan(scalar.value)
-                                ]
-                            ),
-                            len(
-                                event_accumulator.Scalars(
-                                    "Text_recognition/_average_CER"
-                                )
-                            ),
-                            kwargs.get("current_image_name"),
-                        )
                 return texts_and_bb
 
             elif module == "semantic_labeling":
@@ -134,7 +90,7 @@ def compare_layouts(
     Creates a confusion matrix with ious as values and gt + pred indices as axis.
     Matches gt with pred based on highest iou.
     If there are too many or too few predictions, the iou is set to 0 for the missing ones.
-    Logs the average iou to tensorboard.
+    Logs the ious per region and the average iou for the whole image to tensorboard.
 
     :param ground_truths: List of ground truth polygons.
     :param predictions: List of dictionaries containing the predicted bounding boxes.
@@ -179,6 +135,13 @@ def compare_layouts(
         gt_pred_confusion_matrix = np.delete(
             gt_pred_confusion_matrix, max_iou_coordinates[0], axis=0
         )
+
+    # Add the ious to tensorboard
+    evaluation_writer.add_scalars(
+        "Layout_analysis/_ious",
+        {f"bb_{i}": iou for i, iou in enumerate(ious)},
+        image_index,
+    )
 
     # account for false positives and false negatives
     num_fp_fn = abs(len(ground_truths) - len(predictions))
@@ -246,99 +209,73 @@ def load_image_from_url(url):
         return None
 
 
-class TextEvaluator:
+def compare_texts(predictions: list[str], ground_truths: list[str], image_index: int):
     """
-    Class to evaluate the text recognition performance of a model using the Character Error Rate (CER)
-    with leveinshtein distance.
-    """
+    Computes the Character Error Rate (CER) with leveinshtein distance between ground truth and predicted strings.
+    It orders the predictionst to the ground truth string to minimize the total edit distance.
+    Saves the individual CER values and the average CER value to tensorboard.
 
-    def __init__(self, ground_truth, predictions):
-        """
-        :param ground_truth: List of ground truth strings.
-        :param predictions: List of predicted strings.
-        """
-        # order predictions to minimize the total edit distance
-        if len(ground_truth) == len(predictions):
-            self.ground_truth = ground_truth
-            self.predictions = self.order_predictions(predictions, ground_truth)
+    Args:
+        ground_truth: List of ground truth strings.
+        predictions: List of predicted strings.
+
+    """
+    # Only evaluate if the number of ground truth strings matches the number of predictions
+    if len(ground_truths) != len(predictions):
+        event_accumulator.Reload()
+        if "Text_recognition/_average_CER" in event_accumulator.scalars.Keys():
+            logger.warning(
+                "Did not evaluate text in image, len(pred)!=len(ground_truth). Evaluated images in TB: %s/%s",
+                len(event_accumulator.Scalars("Text_recognition/_average_CER")),
+                len(event_accumulator.Scalars("Layout_analysis/_average_ious")),
+            )
         else:
-            # if the number of predictions does not match the number of ground truth strings,
-            # we don't evaluate the CER
-            logger.info(
-                "Number of predictions does not match number of ground truth strings."
+            logger.warning(
+                "Did not evaluate text in image, len(pred)!=len(ground_truth)."
             )
-            self.ground_truth = None
+        return
 
-            # TODO: Takes too long to run
-            # self.predictions = self.concatenate_to_match(predictions, self.ground_truth)
+    # Order predictions
+    min_distance = float("inf")
 
-    def calculate_cer(self, ground_truth, prediction):
-        """
-        Calculate the Character Error Rate (CER) between a ground truth string and a predicted string.
+    for perm in permutations(predictions):
+        cer_values_perm = [compute_cer(p, gt) for p, gt in zip(perm, ground_truths)]
 
-        :param gt: Ground truth string.
-        :param pred: Predicted string.
-        :return: CER value.
-        """
-        distance = editdistance.eval(ground_truth, prediction)
+        if sum(cer_values_perm) < min_distance:
+            min_distance = sum(cer_values_perm)
+            cer_values = cer_values_perm
 
-        if len(ground_truth) > 0:
-            cer = distance / len(ground_truth)
-        elif distance == 0:  # Cover for the case when both strings are empty
-            cer = 0
-        else:  # Cover for the case when ground truth is empty but prediction is not
-            cer = 1
-        return float(cer)
+    # Save individual CER values to tensorboard
+    evaluation_writer.add_scalars(
+        "Text_recognition/_CER",
+        {f"bb_{i}": cer for i, cer in enumerate(cer_values)},
+        image_index,
+    )
 
-    def evaluate(self):
-        """
-        Evaluate the CER for all ground truth and prediction pairs.
+    avg_cer = np.average(cer_values)
 
-        :return: List of CER values.
-        """
-        if not self.ground_truth:
-            return np.nan
+    logger.debug("average CER: %s - cer values: %s", avg_cer, cer_values)
 
-        cer_values = [
-            self.calculate_cer(gt, pred)
-            for gt, pred in zip(self.ground_truth, self.predictions, strict=False)
-        ]
-        return cer_values
+    # Save average CER value to tensorboard
+    evaluation_writer.add_scalar("Text_recognition/_average_CER", avg_cer, image_index)
 
-    def average_cer(self):
-        """
-        Calculate the average CER over all ground truth and prediction pairs.
 
-        :return: Average CER value.
-        """
-        # If the number of predictions does not match the number of ground truth strings,
-        # we don't evaluate the CER
-        if not self.ground_truth:
-            return np.nan
-        cer_values = self.evaluate()
-        avg_cer = sum(cer_values) / len(cer_values) if cer_values else float("inf")
-        return avg_cer
+def compute_cer(prediction: str, ground_truth: str):
+    """
+    Computes the Character Error Rate (CER) with leveinshtein distance between ground truth and predicted strings.
 
-    def order_predictions(self, predictions, ground_truth):
-        """
-        Orders predictions to minimize the total edit distance.
+    Args:
+        prediction: Predicted string.
+        ground_truth: Ground truth string.
+    """
+    distance = editdistance.eval(ground_truth, prediction)
 
-        :param predictions: List of predicted text.
-        :param  ground_truth: List of ground truth.
-        :return: Ordered predictions
-        """
-        if len(predictions) != len(ground_truth):
-            return None
-
-        min_distance = float("inf")
-        best_permutation = ground_truth
-
-        for perm in permutations(predictions):
-            total_distance = sum(
-                editdistance.eval(a, b) for a, b in zip(ground_truth, perm)
-            )
-            if total_distance < min_distance:
-                min_distance = total_distance
-                best_permutation = perm
-
-        return list(best_permutation)
+    if len(ground_truth) > 0:
+        cer_value = distance / len(ground_truth)
+    # Cover for the case when both strings are empty
+    elif distance == 0:
+        cer_value = 0
+    # Cover for the case when ground truth is empty but prediction is not
+    else:
+        cer_value = len(prediction)
+    return float(cer_value)
