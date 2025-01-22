@@ -56,6 +56,7 @@ conda create -n app-kiebids python=3.10.13
 conda activate app-kiebids
 pip install -U pip
 pip install -r requirements.txt
+conda install -c conda-forge pyvips
 ```
 
 **`uv` example:**
