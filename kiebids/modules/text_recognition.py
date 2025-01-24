@@ -25,13 +25,15 @@ class TextRecognizer:
     """
 
     def __init__(self):
-        if module_config.model == "easyocr":
-            self.model = EasyOcr()
-        elif module_config.model == "moondream":
-            self.model = Moondream()
+        MODEL_REGISTRY = {"easyocr": EasyOcr, "moondream": Moondream}
+
+        if module_config.model in MODEL_REGISTRY:
+            self.model = MODEL_REGISTRY[module_config.model]()
         else:
             logger.warning(
-                f"Model {module_config.model} not found. Using EasyOcr as default."
+                "Model name '%s' found in the workflow_config.yaml is not part of the available models: %s. Falling back to default model easyocr.",
+                module_config.model,
+                list(MODEL_REGISTRY.keys()),
             )
             self.model = EasyOcr()
 
@@ -67,8 +69,9 @@ class EasyOcr:
     """
 
     def __init__(self):
-        gpu = torch.cuda.is_available()
-        self.model = easyocr.Reader([module_config.easyocr.language], gpu=gpu)
+        self.model = easyocr.Reader(
+            [module_config.easyocr.language], gpu=torch.cuda.is_available()
+        )
 
     def get_text(self, image: np.array):
         """
@@ -94,18 +97,17 @@ class Moondream:
     """
 
     def __init__(self):
-        gpu = torch.cuda.is_available()
         self.model = AutoModelForCausalLM.from_pretrained(
             module_config.moondream.name,
             revision=module_config.moondream.revision,
             trust_remote_code=module_config.moondream.trust_remote_code,
-            device_map={"": "cuda"} if gpu else None,
+            device_map={"": "cuda"} if torch.cuda.is_available() else None,
         )
         self.prompt = module_config.moondream.prompt
 
     def get_text(self, image: np.array):
         pil_image = Image.fromarray(image)
-        text = self.model.query(pil_image, self.prompt)["answer"]
+        text = self.model.query(pil_image, self.prompt).get("answer", "")
         return self.clean_text(text)
 
     def clean_text(self, text):

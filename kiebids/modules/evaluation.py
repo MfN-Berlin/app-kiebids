@@ -3,10 +3,10 @@ from io import BytesIO
 from itertools import permutations
 
 import cv2
-import editdistance
 import numpy as np
 import requests
 from PIL import Image
+from torchmetrics.text import CharErrorRate
 
 from kiebids import (
     config,
@@ -216,7 +216,8 @@ def load_image_from_url(url):
 
 def compare_texts(predictions: list[str], ground_truths: list[str], image_index: int):
     """
-    Computes the Character Error Rate (CER) with leveinshtein distance between ground truth and predicted strings.
+    Computes the Character Error Rate (CER) ground truth and predicted strings,
+    using torchmetric CharErrorRate. https://lightning.ai/docs/torchmetrics/stable/text/char_error_rate.html.
     It orders the predictionst to the ground truth string to minimize the total edit distance.
     Saves the individual CER values and the average CER value to tensorboard.
 
@@ -230,25 +231,31 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
         event_accumulator.Reload()
         if "Text_recognition/_average_CER" in event_accumulator.scalars.Keys():
             logger.warning(
-                "Did not evaluate text in image, len(pred)!=len(ground_truth). Evaluated images in TB: %s/%s",
+                "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file. Evaluated images in TB: %s/%s",
                 len(event_accumulator.Scalars("Text_recognition/_average_CER")),
                 len(event_accumulator.Scalars("Layout_analysis/_average_ious")),
             )
         else:
             logger.warning(
-                "Did not evaluate text in image, len(pred)!=len(ground_truth)."
+                "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file."
             )
         return
 
-    # Order predictions
-    min_distance = float("inf")
+    CER_calculator = CharErrorRate()
 
+    # Order the predicted strings to the ground truth strings until finding the best possible match
+    min_cer = float("inf")
     for perm in permutations(predictions):
-        cer_values_perm = [compute_cer(p, gt) for p, gt in zip(perm, ground_truths)]
+        cer = CER_calculator(perm, ground_truths)
+        if cer < min_cer:
+            min_cer = cer
+            ordered_predictions = perm
 
-        if sum(cer_values_perm) < min_distance:
-            min_distance = sum(cer_values_perm)
-            cer_values = cer_values_perm
+    # Calculate CER values for each individual region with the best region match in the ground truth
+    cer_values = [
+        CER_calculator(prediction, ground_truth)
+        for prediction, ground_truth in zip(ordered_predictions, ground_truths)
+    ]
 
     # Save individual CER values to tensorboard
     evaluation_writer.add_scalars(
@@ -257,30 +264,11 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
         image_index,
     )
 
-    avg_cer = np.average(cer_values)
-
-    logger.debug("average CER: %s - cer values: %s", avg_cer, cer_values)
+    logger.debug(
+        "average CER: %s - Individual CER values: %s",
+        round(float(min_cer), 4),
+        [round(float(value), 4) for value in cer_values],
+    )
 
     # Save average CER value to tensorboard
-    evaluation_writer.add_scalar("Text_recognition/_average_CER", avg_cer, image_index)
-
-
-def compute_cer(prediction: str, ground_truth: str):
-    """
-    Computes the Character Error Rate (CER) with leveinshtein distance between ground truth and predicted strings.
-
-    Args:
-        prediction: Predicted string.
-        ground_truth: Ground truth string.
-    """
-    distance = editdistance.eval(ground_truth, prediction)
-
-    if len(ground_truth) > 0:
-        cer_value = distance / len(ground_truth)
-    # Cover for the case when both strings are empty
-    elif distance == 0:
-        cer_value = 0
-    # Cover for the case when ground truth is empty but prediction is not
-    else:
-        cer_value = len(prediction)
-    return float(cer_value)
+    evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
