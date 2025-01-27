@@ -26,12 +26,14 @@ def ocr_flow():
     # init objects/models for every stage
     logger.info("Loading Layout analysis Model...")
     layout_analyzer = LayoutAnalyzer()
-    logger.info("Loading Text recognition Model...")
+    logger.info(
+        f"Loading text recognition model ({pipeline_config.text_recognition.model})..."
+    )
     text_recognizer = TextRecognizer()
 
     # Process images sequentially
     for image_index, filename in enumerate(
-        tqdm(os.listdir(config.image_path)[: config.max_images])
+        tqdm(sorted(os.listdir(config.image_path))[: config.max_images])
     ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue

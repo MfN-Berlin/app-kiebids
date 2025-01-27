@@ -250,7 +250,8 @@ def read_xml(file_path: str) -> dict:
                 region.findall(".//ns:TextEquiv", namespaces=ns)[-1]
                 .find(".//ns:Unicode", namespaces=ns)
                 .text
-                or ""
+                if region.findall(".//ns:TextEquiv", namespaces=ns)
+                else ""
             ),
             "text_lines": [],
         }

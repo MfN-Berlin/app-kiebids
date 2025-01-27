@@ -23,10 +23,22 @@ layout_analysis:
   closing_kernel: 20
 
 text_recognition:  # easyocr module
-  language: 'de'
-  text_threshold: 0.7  # Text confidence threshold
-  decoder: 'greedy'  # Options: 'greedy', 'beamsearch', 'wordbeamsearch'
-
+  model: "moondream" # Options: 'easyocr', 'moondream'
+  easyocr:
+    language: "de"
+    text_threshold: 0.7  # Text confidence threshold
+    decoder: "greedy"  # Options: 'greedy', 'beamsearch', 'wordbeamsearch'
+    paragraph: false
+    y_ths: 0.3 # Vertical distance for text grouping
+  moondream:
+    name: "vikhyatk/moondream2"
+    revision: "2025-01-09"
+    trust_remote_code: true
+    prompt: |
+      Transcribe all printed and handwritten text on this label of a specimen
+      from a collection of a museum for natural history, being especially
+      careful to preserve any scientific names, dates, and location information.
+      Maintain the original formatting and line breaks. Most text is in German.
 entity_linking:
 
 semantic_labeling:

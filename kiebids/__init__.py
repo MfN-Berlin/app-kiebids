@@ -1,4 +1,5 @@
 import os
+import shutil
 from datetime import datetime
 
 import fiftyone.core.dataset as fod
@@ -45,6 +46,13 @@ if config.evaluation:
         "Evaluation enabled - Tensorboard logs will be saved with run_id: %s", run_id
     )
     log_dir = f"{config.evaluation_path}/tensorboard/{run_id}"
+
+    os.makedirs(log_dir, exist_ok=True)
+    shutil.copyfile(
+        os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),
+        f"{log_dir}/ocr_config.yaml",
+    )
+
     evaluation_writer = SummaryWriter(log_dir)
     event_accumulator = EventAccumulator(log_dir)
 else:
