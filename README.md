@@ -15,7 +15,7 @@ Overview of each module
 The pipeline can be run in three different modes:
 1. Prediction (work in progress)
 2. Evaluation (work in progress)
-3. Debugging
+3. Debug
 
 ## Quickstart with example image
 ### Prerequisites
@@ -63,6 +63,9 @@ Behaviour:
 ```bash
 bash run_flow.sh
 ```
+This starts the Prefect service, and you can view the dashboard at the url shown in the terminal (http://127.0.0.1:{port}).
+To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
+Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
 
 Behaviour:
 - This will start a flow run on all images inside the `image_path` referenced in [workflow_config.yaml](./configs/workflow_config.yaml)
@@ -70,12 +73,25 @@ Behaviour:
 ### Run flow on own images:
 You can either put more images inside the `data/images` directory or you can reference a directory on your system under => `image_path` in [workflow_config.yaml](./configs/workflow_config.yaml) (Make sure that you also adjust the `max_images` field to analyse the desired number of images)
 
-## Evaluation
-To view evaluation tensorboard, run:
-```bash
-tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+## Evaluation Modus (Work in Progress)
+To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
 ```
-The tensorboard updates every 1 minute during the pipeline process.
+evaluation: true
+xml_path: "path/to/ground/truth/xml_files"
+```
+and optionally set ```run_id``` if you want to tag the evaluation with a specific name. This starts a tensorboard session where results from the modules is stored:
+
+- Layout analysis: average iou
+- Text recognition: average CER
+
+The results for each run will be stored in the folder ```data/evaluation/tensorboard/{name_of_run}```. To view the dashboard, run:
+
+## Debug Modus
+To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file, and optionally ```run_id``` if you want to tag the debug run with a specific name.
+
+Debug modus saves interim results after each module. You find the debug results from each module in the ```data/debug/{module}/{name_of_run}``` path.
+
+The debug mode also serves a FiftyOne app at the end of the flow at the shown URL, where you can view the images.
 
 ## Dockerized application
 Make sure you have `docker` and `docker compose` installed.
@@ -115,3 +131,41 @@ You can inspect the results for each image by filtering the `image_name` field i
 > This tracking is currently activated only in debug mode
 
 -----
+
+## Known issues
+
+### Prefect
+
+**Database locked**
+
+Prefect uses a SQLite database under the hood, and to ensure correct concurrent access the database occasionally locks. This causes the following error:
+
+```bash
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+```
+
+This is is is not a dangerous error, and any requests to the database will simply retry until connection is established. This is a know issue from prefect: https://github.com/PrefectHQ/prefect/issues/10188
+
+**Port already in Use / Connection refused**
+
+After finishing running the pipeline, prefect will block the used port for a couple of minutes. If you start a run again within that time, you will get a connection error since the port is already in use:
+
+```bash
+Port xxxx is already in use. Please specify a different port with the `--port` flag.
+```
+
+Or the error:
+
+```bash
+httpx.ConnectError: [Errno 111] Connection refused
+```
+
+You can either wait a few minutes and try again, or set a new port number in the ```.env``` file.
+
+### FiftyOne Database
+
+When running the pipeline in debug mode the fiftyone database is enabled. If the pipeline was abruptly cancelled it may cause issues with the storing of data to the database. If such issues are encountered, you can simply delete the database before running the pipeline again:
+
+```bash
+rm data/debug/fifty-db --r
+```
