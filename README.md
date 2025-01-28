@@ -15,7 +15,7 @@ Overview of each module
 The pipeline can be run in three different modes:
 1. Prediction (work in progress)
 2. Evaluation (work in progress)
-3. Debugging
+3. Debug
 
 ## Prerequisites
 <!-- ffmpeg installation -->
@@ -44,8 +44,35 @@ conda activate app-kiebids
 bash run_flow.sh
 ```
 
-<!-- TODO -->
-> Behaviour / what to expect:
+# Pipeline modes and Configuration
+You can run the pipline in three different modes:
+- Prediction
+- Evaluation
+- Debug
+
+## Prediction
+In prediction mode the pipeline will loop through all images found in ```image_path``` from the [workflow_config](./configs/workflow_config.yaml) and output xml files to the ```outout_path```.
+
+## Evaluation (Work in Progress)
+To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
+```
+evaluation: true
+xml_path: "path/to/ground/truth/xml_files"
+```
+and optionally set ```run_id``` if you want to tag the evaluation with a specific name. This starts a tensorboard session where results from the modules is stored:
+
+- Layout analysis: average iou
+- Text recognition: average CER
+
+To view evaluation tensorboard, run: (you can see all runs under the below folder path)
+```bash
+tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+```
+The tensorboard updates every 1 minute during the pipeline process.
+
+## Debug
+To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
+
 
 
 ### Dockerized application
