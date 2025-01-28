@@ -38,7 +38,6 @@ while [[ $# -gt 0 ]]; do
 done
 
 export PYTHONPATH=$PYTHONPATH:.
-source .env
 
 if [ -z "$PREFECT_PORT" ]; then
     echo "defaulting PREFECT_PORT to 4200"
