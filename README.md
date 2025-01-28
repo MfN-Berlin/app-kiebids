@@ -43,17 +43,13 @@ conda activate app-kiebids
 ```bash
 bash run_flow.sh
 ```
+This starts the Prefect service, and you can view the dashboard at: http://127.0.0.1:{port}
+To run the flow, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
+- **image_path**: Path to folder with images
 
-# Pipeline modes and Configuration
-You can run the pipline in three different modes:
-- Prediction
-- Evaluation
-- Debug
+Pipeline will loop through all images found in ```image_path``` and output xml files to the ```output_path``` defined in the config.
 
-## Prediction
-In prediction mode the pipeline will loop through all images found in ```image_path``` from the [workflow_config](./configs/workflow_config.yaml) and output xml files to the ```outout_path```.
-
-## Evaluation (Work in Progress)
+## Evaluation Modus (Work in Progress)
 To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
 ```
 evaluation: true
@@ -64,15 +60,18 @@ and optionally set ```run_id``` if you want to tag the evaluation with a specifi
 - Layout analysis: average iou
 - Text recognition: average CER
 
-To view evaluation tensorboard, run: (you can see all runs under the below folder path)
+To view evaluation tensorboard, run: (you can see all previous runs under the below folder path)
 ```bash
 tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
 ```
 The tensorboard updates every 1 minute during the pipeline process.
 
-## Debug
-To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
+## Debug Modus
+To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file, and optionally ```run_id``` if you want to tag the debug run with a specific name.
 
+Debug modus saves interim results after each module. You find the debug results from each module in the ```data/debug/{module}/{name_of_run}``` path.
+
+The debug mode also serves a FiftyOne app at the end of the flow at the shown URL, where you can view the images.
 
 
 ### Dockerized application
@@ -120,3 +119,42 @@ You can inspect the results for each image by filtering the `image_name` field i
 > This tracking is currently activated only in debug mode
 
 -----
+
+
+## Known issues
+
+### Prefect
+
+**Database locked**
+
+Prefect uses a SQLite database under the hood, and to ensure correct concurrent access the database occasionally locks. This causes the following error:
+
+```bash
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
+```
+
+This is is is not a dangerous error, and any requests to the database will simply retry until connection is established. This is a know issue from prefect: https://github.com/PrefectHQ/prefect/issues/10188
+
+**Port already in Use / Connection refused**
+
+After finishing running the pipeline, prefect will block the used port for a couple of minutes. If you start a run again within that time, you will get a connection error since the port is already in use:
+
+```bash
+Port xxxx is already in use. Please specify a different port with the `--port` flag.
+```
+
+Or the error:
+
+```bash
+httpx.ConnectError: [Errno 111] Connection refused
+```
+
+You can either wait a few minutes and try again, or set a new port number in the ```.env``` file.
+
+## FiftyOne Database
+
+When running the pipeline in debug mode (mode: debug in dev_workflow.yaml) the fiftyone database is enabled. If the pipeline was abruptly cancelled it may cause issues with the storing of data to the database. If such issues are encountered, you can simply delete the database before running the pipeline again:
+
+```bash
+rm data/debug/fifty-db --r
+```
