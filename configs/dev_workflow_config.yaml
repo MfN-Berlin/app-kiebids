@@ -2,12 +2,13 @@
 
 # Path to input /images directory
 image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
+max_images: 5  # number of images to process
 
 # Path to output directories
 output_path: data/output
 
 # Evaluation settings
-run_id: # Specify a name to identify the run
+run_tag: # Specify a name to identify the run (optional)
 evaluation: false
 evaluation_path: data/evaluation
 xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
@@ -15,7 +16,6 @@ xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/pag
 # Debug configs
 mode: debug
 debug_path: data/debug
-max_images: 5  # number of images to process, useful for debugging
 
 log_level: DEBUG
 

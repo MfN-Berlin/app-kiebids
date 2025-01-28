@@ -37,16 +37,16 @@ logger.setLevel(config.log_level)
 
 run_id = (
     datetime.now().strftime("%Y%m%d-%H%M%S")
-    if config.run_id is None
-    else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_id}"
+    if config.run_tag is None
+    else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_tag}"
 )
 
+logger.info("Starting app-kiebids... Run ID: %s", run_id)
+
 if config.evaluation:
-    logger.info(
-        "Evaluation enabled - Tensorboard logs will be saved with run_id: %s", run_id
-    )
     log_dir = f"{config.evaluation_path}/tensorboard/{run_id}"
 
+    logger.info("Evaluation enabled - Tensorboard logs will be saved at: %s", log_dir)
     os.makedirs(log_dir, exist_ok=True)
     shutil.copyfile(
         os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),

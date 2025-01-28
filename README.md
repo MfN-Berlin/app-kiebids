@@ -15,105 +15,118 @@ Overview of each module
 The pipeline can be run in three different modes:
 1. Prediction (work in progress)
 2. Evaluation (work in progress)
-3. Debugging
+3. Debug
 
+## Quickstart with example image
+### Prerequisites
+<!-- TODO GPU Support Cuda und  -->
 
-## Usage
+Tested on Ubuntu 22.04 distribution!
 
-1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
-   e.g., set `image_path` to the path of your input images, etc.
-2. Make a folder called `models` in the root directory (next to `data` etc.) and put the [SAM](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) model there.
-3. Follow the [installation instructions](#installation) for your preferred method.
-4. Run the workflow.
-5. Inspect the results – PAGE XML files by default, images when in debug mode.
-
-## Installation
-
-There are two ways to run this application:
-
-1. From the command line in a local Python environment that will run the workflow automatically.
-2. As a dockerized application which allows you to start workflow runs from the Prefect frontend.
-
-The dockerized variant is preferred in the long run but is not yet fully functional.
-For the time being, use the local variant.
-
-### Local Python environment
-
-Set up a virtual environment using your preferred Python management tool.
-
-**barebones `venv` example:** Make sure you have Python 3.10(.13) installed.
-```bash
-python3.10 -m venv app-kiebids
-source app-kiebids/bin/activate
-pip install -U pip
-pip install -r requirements.txt
+Install linux related dependencies:
+```
+sudo apt update
+sudo apt install -y ffmpeg libsm6 libxext6 curl libcurl4
 ```
 
-**`conda` example:**
-See [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) for further information on installing conda.
+<!-- Files and models -->
+After cloning this repository, download the required SAM Model by running:
+```
+cd ./app-kiebids
+wget -P ./models/ https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
+
+### Set up local Python environment
+<!-- TODO try to run without conda -->
+Install conda (see [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)) and create a local python environment by using the bash shell:
 ```bash
-conda create -n app-kiebids python=3.10.13
+conda env create --file environment.yml
 conda activate app-kiebids
-pip install -U pip
-pip install -r requirements.txt
-conda install -c conda-forge pyvips
 ```
 
-**`uv` example:**
-(See [uv installation guide](https://docs.astral.sh/uv/getting-started/installation/) for further information on installing uv.)
-
+### Run app and trigger flow run from browser
+Once the dependencies are installed run:
 ```bash
-uv venv --python 3.10.13
-source .venv/bin/activate
-uv pip install -U pip
-uv pip install -r requirements.txt
+source .example.env
+bash run_flow.sh --serve-deployment
 ```
 
-**Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:**
+This will serve a self hosted prefect environment:
+1. Copy and paste the shown url of respective deployment. The URL should look similar to this `http://localhost:4200/deployments/deployment/<some-random-deployment-id>`
+2. Click upper right button `Run` and select `Quick run`
 
+Behaviour:
+- This will start a flow run on all images inside the `image_path` referenced in [workflow_config.yaml](./configs/workflow_config.yaml)
+- You can follow the progress in your terminal for more detailed logs.
+
+### Running a flow without prefect UI:
 ```bash
 bash run_flow.sh
 ```
+This starts the Prefect service, and you can view the dashboard at the url displayed in the terminal.
 
-This will start the prefect server in background (if not started so far) and execute the basic flow.
-For further script options, see:
+> [!NOTE]
+> Each run will have an app-internal **run-id** in a timedata format YYYYMMDD-HHMMSS.
+
+> [!TIP]
+> To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml). The run-id would be of the format:
+> ```YYYYMMDD-HHMMSS_{run_tag}```. For example: ```20250115-174008_test_moondream.```
+
+> [!NOTE]
+> The .XML results corresponding to a specific image is saved with the same image name. (This also applies to the interim results saved by debug modus)
+
+
+### Run flow on own images:
+You can either put more images inside the `data/images` directory or you can reference a directory on your system under => `image_path` in [workflow_config.yaml](./configs/workflow_config.yaml) (Make sure that you also adjust the `max_images` field to analyse the desired number of images)
+
+## Evaluation Modus (Work in Progress - Tensorboard to be exchanged)
+To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
 ```
-bash run_flow.sh --help
+evaluation: true
+xml_path: "path/to/ground/truth/xml_files"
 ```
+This starts a tensorboard session upon running the pipeline. Currently the main metrics are being measured for each image are:
 
+- Layout analysis: average iou over all regions (Intersection over Union)
+- Text recognition: average CER over all regions (Character Error Rate)
 
-**Alternatively you can start the work flow by running the `ocr_flow.py` script directly:**
-
+The results for each run will be stored in the folder ```data/evaluation/tensorboard/{run-id}```. To view the dashboard, run:
 ```bash
-prefect cloud login  # if not already logged in; will provide a link to log in
-python kiebids/ocr_flow.py
-```
-
-
-### Dockerized application
-
-Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
-See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
-
-Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
-> The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
-
-## Evaluation
-To view evaluation tensorboard, run:
-```bash
-tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+tensorboard --logdir data/evaluation/tensorboard/{run-id}
 ```
 The tensorboard updates every 1 minute during the pipeline process.
 
-## Testing
+## Debug Modus
+To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
+Debug mode has two main features:
+- **Save interim results**
+
+   Debug modus saves interim results after each module at path ```data/debug/{module}/{run-id}```.
+- **FiftyOne APP**
+
+   Debug modus serves a FiftyOne app at the end of the flow at the displayed URL, where you can view the images. You can toggle of this feature by setting
+   ```disable_fiftyone: false``` in the [workflow_config](./configs/workflow_config.yaml). It persists previous results of each module for each given image.
+   You can also run the app standalone to inspect your previous runs by running
+   ```
+   python kiebids/ocr_flow.py --fiftyone-only
+   ```
+   You can inspect the results for each image by filtering the `image_name` field inside the app.
+
+## Dockerized application
+Make sure you have `docker` and `docker compose` installed.
+See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
+
+Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to run the application via docker. `git checkout dockerization`
+> The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
+
+## Testing (WIP)
 
 Run pytests:
 ```bash
 pytest -s
 ```
 
-## Development Mode
-
+## Development Environment KI-Ideenwerkstatt
 ### Config behaviour
 
 Inside the your local `.env` file (see [.example.env](.example.env)) set the following two variables to ensure that the development configs are initialized with paths to our shared directories.
@@ -123,17 +136,40 @@ WORKFLOW_CONFIG="dev_workflow_config.yaml"
 ```
 If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
 
-### Observe debugging results in the FiftyOne app
+## Known issues
 
-Set ocr flow to debug mode inside the [workflow config file](./configs/workflow_config.yaml).
-After processing a fiftyone app is served at the displayed URL. It persists previous results of each module for each given image.
-You can also run the app standalone to inspect your previous runs by running
+### Prefect
+
+**Database locked**
+
+Prefect uses a SQLite database under the hood, and to ensure correct concurrent access the database occasionally locks. This causes the following error:
+
+```bash
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) database is locked
 ```
-python kiebids/ocr_flow.py --fiftyone-only
+
+This is is is not a dangerous error, and any requests to the database will simply retry until connection is established. This is a know issue from prefect: https://github.com/PrefectHQ/prefect/issues/10188
+
+**Port already in Use / Connection refused**
+
+After finishing running the pipeline, prefect will block the used port for a couple of minutes. If you start a run again within that time, you will get a connection error since the port is already in use:
+
+```bash
+Port xxxx is already in use. Please specify a different port with the `--port` flag.
 ```
 
-You can inspect the results for each image by filtering the `image_name` field inside the app.
+Or the error:
 
-> This tracking is currently activated only in debug mode
+```bash
+httpx.ConnectError: [Errno 111] Connection refused
+```
 
------
+You can either wait a few minutes and try again, or set a new port number in the ```.env``` file.
+
+### FiftyOne Database
+
+When running the pipeline in debug mode the fiftyone database is enabled. If the pipeline was abruptly cancelled it may cause issues with the storing of data to the database. If such issues are encountered, you can simply delete the database before running the pipeline again:
+
+```bash
+rm data/debug/fifty-db --r
+```
