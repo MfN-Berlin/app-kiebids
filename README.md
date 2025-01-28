@@ -43,13 +43,14 @@ Once you set up a virtual environment and installed the dependencies, you can ru
 ```bash
 bash run_flow.sh
 ```
-This starts the Prefect service, and you can view the dashboard at the url displayed in the terminal (http://127.0.0.1:{port}).
+This starts the Prefect service, and you can view the dashboard at the url displayed in the terminal.
 
 > [!NOTE]
 > Each run will have an app-internal **run-id** in a timedata format YYYYMMDD-HHMMSS.
 
 > [!TIP]
-> To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml), and the run-id would be of the format YYYYMMDD-HHMMSS_{run_tag}. For example: ```20250115-174008_test_moondream.```
+> To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml). The run-id would be of the format:
+> ```YYYYMMDD-HHMMSS_{run_tag}```. For example: ```20250115-174008_test_moondream.```
 
 To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
 Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
@@ -78,8 +79,10 @@ The tensorboard updates every 1 minute during the pipeline process.
 To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
 Debug mode has two main features:
 - **Save interim results**
+
    Debug modus saves interim results after each module at path ```data/debug/{module}/{run-id}```.
 - **FiftyOne APP**
+
    Debug modus serves a FiftyOne app at the end of the flow at the displayed URL, where you can view the images. You can toggle of this feature by setting
    ```disable_fiftyone: false``` in the [workflow_config](./configs/workflow_config.yaml). It persists previous results of each module for each given image.
    You can also run the app standalone to inspect your previous runs by running
@@ -112,21 +115,6 @@ OCR_CONFIG="dev_ocr_config.yaml"
 WORKFLOW_CONFIG="dev_workflow_config.yaml"
 ```
 If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
-
-### Observe debugging results in the FiftyOne app
-
-Set ocr flow to debug mode inside the [workflow config file](./configs/workflow_config.yaml).
-After processing a fiftyone app is served at the displayed URL. It persists previous results of each module for each given image.
-You can also run the app standalone to inspect your previous runs by running
-```
-python kiebids/ocr_flow.py --fiftyone-only
-```
-
-You can inspect the results for each image by filtering the `image_name` field inside the app.
-
-> This tracking is currently activated only in debug mode
-
------
 
 
 ## Known issues
