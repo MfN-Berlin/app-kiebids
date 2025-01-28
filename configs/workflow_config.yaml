@@ -2,7 +2,7 @@
 
 # Path to input /images directory
 image_path: data/images
-max_images: 5  # number of images to process
+max_images: 50  # number of images to process
 
 # Path to output directories
 output_path: data/output
