@@ -38,16 +38,14 @@ conda env create --file environment.yml
 conda activate app-kiebids
 ```
 
-**Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:**
+Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:
 
 ```bash
 bash run_flow.sh
 ```
-This starts the Prefect service, and you can view the dashboard at: http://127.0.0.1:{port}
-To run the flow, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
-- **image_path**: Path to folder with images
-
-Pipeline will loop through all images found in ```image_path``` and output xml files to the ```output_path``` defined in the config.
+This starts the Prefect service, and you can view the dashboard at the url shown in the terminal (http://127.0.0.1:{port}).
+To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
+Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
 
 ## Evaluation Modus (Work in Progress)
 To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
@@ -60,7 +58,7 @@ and optionally set ```run_id``` if you want to tag the evaluation with a specifi
 - Layout analysis: average iou
 - Text recognition: average CER
 
-To view evaluation tensorboard, run: (you can see all previous runs under the below folder path)
+The results for each run will be stored in the folder ```data/evaluation/tensorboard/{name_of_run}```. To view the dashboard, run:
 ```bash
 tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
 ```
@@ -80,13 +78,6 @@ See [docker installation guide](https://docs.docker.com/get-docker/) for further
 
 Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
 > The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
-
-## Evaluation
-To view evaluation tensorboard, run:
-```bash
-tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
-```
-The tensorboard updates every 1 minute during the pipeline process.
 
 ## Testing (WIP)
 
@@ -151,9 +142,9 @@ httpx.ConnectError: [Errno 111] Connection refused
 
 You can either wait a few minutes and try again, or set a new port number in the ```.env``` file.
 
-## FiftyOne Database
+### FiftyOne Database
 
-When running the pipeline in debug mode (mode: debug in dev_workflow.yaml) the fiftyone database is enabled. If the pipeline was abruptly cancelled it may cause issues with the storing of data to the database. If such issues are encountered, you can simply delete the database before running the pipeline again:
+When running the pipeline in debug mode the fiftyone database is enabled. If the pipeline was abruptly cancelled it may cause issues with the storing of data to the database. If such issues are encountered, you can simply delete the database before running the pipeline again:
 
 ```bash
 rm data/debug/fifty-db --r
