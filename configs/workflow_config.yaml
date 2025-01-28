@@ -8,7 +8,7 @@ max_images: 50  # number of images to process
 output_path: data/output
 
 # Evaluation settings
-run_id: # Specify a name to identify the run
+run_tag: # Specify a tag to identify the run (optional)
 evaluation: false
 evaluation_path: data/evaluation
 xml_path: "data/page_xml"
