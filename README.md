@@ -26,7 +26,7 @@ Tested on Ubuntu 22.04 distribution
 Install ffmpeg library:
 ```
 sudo apt update
-sudo apt install ffmpeg
+sudo apt install -y ffmpeg libsm6 libxext6 curl libcurl4
 ```
 
 <!-- Files and models -->
@@ -47,6 +47,7 @@ conda activate app-kiebids
 ### Run app and trigger flow run from browser
 Once the dependencies are installed run:
 ```bash
+source .example.env
 bash run_flow.sh --serve-deployment
 ```
 
