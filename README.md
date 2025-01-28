@@ -21,9 +21,9 @@ The pipeline can be run in three different modes:
 ### Prerequisites
 <!-- TODO GPU Support Cuda und  -->
 
-Tested on Ubuntu 22.04 distribution
-<!-- ffmpeg installation -->
-Install ffmpeg library:
+Tested on Ubuntu 22.04 distribution!
+
+Install linux related dependencies:
 ```
 sudo apt update
 sudo apt install -y ffmpeg libsm6 libxext6 curl libcurl4
@@ -72,11 +72,8 @@ This starts the Prefect service, and you can view the dashboard at the url displ
 > To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml). The run-id would be of the format:
 > ```YYYYMMDD-HHMMSS_{run_tag}```. For example: ```20250115-174008_test_moondream.```
 
-To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
-Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
-
 > [!NOTE]
-> The .XML results corresponding to a specific image is saved with the same image name. (This is also applies to the interim results saved by debug modus)
+> The .XML results corresponding to a specific image is saved with the same image name. (This also applies to the interim results saved by debug modus)
 
 
 ### Run flow on own images:
