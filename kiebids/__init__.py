@@ -25,6 +25,7 @@ with open(os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}")) a
 fiftyone_dataset = None
 if not config.disable_fiftyone:
     os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
+    os.environ["PREFECT_API_SERVICES_FLOW_RUN_NOTIFICATIONS_ENABLED"] = "false"
 
     fiftyone_dataset = fod.load_dataset(
         config.fiftyone_dataset, create_if_necessary=True

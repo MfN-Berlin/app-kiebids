@@ -43,33 +43,50 @@ Once you set up a virtual environment and installed the dependencies, you can ru
 ```bash
 bash run_flow.sh
 ```
-This starts the Prefect service, and you can view the dashboard at the url shown in the terminal (http://127.0.0.1:{port}).
+This starts the Prefect service, and you can view the dashboard at the url displayed in the terminal (http://127.0.0.1:{port}).
+
+> [!NOTE]
+> Each run will have an app-internal **run-id** in a timedata format YYYYMMDD-HHMMSS.
+
+> [!TIP]
+> To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml), and the run-id would be of the format YYYYMMDD-HHMMSS_{run_tag}. For example: ```20250115-174008_test_moondream.```
+
 To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
 Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
 
-## Evaluation Modus (Work in Progress)
+> [!NOTE]
+> The .XML results corresponding to a specific image is saved with the same image name. (This is also applies to the interim results saved by debug modus)
+
+## Evaluation Modus (Work in Progress - Tensorboard to be exchanged)
 To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
 ```
 evaluation: true
 xml_path: "path/to/ground/truth/xml_files"
 ```
-and optionally set ```run_id``` if you want to tag the evaluation with a specific name. This starts a tensorboard session where results from the modules is stored:
+This starts a tensorboard session upon running the pipeline. Currently the main metrics are being measured for each image are:
 
-- Layout analysis: average iou
-- Text recognition: average CER
+- Layout analysis: average iou over all regions (Intersection over Union)
+- Text recognition: average CER over all regions (Character Error Rate)
 
-The results for each run will be stored in the folder ```data/evaluation/tensorboard/{name_of_run}```. To view the dashboard, run:
+The results for each run will be stored in the folder ```data/evaluation/tensorboard/{run-id}```. To view the dashboard, run:
 ```bash
-tensorboard --logdir data/evaluation/tensorboard/{name_of_run}
+tensorboard --logdir data/evaluation/tensorboard/{run-id}
 ```
 The tensorboard updates every 1 minute during the pipeline process.
 
 ## Debug Modus
-To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file, and optionally ```run_id``` if you want to tag the debug run with a specific name.
-
-Debug modus saves interim results after each module. You find the debug results from each module in the ```data/debug/{module}/{name_of_run}``` path.
-
-The debug mode also serves a FiftyOne app at the end of the flow at the shown URL, where you can view the images.
+To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
+Debug mode has two main features:
+- **Save interim results**
+   Debug modus saves interim results after each module at path ```data/debug/{module}/{run-id}```.
+- **FiftyOne APP**
+   Debug modus serves a FiftyOne app at the end of the flow at the displayed URL, where you can view the images. You can toggle of this feature by setting
+   ```disable_fiftyone: false``` in the [workflow_config](./configs/workflow_config.yaml). It persists previous results of each module for each given image.
+   You can also run the app standalone to inspect your previous runs by running
+   ```
+   python kiebids/ocr_flow.py --fiftyone-only
+   ```
+   You can inspect the results for each image by filtering the `image_name` field inside the app.
 
 
 ### Dockerized application
