@@ -66,7 +66,7 @@ PYTHON_PATH=$(which /usr/bin/env python)
 
 # Check if port $PREFECT_PORT is in use
 if ! lsof -i :$PREFECT_PORT > /dev/null; then
-    prefect server start --port $PREFECT_PORT &
+    prefect server start --host localhost --port $PREFECT_PORT &
 
     # wait for prefect server to start
     sleep 5

@@ -17,9 +17,20 @@ The pipeline can be run in three different modes:
 2. Evaluation (work in progress)
 3. Debugging
 
+# Quickstart
 ## Prerequisites
+Ubuntu distribution
 <!-- ffmpeg installation -->
+```
+sudo apt update
+sudo apt install ffmpeg
+```
+
 <!-- Files and models -->
+Download the required SAM Model by running:
+```
+wget -P ./models/ https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
 <!-- ## Usage
 1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
    e.g., set `image_path` to the path of your input images, etc.
@@ -30,16 +41,21 @@ The pipeline can be run in three different modes:
 
 ### Local Python environment
 <!-- TODO try to run without conda -->
-Install conda and create an environment:
-
-See [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) for further information on installing conda.
+Install conda (see [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)) and create a local python environment by using the bash shell:
 ```bash
 conda env create --file environment.yml
 conda activate app-kiebids
 ```
 
-**Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:**
+#### Run Flow deployment from browser
+Once the dependencies are installed run:
+```bash
+bash run_flow.sh --serve-deployment
+```
 
+> This will serve a self hosted prefect environment. Copy and paste the shown url of respective deployment. The URL should look something like this `http://localhost:4200/deployments/deployment/<some-random-deployment-id>`
+
+#### Running a flow without starting self hosted prefect:
 ```bash
 bash run_flow.sh
 ```
@@ -47,12 +63,11 @@ bash run_flow.sh
 <!-- TODO -->
 > Behaviour / what to expect:
 
-
 ### Dockerized application
 Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
 See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
 
-Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
+Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to run the application via docker. `git checkout dockerization`
 > The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
 
 ## Evaluation
@@ -69,7 +84,7 @@ Run pytests:
 pytest -s
 ```
 
-## Development Environment KI-IW
+## Development Environment KI-Ideenwerkstatt
 ### Config behaviour
 
 Inside the your local `.env` file (see [.example.env](.example.env)) set the following two variables to ensure that the development configs are initialized with paths to our shared directories.
