@@ -186,6 +186,17 @@ def extract_polygon(coordinates):
     return [tuple(map(int, point.split(","))) for point in coordinates.split()]
 
 
+def bounding_box_to_coordinates(bounding_box: list[int]):
+    """
+    Convert a bounding box to coordinates.
+    params bounding_box:  [x_min, y_min, width, height]
+
+    returns: "x_min,y_min x_max,y_min x_max,y_max x_min,y_max"
+    """
+    x, y, w, h = bounding_box
+    return f"{x},{y} {x+w},{y} {x+w},{y+h} {x},{y+h}"
+
+
 def resize(img, max_size):
     h, w = img.shape[:2]
     if max(w, h) > max_size:

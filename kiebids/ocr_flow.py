@@ -44,16 +44,16 @@ def ocr_flow():
         preprocessed_image = preprocessing(current_image_name=filename)
 
         # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
-        bb_labels = layout_analyzer.run(
+        la_result = layout_analyzer.run(
             image=preprocessed_image,
             current_image_name=filename,
             current_image_index=image_index,
         )
 
         # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        results = text_recognizer.run(  # noqa: F841
+        tr_result = text_recognizer.run(  # noqa: F841
             image=preprocessed_image,
-            bounding_boxes=[bb_label["bbox"] for bb_label in bb_labels],
+            bounding_boxes=[bb_label["bbox"] for bb_label in la_result],
             current_image_name=filename,
             current_image_index=image_index,
         )
@@ -65,7 +65,7 @@ def ocr_flow():
         # entity_linking(image_path, config.output_path)
 
         # write results to PAGE XML
-        write_page_xml(config.output_path, filename, results)
+        write_page_xml(current_image_name=filename, tr_result=tr_result)
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)
