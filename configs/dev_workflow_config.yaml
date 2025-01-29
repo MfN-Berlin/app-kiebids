@@ -2,6 +2,7 @@
 
 # Path to input /images directory
 image_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/images # yamllint disable-line
+max_images: 5  # number of images to process
 
 # Path to output directories
 output_path: data/output
@@ -15,7 +16,6 @@ xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/pag
 # Debug configs
 mode: debug
 debug_path: data/debug
-max_images: 4  # number of images to process, useful for debugging
 
 log_level: DEBUG
 
@@ -23,6 +23,6 @@ fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
 disable_fiftyone: false
 
-# XML output settings
+# Will be used in the XML output, who created the XML file
 creator_info: |
   Information about the creator of the XML file.

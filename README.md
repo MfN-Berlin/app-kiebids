@@ -17,29 +17,49 @@ The pipeline can be run in three different modes:
 2. Evaluation (work in progress)
 3. Debug
 
-## Prerequisites
-<!-- ffmpeg installation -->
+## Quickstart with example image
+### Prerequisites
+<!-- TODO GPU Support Cuda und  -->
+
+Tested on Ubuntu 22.04 distribution!
+
+Install linux related dependencies:
+```
+sudo apt update
+sudo apt install -y ffmpeg libsm6 libxext6 curl libcurl4
+```
+
 <!-- Files and models -->
-<!-- ## Usage
-1. Adapt [workflow_config.yaml](./configs/workflow_config.yaml) to your needs.
-   e.g., set `image_path` to the path of your input images, etc.
-2. Make a folder called `models` in the root directory (next to `data` etc.) and put the [SAM](https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth) model there.
-3. Follow the [installation instructions](#installation) for your preferred method.
-4. Run the workflow.
-5. Inspect the results – PAGE XML files by default, images when in debug mode. -->
+After cloning this repository, download the required SAM Model by running:
+```
+cd ./app-kiebids
+wget -P ./models/ https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
+```
 
-### Local Python environment
+### Set up local Python environment
 <!-- TODO try to run without conda -->
-Install conda and create an environment:
-
-See [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html) for further information on installing conda.
+Install conda (see [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)) and create a local python environment by using the bash shell:
 ```bash
 conda env create --file environment.yml
 conda activate app-kiebids
 ```
 
-Once you set up a virtual environment and installed the dependencies, you can run the application by executing the following command in your terminal:
+### Run app and trigger flow run from browser
+Once the dependencies are installed run:
+```bash
+source .example.env
+bash run_flow.sh --serve-deployment
+```
 
+This will serve a self hosted prefect environment:
+1. Copy and paste the shown url of respective deployment. The URL should look similar to this `http://localhost:4200/deployments/deployment/<some-random-deployment-id>`
+2. Click upper right button `Run` and select `Quick run`
+
+Behaviour:
+- This will start a flow run on all images inside the `image_path` referenced in [workflow_config.yaml](./configs/workflow_config.yaml)
+- You can follow the progress in your terminal for more detailed logs.
+
+### Running a flow without prefect UI:
 ```bash
 bash run_flow.sh
 ```
@@ -52,11 +72,12 @@ This starts the Prefect service, and you can view the dashboard at the url displ
 > To get a better overview of your different pipeline runs, you can append your run-id with a name by setting  ```run_tag``` in the [workflow_config](./configs/workflow_config.yaml). The run-id would be of the format:
 > ```YYYYMMDD-HHMMSS_{run_tag}```. For example: ```20250115-174008_test_moondream.```
 
-To run the flow, you need to set the **image_path** in [workflow_config](./configs/workflow_config.yaml) to point to a folder with images.
-Pipeline will loop through all images and will output xml files to the ```output_path``` defined in the config.
-
 > [!NOTE]
-> The .XML results corresponding to a specific image is saved with the same image name. (This is also applies to the interim results saved by debug modus)
+> The .XML results corresponding to a specific image is saved with the same image name. (This also applies to the interim results saved by debug modus)
+
+
+### Run flow on own images:
+You can either put more images inside the `data/images` directory or you can reference a directory on your system under => `image_path` in [workflow_config.yaml](./configs/workflow_config.yaml) (Make sure that you also adjust the `max_images` field to analyse the desired number of images)
 
 ## Evaluation Modus (Work in Progress - Tensorboard to be exchanged)
 To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
@@ -91,12 +112,11 @@ Debug mode has two main features:
    ```
    You can inspect the results for each image by filtering the `image_name` field inside the app.
 
-
-### Dockerized application
-Make sure you have `docker` and `docker compose` installed and Docker is running on your machine.
+## Dockerized application
+Make sure you have `docker` and `docker compose` installed.
 See [docker installation guide](https://docs.docker.com/get-docker/) for further information.
 
-Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to launch the application via docker. `git checkout dockerization`
+Please checkout the [dockerization branch](https://github.com/MfN-Berlin/app-kiebids/tree/dockerization?tab=readme-ov-file#run-with-docker) to run the application via docker. `git checkout dockerization`
 > The state of `dockerization branch` might be behind the `main` branch due to ongoing development process.
 
 ## Testing (WIP)
@@ -106,7 +126,7 @@ Run pytests:
 pytest -s
 ```
 
-## Development Environment KI-IW
+## Development Environment KI-Ideenwerkstatt
 ### Config behaviour
 
 Inside the your local `.env` file (see [.example.env](.example.env)) set the following two variables to ensure that the development configs are initialized with paths to our shared directories.
@@ -115,7 +135,6 @@ OCR_CONFIG="dev_ocr_config.yaml"
 WORKFLOW_CONFIG="dev_workflow_config.yaml"
 ```
 If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
-
 
 ## Known issues
 

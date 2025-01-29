@@ -2,6 +2,7 @@
 
 # Path to input /images directory
 image_path: data/images
+max_images: 50  # number of images to process
 
 # Path to output directories
 output_path: data/output
@@ -10,12 +11,11 @@ output_path: data/output
 run_tag: # Specify a tag to identify the run (optional)
 evaluation: false
 evaluation_path: data/evaluation
-xml_path: ""
+xml_path: "data/page_xml"
 
 # Debug configs
 mode:  # debug
 debug_path: data/debug
-max_images: 5  # number of images to process, useful for debugging
 
 log_level: INFO  # DEBUG
 
