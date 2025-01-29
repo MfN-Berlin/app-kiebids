@@ -23,6 +23,6 @@ fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
 disable_fiftyone: false
 
-# Will be used in the XML output, who created the XML file
+# Information on who created the XML file. Used in the XML output.
 creator_info: |
   Information about the creator of the XML file.
