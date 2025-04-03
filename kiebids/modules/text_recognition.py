@@ -25,6 +25,8 @@ class TextRecognizer:
     """
 
     def __init__(self):
+        logger.info(f"Loading text recognition model ({module_config.model})...")
+
         MODEL_REGISTRY = {"easyocr": EasyOcr, "moondream": Moondream}
 
         if module_config.model in MODEL_REGISTRY:

@@ -74,7 +74,7 @@ def evaluator(module=""):
 
                 return texts_and_bb
 
-            elif module == "semantic_labeling":
+            elif module == "semantic_tagging":
                 # do something here
                 return func(*args, **kwargs)
 

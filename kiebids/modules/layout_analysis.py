@@ -20,6 +20,7 @@ module_config = pipeline_config[module]
 
 class LayoutAnalyzer:
     def __init__(self):
+        logger.info("Loading Layout analysis Model...")
         model_path = module_config["model_path"]
         self.mask_generator = self.load_model(model_path)
 
