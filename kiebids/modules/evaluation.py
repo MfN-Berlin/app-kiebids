@@ -6,7 +6,9 @@ from itertools import permutations
 import cv2
 import numpy as np
 import requests
+import spacy
 from PIL import Image
+from spacy.tokens import Span
 from torchmetrics.text import CharErrorRate
 
 from kiebids import (
@@ -333,3 +335,73 @@ def prepare_sem_tag_gt(file):
 
         text = line_separator.join(text)
     return text, global_tags, global_positions
+
+
+def evaluate_semantic_tagging():
+    file = "/mnt/data/ZUG-Biodiversität/data_new/readcoop_1458788_mfnberlin4classification2/page_xml/0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
+    text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(file)
+
+    # nlp = spacy.blank("en")
+    nlp = spacy.load("en_core_web_sm")
+
+    spans = []
+
+    # Create a spaCy doc (tokenized version of the text)
+    # doc = nlp(text)
+    doc_gold = nlp.make_doc(text)
+
+    for tag, p in zip(gt_global_tags, gt_global_positions):
+        # Use char_span to align character offsets to tokens
+        spans.append(
+            doc_gold.char_span(
+                int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
+            )
+        )
+
+    # add gold entities to doc_gold
+    # doc_gold.spans = spans # allows overlapping entities
+    doc_gold.spans["my_entities"] = spans  # allows overlapping entities
+
+    doc_pred = nlp(text)
+    pred_spans = [
+        Span(doc_pred, span.start, span.end, label=span.label) for span in spans
+    ]
+
+    doc_pred.spans["predicted"] = pred_spans[:-1]
+
+    # ✅ Custom scoring function
+    def score_overlap(gold_spans, pred_spans):
+        gold_set = {(s.start_char, s.end_char, s.label_) for s in gold_spans}
+        pred_set = {(s.start_char, s.end_char, s.label_) for s in pred_spans}
+
+        tp = len(gold_set & pred_set)
+        fp = len(pred_set - gold_set)
+        fn = len(gold_set - pred_set)
+
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = (
+            2 * precision * recall / (precision + recall)
+            if (precision + recall) > 0
+            else 0.0
+        )
+
+        return {
+            "precision": round(precision * 100, 2),
+            "recall": round(recall * 100, 2),
+            "f1": round(f1 * 100, 2),
+            "true_positive": tp,
+            "false_positive": fp,
+            "false_negative": fn,
+        }
+
+    scores = score_overlap(doc_gold.spans["my_entities"], doc_pred.spans["predicted"])
+
+    import pprint
+
+    pprint.pprint(scores)
+
+
+if __name__ == "__main__":
+    # eval_test()
+    evaluate_semantic_tagging()
