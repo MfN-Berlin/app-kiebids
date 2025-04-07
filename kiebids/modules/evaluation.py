@@ -18,7 +18,7 @@ from kiebids import (
     get_logger,
     pipeline_config,
 )
-from kiebids.utils import extract_polygon, get_ground_truth_data, read_xml, resize
+from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -77,9 +77,10 @@ def evaluator(module=""):
 
                 return texts_and_bb
             elif module == "semantic_tagging":
-                # just hardcorded for now
-                file = "/mnt/data/ZUG-Biodiversität/data_new/readcoop_1458788_mfnberlin4classification2/page_xml/0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
-                text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(file)
+                parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
+                text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(
+                    parsed_dict
+                )
                 # use ground truth input for evaluation for now
                 kwargs["text"] = text
 
@@ -290,7 +291,7 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
     evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
 
 
-def prepare_sem_tag_gt(file):
+def prepare_sem_tag_gt(file_dict):
     """
     Prepares the ground truth data for semantic tagging evaluation.
     It extracts the text, tags, and positions from the XML file.
@@ -298,8 +299,6 @@ def prepare_sem_tag_gt(file):
     The function returns the concatenated text, global tags, and global positions.
     """
 
-    # file_dict = get_ground_truth_data(file)
-    file_dict = read_xml(file)
     line_separator = "\n\n"
 
     # multiple regions possible because of multiple exhibit labels.
