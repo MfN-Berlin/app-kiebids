@@ -1,4 +1,5 @@
 import itertools
+import re
 from io import BytesIO
 from itertools import permutations
 
@@ -15,7 +16,7 @@ from kiebids import (
     get_logger,
     pipeline_config,
 )
-from kiebids.utils import extract_polygon, get_ground_truth_data, resize
+from kiebids.utils import extract_polygon, get_ground_truth_data, read_xml, resize
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
@@ -73,9 +74,22 @@ def evaluator(module=""):
                     )
 
                 return texts_and_bb
-
             elif module == "semantic_tagging":
-                # do something here
+                # just hardcorded for now
+                file = "/mnt/data/ZUG-Biodiversität/data_new/readcoop_1458788_mfnberlin4classification2/page_xml/0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
+                text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(file)
+                # use ground truth input for evaluation for now
+                kwargs["text"] = text
+
+                sequences_and_tags = func(*args, **kwargs)
+
+                # extract recognized tags from predictions
+                # what do we actually want to compare?
+                #
+                # prepare ground truth sequences and tags
+                # compare with ground truth tags
+                return sequences_and_tags
+            else:
                 return func(*args, **kwargs)
 
         return wrapper
@@ -272,3 +286,50 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
 
     # Save average CER value to tensorboard
     evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
+
+
+def prepare_sem_tag_gt(file):
+    """
+    Prepares the ground truth data for semantic tagging evaluation.
+    It extracts the text, tags, and positions from the XML file.
+    It concatenates the text lines with a line separator and extracts the tags and positions from custom attributes.
+    The function returns the concatenated text, global tags, and global positions.
+    """
+
+    # file_dict = get_ground_truth_data(file)
+    file_dict = read_xml(file)
+    line_separator = "\n\n"
+
+    # multiple regions possible because of multiple exhibit labels.
+    # TODO this is just assuming that there is only one region. We need a strategy here for multiple regions
+    for region in file_dict["text_regions"]:
+        text = []
+        # global offset used to correct posiotion for tags
+        global_offset = 0
+        global_positions = []
+        global_tags = []
+        for line in region["text_lines"]:
+            # extract text lines and concatenate (separator=[line_sep])
+            text.append(line["text"])
+
+            # skipping reading order
+            global_tags.extend(
+                [ca[0] for ca in line["custom_attributes"] if ca[0] != "readingOrder"]
+            )
+
+            # extract positions from custom attributes
+            positions = [
+                {k: v for k, v in re.findall(r"(\w+):([^;]+)", ca[1])}
+                for ca in line["custom_attributes"]
+                if ca[0] != "readingOrder"
+            ]
+            # adding global offset to positions offset
+            for p in positions:
+                p["offset"] = int(p["offset"]) + global_offset
+
+            global_positions.extend(positions)
+
+            global_offset += len(line["text"]) + len(line_separator)
+
+        text = line_separator.join(text)
+    return text, global_tags, global_positions

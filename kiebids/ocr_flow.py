@@ -53,7 +53,8 @@ def ocr_flow():
             current_image_index=image_index,
         )
 
-        semantic_tagging.run()
+        # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
+        semantic_tagging.run(text=tr_result)
         # semantic_labeling_output_dir = semantic_labeling(layout_analysis_output_dir, config.output_path)
 
         # entity_linking.run

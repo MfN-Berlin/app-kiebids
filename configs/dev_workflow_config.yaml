@@ -9,7 +9,7 @@ output_path: data/output
 
 # Evaluation settings
 run_tag: # Specify a name to identify the run (optional)
-evaluation: false
+evaluation: true
 evaluation_path: data/evaluation
 xml_path: /mnt/data/ZUG-Biodiversität/data/labels_fossinv_insekten_20200723/page_xml # yamllint disable-line
 

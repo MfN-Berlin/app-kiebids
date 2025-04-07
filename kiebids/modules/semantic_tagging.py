@@ -16,12 +16,11 @@ module_config = pipeline_config[module]
 
 class SemanticTagging:
     def __init__(self):
-        # model_path = module_config["model_path"]
-        # self.mask_generator = self.load_model(model_path)
-        ...
+        logger.info("Running Semantic tagging module")
 
     @debug_writer(debug_path, module=module)
     @evaluator(module=module)
     @task(name=module)
-    def run(self, **kwargs):  # pylint: disable=unused-argument
+    def run(self, text, **kwargs):  # pylint: disable=unused-argument
+        logger.debug("%s", text)
         return "dummy"

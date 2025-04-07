@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 
 import cv2
@@ -118,6 +119,8 @@ def debug_writer(debug_path="", module=""):
                     json.dump(output, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
                 return texts_and_bb
+            else:
+                return func(*args, **kwargs)
 
         return wrapper
 
@@ -268,6 +271,13 @@ def read_xml(file_path: str) -> dict:
         }
 
         for line in region.findall(".//ns:TextLine", namespaces=ns):
+            if "custom" in line.attrib:
+                custom_attributes = line.attrib["custom"]
+                matches = re.findall(r"(\w+)\s*\{([^}]*)\}", custom_attributes)
+                custom_attributes = [
+                    (tag, position.strip()) for tag, position in matches
+                ]
+
             text_region["text_lines"].append(
                 {
                     "id": line.get("id"),
@@ -281,6 +291,7 @@ def read_xml(file_path: str) -> dict:
                         .text
                         or ""
                     ),
+                    "custom_attributes": custom_attributes,
                 }
             )
 
