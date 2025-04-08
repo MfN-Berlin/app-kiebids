@@ -8,7 +8,6 @@ import numpy as np
 import requests
 import spacy
 from PIL import Image
-from spacy.tokens import Span
 from torchmetrics.text import CharErrorRate
 
 from kiebids import (
@@ -31,20 +30,20 @@ def evaluator(module=""):
             if not module or not evaluation_writer:
                 return func(*args, **kwargs)
 
+            # get ground truth for image
+            gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
 
-                # get ground truth for image
-                parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
-                if parsed_dict:
+                if gt_data:
                     gt_regions = [
                         extract_polygon(tr["coords"])
-                        for tr in parsed_dict.get("text_regions")
+                        for tr in gt_data.get("text_regions")
                     ]
                     # TODO make this casting safe
                     original_resolution = (
-                        int(parsed_dict.get("image_height")),
-                        int(parsed_dict.get("image_width")),
+                        int(gt_data.get("image_height")),
+                        int(gt_data.get("image_width")),
                     )
                     logger.debug(f"image index: {kwargs.get('current_image_index')}")
                     compare_layouts(
@@ -60,10 +59,8 @@ def evaluator(module=""):
                 texts_and_bb = func(*args, **kwargs)
 
                 predictions = [text["text"] for text in texts_and_bb]
-                parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
-
-                if parsed_dict:
-                    gt_texts = [tr["text"] for tr in parsed_dict.get("text_regions")]
+                if gt_data:
+                    gt_texts = [tr["text"] for tr in gt_data.get("text_regions")]
 
                     # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                     # For fair comparison we replace all \r\n with \n
@@ -77,15 +74,12 @@ def evaluator(module=""):
 
                 return texts_and_bb
             elif module == "semantic_tagging":
-                parsed_dict = get_ground_truth_data(kwargs.get("current_image_name"))
-                text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(
-                    parsed_dict
-                )
+                text, gt_spans = prepare_sem_tag_gt(gt_data)
                 # use ground truth input for evaluation for now
                 kwargs["text"] = text
 
                 sequences_and_tags = func(*args, **kwargs)
-
+                compare_tags(predictions=sequences_and_tags, ground_truths=gt_spans)
                 # extract recognized tags from predictions
                 # what do we actually want to compare?
                 #
@@ -301,14 +295,14 @@ def prepare_sem_tag_gt(file_dict):
 
     line_separator = "\n\n"
 
+    global_positions = []
+    global_tags = []
     # multiple regions possible because of multiple exhibit labels.
-    # TODO this is just assuming that there is only one region. We need a strategy here for multiple regions
+    # TODO this is just assuming that there is only one region as present in evaluation data set. Do we need a strategy to handle multiple regions?
     for region in file_dict["text_regions"]:
         text = []
         # global offset used to correct posiotion for tags
         global_offset = 0
-        global_positions = []
-        global_tags = []
         for line in region["text_lines"]:
             # extract text lines and concatenate (separator=[line_sep])
             text.append(line["text"])
@@ -333,74 +327,58 @@ def prepare_sem_tag_gt(file_dict):
             global_offset += len(line["text"]) + len(line_separator)
 
         text = line_separator.join(text)
-    return text, global_tags, global_positions
 
-
-def evaluate_semantic_tagging():
-    file = "/mnt/data/ZUG-Biodiversität/data_new/readcoop_1458788_mfnberlin4classification2/page_xml/0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
-    text, gt_global_tags, gt_global_positions = prepare_sem_tag_gt(file)
-
-    # nlp = spacy.blank("en")
     nlp = spacy.load("en_core_web_sm")
-
-    spans = []
+    gt_spans = []
 
     # Create a spaCy doc (tokenized version of the text)
-    # doc = nlp(text)
     doc_gold = nlp.make_doc(text)
-
-    for tag, p in zip(gt_global_tags, gt_global_positions):
+    for tag, p in zip(global_tags, global_positions):
         # Use char_span to align character offsets to tokens
-        spans.append(
+        gt_spans.append(
             doc_gold.char_span(
                 int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
             )
         )
+    return text, gt_spans
 
-    # add gold entities to doc_gold
-    # doc_gold.spans = spans # allows overlapping entities
-    doc_gold.spans["my_entities"] = spans  # allows overlapping entities
 
-    doc_pred = nlp(text)
-    pred_spans = [
-        Span(doc_pred, span.start, span.end, label=span.label) for span in spans
-    ]
+def compare_tags(predictions: list, ground_truths: list):
+    gold_set = {(s.start_char, s.end_char, s.label_) for s in ground_truths}
+    pred_set = {(s.start_char, s.end_char, s.label_) for s in predictions}
 
-    doc_pred.spans["predicted"] = pred_spans[:-1]
+    tp = len(gold_set & pred_set)
+    fp = len(pred_set - gold_set)
+    fn = len(gold_set - pred_set)
 
-    # ✅ Custom scoring function
-    def score_overlap(gold_spans, pred_spans):
-        gold_set = {(s.start_char, s.end_char, s.label_) for s in gold_spans}
-        pred_set = {(s.start_char, s.end_char, s.label_) for s in pred_spans}
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    f1 = (
+        2 * precision * recall / (precision + recall)
+        if (precision + recall) > 0
+        else 0.0
+    )
 
-        tp = len(gold_set & pred_set)
-        fp = len(pred_set - gold_set)
-        fn = len(gold_set - pred_set)
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
-        f1 = (
-            2 * precision * recall / (precision + recall)
-            if (precision + recall) > 0
-            else 0.0
-        )
-
-        return {
-            "precision": round(precision * 100, 2),
-            "recall": round(recall * 100, 2),
-            "f1": round(f1 * 100, 2),
-            "true_positive": tp,
-            "false_positive": fp,
-            "false_negative": fn,
-        }
-
-    scores = score_overlap(doc_gold.spans["my_entities"], doc_pred.spans["predicted"])
-
-    import pprint
-
-    pprint.pprint(scores)
+    return {
+        "precision": round(precision * 100, 2),
+        "recall": round(recall * 100, 2),
+        "f1": round(f1 * 100, 2),
+        "true_positive": tp,
+        "false_positive": fp,
+        "false_negative": fn,
+    }
 
 
 if __name__ == "__main__":
-    # eval_test()
-    evaluate_semantic_tagging()
+    file = "0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
+    parsed_dict = get_ground_truth_data(file)
+    text, gt_spans = prepare_sem_tag_gt(parsed_dict)
+
+    nlp = spacy.load("en_core_web_sm")
+    doc_pred = nlp(text)
+    # pred_spans = [
+    #     Span(doc_pred, span.start, span.end, label=span.label) for span in gt_spans
+    # ]
+
+    # doc_pred.spans["predicted"] = pred_spans[:-1]
+    compare_tags(text, gt_spans, gt_spans, 0)
