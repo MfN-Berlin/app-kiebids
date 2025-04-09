@@ -96,21 +96,23 @@ tensorboard --logdir data/evaluation/tensorboard/{run-id}
 ```
 The tensorboard updates every 1 minute during the pipeline process.
 
-## Debug Modus
+## Debug Mode
 To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.
 Debug mode has two main features:
 - **Save interim results**
-
-   Debug modus saves interim results after each module at path ```data/debug/{module}/{run-id}```.
+   Debug mode saves interim results after each module at path ```data/debug/{module}/{run-id}```.
 - **FiftyOne APP**
 
-   Debug modus serves a FiftyOne app at the end of the flow at the displayed URL, where you can view the images. You can toggle of this feature by setting
-   ```disable_fiftyone: false``` in the [workflow_config](./configs/workflow_config.yaml). It persists previous results of each module for each given image.
+   Debug mode serves a FiftyOne app at the end of the flow at the displayed URL, where you can view the images. This will be enabled only when the debug mode
+   ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) is activated. It persists previous results of each module for each given image.
    You can also run the app standalone to inspect your previous runs by running
    ```
-   python kiebids/ocr_flow.py --fiftyone-only
+   python -m kiebids.ocr_flow --fiftyone-only
    ```
+   This requires at least one previous successful execution of the pipeline with the enabled debug mode.
    You can inspect the results for each image by filtering the `image_name` field inside the app.
+
+   > The `fiftyone_dataset` field is refering to the name of the current dataset (can be set as you please) and can be selected in the upper left corner of the fiftyone UI (next to the fiftyone logo).
 
 ## Dockerized application
 Make sure you have `docker` and `docker compose` installed.

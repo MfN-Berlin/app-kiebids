@@ -98,6 +98,6 @@ if __name__ == "__main__":
         else:
             ocr_flow()
 
-    if not config.disable_fiftyone:
+    if config.mode == "debug":
         fiftyone_session = fo.launch_app(fiftyone_dataset)
         fiftyone_session.wait()

@@ -23,7 +23,7 @@ with open(os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}")) a
     pipeline_config = DotMap(yaml.safe_load(f))
 
 fiftyone_dataset = None
-if not config.disable_fiftyone:
+if config.mode == "debug":
     os.environ["FIFTYONE_DATABASE_DIR"] = config.fiftyone_database_dir
 
     fiftyone_dataset = fod.load_dataset(

@@ -19,9 +19,8 @@ debug_path: data/debug
 
 log_level: INFO  # DEBUG
 
-fiftyone_dataset: "mfn-dataset"
+fiftyone_dataset: "mfn-dataset" # Name of the FiftyOne dataset
 fiftyone_database_dir: data/debug/fifty-db
-disable_fiftyone: true
 
 # Information on who created the XML file. Used in the XML output.
 creator_info: |
