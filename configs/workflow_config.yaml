@@ -14,7 +14,7 @@ evaluation_path: data/evaluation
 xml_path: "data/page_xml"
 
 # Debug configs
-mode:  # debug
+mode: prd
 debug_path: data/debug
 
 log_level: INFO  # DEBUG

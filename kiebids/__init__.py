@@ -35,6 +35,8 @@ if config.mode == "debug":
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
 
+logger.info("Running in %s mode", config.mode)
+
 run_id = (
     datetime.now().strftime("%Y%m%d-%H%M%S")
     if config.run_tag is None
