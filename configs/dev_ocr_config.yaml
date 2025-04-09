@@ -39,6 +39,8 @@ text_recognition:  # easyocr module
       from a collection of a museum for natural history, being especially
       careful to preserve any scientific names, dates, and location information.
       Maintain the original formatting and line breaks. Most text is in German.
-entity_linking:
 
 semantic_labeling:
+
+entity_linking:
+  geonames_api_url: "http://api.geonames.org/searchJSON"

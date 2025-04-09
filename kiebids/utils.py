@@ -119,6 +119,8 @@ def debug_writer(debug_path="", module=""):
                     json.dump(output, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
                 return texts_and_bb
+            elif module == "entity_linking":
+                return func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
 

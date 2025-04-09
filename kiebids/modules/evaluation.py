@@ -86,6 +86,9 @@ def evaluator(module=""):
                 # prepare ground truth sequences and tags
                 # compare with ground truth tags
                 return sequences_and_tags
+            elif module == "entity_linking":
+                # How do we evaluate entity linking?
+                return func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
 

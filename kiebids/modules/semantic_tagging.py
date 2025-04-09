@@ -16,7 +16,7 @@ module_config = pipeline_config[module]
 
 class SemanticTagging:
     def __init__(self):
-        logger.info("Running Semantic tagging module")
+        logger.info("Running %s module", module)
 
     @debug_writer(debug_path, module=module)
     @evaluator(module=module)

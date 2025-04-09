@@ -6,8 +6,7 @@ from prefect import flow
 from tqdm import tqdm
 
 from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
-
-# from kiebids.modules.entity_linking import entity_linking
+from kiebids.modules.entity_linking import EntityLinking
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
 from kiebids.modules.preprocessing import preprocessing
@@ -26,6 +25,7 @@ def ocr_flow():
     layout_analyzer = LayoutAnalyzer()
     text_recognizer = TextRecognizer()
     semantic_tagging = SemanticTagging()
+    entity_linking = EntityLinking()
 
     # Process images sequentially
     for image_index, filename in enumerate(
@@ -54,12 +54,14 @@ def ocr_flow():
         )
 
         # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
-        semantic_tagging.run(
+        entities = semantic_tagging.run(
             text=tr_result, current_image_name=filename, current_image_index=image_index
         )
 
-        # entity_linking.run
-        # entity_linking(image_path, config.output_path)
+        entity_linking.run(
+            entities=entities,
+            current_image_name=filename,
+        )
 
         # write results to PAGE XML
         write_page_xml(current_image_name=filename, tr_result=tr_result)
