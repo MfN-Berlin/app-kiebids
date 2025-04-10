@@ -3,12 +3,10 @@ from pathlib import Path
 import cv2
 from prefect import task
 
-from kiebids import config, get_logger, pipeline_config, run_id
-from kiebids.utils import debug_writer, resize
+from kiebids import config, pipeline_config, run_id
+from kiebids.utils import debug_writer, get_kiebids_logger, resize
 
 module = __name__.split(".")[-1]
-logger = get_logger(module)
-logger.setLevel(config.log_level)
 
 debug_path = (
     "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
@@ -16,10 +14,11 @@ debug_path = (
 module_config = pipeline_config[module]
 
 
-@debug_writer(debug_path, module=module)
 @task(name=module)
+@debug_writer(debug_path, module=module)
 def preprocessing(current_image_name):
     image_path = Path(config.image_path) / current_image_name
+    logger = get_kiebids_logger(module)
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 

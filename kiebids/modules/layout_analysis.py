@@ -4,14 +4,11 @@ import torch
 from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
-from kiebids import config, get_logger, pipeline_config, run_id
+from kiebids import config, pipeline_config, run_id
 from kiebids.modules.evaluation import evaluator
-from kiebids.utils import debug_writer
+from kiebids.utils import debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
-logger = get_logger(module)
-logger.setLevel(config.log_level)
-
 debug_path = (
     "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
 )
@@ -20,13 +17,14 @@ module_config = pipeline_config[module]
 
 class LayoutAnalyzer:
     def __init__(self):
-        logger.info("Loading Layout analysis Model...")
+        self.logger = get_kiebids_logger(module)
+        self.logger.info("Loading Layout analysis Model...")
         model_path = module_config["model_path"]
         self.mask_generator = self.load_model(model_path)
 
+    @task(name=module)
     @debug_writer(debug_path, module=module)
     @evaluator(module=module)
-    @task(name=module)
     def run(self, image, **kwargs):  # pylint: disable=unused-argument
         masks = self.mask_generator.generate(image)
         for mask in masks:
@@ -46,11 +44,11 @@ class LayoutAnalyzer:
         return label_masks
 
     def load_model(self, model_path):
-        logger.info(f"Loading segment anything model from {model_path} ...")
+        self.logger.info(f"Loading segment anything model from {model_path} ...")
         sam = sam_model_registry[module_config["model_type"]](checkpoint=model_path)
 
         device = "cuda" if torch.cuda.is_available() else "cpu"
-        logger.info(f"Using device: {device}")
+        self.logger.info(f"Using device: {device}")
         sam.to(device=device)
 
         mask_generator = SamAutomaticMaskGenerator(

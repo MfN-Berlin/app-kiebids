@@ -5,14 +5,11 @@ from PIL import Image
 from prefect import task
 from transformers import AutoModelForCausalLM
 
-from kiebids import config, get_logger, pipeline_config, run_id
+from kiebids import config, pipeline_config, run_id
 from kiebids.modules.evaluation import evaluator
-from kiebids.utils import crop_image, debug_writer
+from kiebids.utils import crop_image, debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
-logger = get_logger(module)
-logger.setLevel(config.log_level)
-
 debug_path = (
     "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
 )
@@ -25,14 +22,15 @@ class TextRecognizer:
     """
 
     def __init__(self):
-        logger.info(f"Loading text recognition model ({module_config.model})...")
+        self.logger = get_kiebids_logger(module)
+        self.logger.info("Loading text recognition model (%s)...", module_config.model)
 
         MODEL_REGISTRY = {"easyocr": EasyOcr, "moondream": Moondream}
 
         if module_config.model in MODEL_REGISTRY:
             self.model = MODEL_REGISTRY[module_config.model]()
         else:
-            logger.warning(
+            self.logger.warning(
                 "Model name '%s' found in the workflow_config.yaml is not part of the available models: %s. Falling back to default model easyocr.",
                 module_config.model,
                 list(MODEL_REGISTRY.keys()),
