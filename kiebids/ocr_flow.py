@@ -5,7 +5,7 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, fiftyone_dataset, get_logger, pipeline_config
+from kiebids import config, fiftyone_dataset, pipeline_config
 from kiebids.modules.entity_linking import EntityLinking
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
@@ -14,7 +14,6 @@ from kiebids.modules.semantic_tagging import SemanticTagging
 from kiebids.modules.text_recognition import TextRecognizer
 
 pipeline_name = pipeline_config.pipeline_name
-logger = get_logger(pipeline_name)
 
 
 @flow(name=pipeline_name, log_prints=True)
@@ -34,7 +33,6 @@ def ocr_flow():
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
-        logger.info("Processing image %s from %s.", filename, config.image_path)
         # accepts image path. outputs image
         preprocessed_image = preprocessing(current_image_name=filename)
 

@@ -9,12 +9,22 @@ import fiftyone.core.labels as fol
 import numpy as np
 from lxml import etree
 from PIL import ImageDraw, ImageFont
-from prefect.logging import get_logger
+from prefect.exceptions import MissingContextError
+from prefect.logging import get_logger, get_run_logger
 
 from kiebids import config, fiftyone_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
+
+
+def get_kiebids_logger(name=""):
+    try:
+        logger = get_run_logger()
+    except MissingContextError:
+        logger = get_logger(name)
+
+    return logger
 
 
 def debug_writer(debug_path="", module=""):
@@ -32,6 +42,8 @@ def debug_writer(debug_path="", module=""):
                 raise ValueError("Debug path not provided")
             if not module:
                 raise ValueError("Module not provided")
+
+            logger = get_kiebids_logger(module)
 
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
