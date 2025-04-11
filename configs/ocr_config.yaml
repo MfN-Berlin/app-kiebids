@@ -45,3 +45,7 @@ semantic_labeling:
 
 entity_linking:
   geonames_api_url: "http://api.geonames.org/searchJSON"
+  geoname_tags:
+  - "MfN_Geo_Country"
+  - "MfN_Geo_Area"
+  - "MfN_Geo_Town"

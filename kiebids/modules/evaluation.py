@@ -8,10 +8,16 @@ import numpy as np
 import requests
 import spacy
 from PIL import Image
+from prefect.artifacts import create_table_artifact
 from torchmetrics.text import CharErrorRate
 
 from kiebids import evaluation_writer, event_accumulator, get_logger, pipeline_config
-from kiebids.utils import extract_polygon, get_ground_truth_data, resize
+from kiebids.utils import (
+    extract_polygon,
+    get_ground_truth_data,
+    get_kiebids_logger,
+    resize,
+)
 
 logger = get_logger(__name__)
 
@@ -23,7 +29,7 @@ def evaluator(module=""):
             if not module or not evaluation_writer:
                 return func(*args, **kwargs)
 
-            # logger = get_run_logger()
+            logger = get_kiebids_logger(module)
 
             # get ground truth for image
             gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
@@ -74,7 +80,9 @@ def evaluator(module=""):
                 kwargs["text"] = text
 
                 sequences_and_tags = func(*args, **kwargs)
-                compare_tags(predictions=sequences_and_tags, ground_truths=gt_spans)
+
+                sample_spans = [s["span"] for s in gt_spans]
+                compare_tags(predictions=sample_spans, ground_truths=gt_spans)
                 # extract recognized tags from predictions
                 # what do we actually want to compare?
                 #
@@ -82,8 +90,31 @@ def evaluator(module=""):
                 # compare with ground truth tags
                 return sequences_and_tags
             elif module == "entity_linking":
-                # How do we evaluate entity linking?
-                return func(*args, **kwargs)
+                text, gt_spans = prepare_sem_tag_gt(gt_data)
+                # use ground truth input for evaluation for now
+                kwargs["entities"] = [s["span"] for s in gt_spans]
+
+                entities_geoname_ids = func(*args, **kwargs)
+
+                # compare with gt geoname ids
+                performance = compare_geoname_ids(
+                    predictions=entities_geoname_ids,
+                    ground_truths=gt_spans,
+                )
+
+                try:
+                    create_table_artifact(
+                        # TODO naming of the artifact. keys have weird restriction so that file names wont work
+                        # key=f"{kwargs.get('current_image_name')}",
+                        key="entity-linking-performance",
+                        table=[performance],
+                        description="Performance metrics for geoname ids",
+                    )
+                except Exception:
+                    logger.warning(
+                        "Failed to create artifact for entity linking performance metrics"
+                    )
+                return entities_geoname_ids
             else:
                 return func(*args, **kwargs)
 
@@ -285,10 +316,10 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
 
 def prepare_sem_tag_gt(file_dict):
     """
-    Prepares the ground truth data for semantic tagging evaluation.
+    Prepares the ground truth data for semantic tagging and entity linking evaluation.
     It extracts the text, tags, and positions from the XML file.
     It concatenates the text lines with a line separator and extracts the tags and positions from custom attributes.
-    The function returns the concatenated text, global tags, and global positions.
+    The function returns the concatenated text and a list of gt attributes.
     """
 
     line_separator = "\n\n"
@@ -327,28 +358,105 @@ def prepare_sem_tag_gt(file_dict):
         text = line_separator.join(text)
 
     nlp = spacy.load("en_core_web_sm")
-    gt_spans = []
+    sem_tag_gt = []
 
     # Create a spaCy doc (tokenized version of the text)
     doc_gold = nlp.make_doc(text)
     for tag, p in zip(global_tags, global_positions):
-        # Use char_span to align character offsets to tokens
-        gt_spans.append(
-            doc_gold.char_span(
-                int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
-            )
+        sem_tag_gt.append(
+            {
+                # Use char_span to align character offsets to tokens
+                "span": doc_gold.char_span(
+                    int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
+                ),
+                "geoname_id": p.get("Geonames"),
+            }
         )
-    return text, gt_spans
+    return text, sem_tag_gt
 
 
 def compare_tags(predictions: list, ground_truths: list):
-    gold_set = {(s.start_char, s.end_char, s.label_) for s in ground_truths}
+    gold_set = {
+        (s["span"].start_char, s["span"].end_char, s["span"].label_)
+        for s in ground_truths
+    }
     pred_set = {(s.start_char, s.end_char, s.label_) for s in predictions}
 
+    # TODO can we compare like this?
     tp = len(gold_set & pred_set)
     fp = len(pred_set - gold_set)
     fn = len(gold_set - pred_set)
 
+    precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
+    return {
+        "precision": round(precision * 100, 2),
+        "recall": round(recall * 100, 2),
+        "f1": round(f1 * 100, 2),
+        "true-positive": tp,
+        "false-positive": fp,
+        "false-negative": fn,
+    }
+
+
+def compare_geoname_ids(predictions: list, ground_truths: list):
+    geo_tags = pipeline_config["entity_linking"].geoname_tags
+
+    # get all geo labels
+    gt_geo_entities = [
+        entity for entity in ground_truths if entity["span"].label_ in geo_tags
+    ]
+    pred_geo_entities = [
+        entity for entity in predictions if entity["span"].label_ in geo_tags
+    ]
+
+    # This actually tracks the number of false positives and false negatives regarding tags. comparisson of geonames should be more specific
+    fn = max(0, len(gt_geo_entities) - len(pred_geo_entities))
+    fp = max(0, len(pred_geo_entities) - len(gt_geo_entities))
+    tp = 0
+
+    # how can we map the predictions to the ground truth?
+    # is a simple string match enough?
+    for pred in pred_geo_entities:
+        for gt in gt_geo_entities:
+            gt_span, gt_geoname_id = gt["span"], gt["geoname_id"]
+            pred_span, pred_geoname_id = pred["span"], pred["geoname_id"]
+            if gt_geoname_id is None:
+                logger.debug(
+                    "Ground truth geoname id for %s is None. Skipping comparison.",
+                    gt_span.label_,
+                )
+                continue
+
+            # TODO comparisson with strings sufficient?
+            if str(pred_span) == str(gt_span):
+                tp += (
+                    (pred_geoname_id == gt_geoname_id)
+                    and (pred_geoname_id is not None)
+                    and (gt_geoname_id is not None)
+                ) * 1
+                fn += (
+                    (pred_geoname_id == gt_geoname_id)
+                    and (pred_geoname_id is None)
+                    and (gt_geoname_id is not None)
+                ) * 1
+                fp += (
+                    (pred_geoname_id != gt_geoname_id)
+                    and (pred_geoname_id is not None)
+                    and (gt_geoname_id is None)
+                ) * 1
+
+    precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
+    return {
+        "precision": round(precision * 100, 2),
+        "recall": round(recall * 100, 2),
+        "f1": round(f1 * 100, 2),
+        "true-positive": tp,
+        "false-positive": fp,
+        "false-negative": fn,
+    }
+
+
+def compute_performance_metrics(tp, fp, fn):
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     f1 = (
@@ -357,14 +465,7 @@ def compare_tags(predictions: list, ground_truths: list):
         else 0.0
     )
 
-    return {
-        "precision": round(precision * 100, 2),
-        "recall": round(recall * 100, 2),
-        "f1": round(f1 * 100, 2),
-        "true_positive": tp,
-        "false_positive": fp,
-        "false_negative": fn,
-    }
+    return precision, recall, f1
 
 
 if __name__ == "__main__":
