@@ -64,7 +64,11 @@ def evaluator(module=""):
 
                     # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                     # For fair comparison we replace all \r\n with \n
-                    gt_texts = [text.replace("\r\n", "\n") for text in gt_texts]
+
+                    gt_texts = [
+                        text.replace("\r\n", "\n") if text is not None else ""
+                        for text in gt_texts
+                    ]
 
                     compare_texts(
                         predictions=predictions,
@@ -76,7 +80,7 @@ def evaluator(module=""):
             elif module == "semantic_tagging":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
                 # use ground truth input for evaluation for now
-                kwargs["text"] = text
+                kwargs["texts"] = text
 
                 sequences_and_tags = func(*args, **kwargs)
                 compare_tags(predictions=sequences_and_tags, ground_truths=gt_spans)

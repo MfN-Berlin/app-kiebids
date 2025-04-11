@@ -39,6 +39,16 @@ text_recognition:  # easyocr module
       from a collection of a museum for natural history, being especially
       careful to preserve any scientific names, dates, and location information.
       Maintain the original formatting and line breaks. Most text is in German.
+
+semantic_tagging:
+  # Tags that we use regex to identify
+  regex: # Options: - MfN_GatheringDate, MfN_NURI, MfN_Sex, MfN_Geo_Latitute, MfN_Geo_Longitude, MfN_Type
+  - MfN_GatheringDate
+  - MfN_NURI
+  - MfN_Sex
+  - MfN_Geo_Latitude
+  - MfN_Geo_Longitude
+  - MfN_Type
 entity_linking:
 
 semantic_labeling:
