@@ -9,7 +9,15 @@ def semantic_tagging_instance():
 
 
 def test_semantic_tagging(semantic_tagging_instance):
-    # Sample gatheringdate
+    """
+    Test the `run` method of the `semantic_tagging_instance` for various types of text inputs
+    and their expected semantic tagging outputs.
+    Args:
+        semantic_tagging_instance: An instance of a semantic tagging class with a `run` method
+                                   that processes text and returns tagged entities.
+    Asserts:
+        Verifies that the output of the `run` method matches the expected output for each test case.
+    """
 
     text_gatheringdate = [
         "Sample text with different dates: 12.03.2023",
