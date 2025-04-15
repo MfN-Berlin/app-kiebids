@@ -37,7 +37,7 @@ def test_semantic_tagging(semantic_tagging_instance):
     text_sex = ["text with symbols: ♂ and ♀"]
     expected_sex = [[("MfN_Sex", 19, 1), ("MfN_Sex", 25, 1)]]
 
-    MfN_type = [
+    text_type = [
         "text with type: holotype and lectotype and neotyp and paralectotype and syntyp"
     ]
 
@@ -57,4 +57,4 @@ def test_semantic_tagging(semantic_tagging_instance):
     assert semantic_tagging_instance.run(text_geolatitude) == expected_geolatitude
     assert semantic_tagging_instance.run(text_nuri) == expected_nuri
     assert semantic_tagging_instance.run(text_sex) == expected_sex
-    assert semantic_tagging_instance.run(MfN_type) == expected_type
+    assert semantic_tagging_instance.run(text_type) == expected_type
