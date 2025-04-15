@@ -103,14 +103,14 @@ class SpacyMatcher:
                 [
                     {"IS_DIGIT": True},  # 98
                     {"TEXT": "°"},  # °
-                    {"TEXT": {"REGEX": r"\d{1,2}'[E]\b"}},  # 57'E
+                    {"TEXT": {"REGEX": r"\d{1,2}'[E|W]\b"}},  # 57'E
                 ]
             ],
             "MfN_Geo_Latitude": [
                 [
                     {"IS_DIGIT": True},  # 98
                     {"TEXT": "°"},  # °
-                    {"TEXT": {"REGEX": r"\d{1,2}'[N]\b"}},  # 57'N
+                    {"TEXT": {"REGEX": r"\d{1,2}'[N|S]\b"}},  # 57'N
                 ]
             ],
             "MfN_NURI": [
