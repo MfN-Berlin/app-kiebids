@@ -33,7 +33,7 @@ if not config.disable_fiftyone:
     fiftyone_dataset.persistent = True
 
 logger = get_logger(__name__)
-logger.setLevel(config.log_level)
+
 
 run_id = (
     datetime.now().strftime("%Y%m%d-%H%M%S")

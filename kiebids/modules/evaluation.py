@@ -10,17 +10,10 @@ import spacy
 from PIL import Image
 from torchmetrics.text import CharErrorRate
 
-from kiebids import (
-    config,
-    evaluation_writer,
-    event_accumulator,
-    get_logger,
-    pipeline_config,
-)
+from kiebids import evaluation_writer, event_accumulator, get_logger, pipeline_config
 from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
-logger.setLevel(config.log_level)
 
 
 def evaluator(module=""):
@@ -29,6 +22,8 @@ def evaluator(module=""):
             # skip evaluation if not enabled
             if not module or not evaluation_writer:
                 return func(*args, **kwargs)
+
+            # logger = get_run_logger()
 
             # get ground truth for image
             gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
