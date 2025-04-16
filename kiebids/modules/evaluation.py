@@ -11,7 +11,13 @@ from PIL import Image
 from prefect.artifacts import create_table_artifact
 from torchmetrics.text import CharErrorRate
 
-from kiebids import evaluation_writer, event_accumulator, get_logger, pipeline_config
+from kiebids import (
+    config,
+    evaluation_writer,
+    event_accumulator,
+    get_logger,
+    pipeline_config,
+)
 from kiebids.utils import (
     extract_polygon,
     get_ground_truth_data,
@@ -25,14 +31,14 @@ logger = get_logger(__name__)
 def evaluator(module=""):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            # skip evaluation if not enabled
-            if not module or not evaluation_writer:
+            # get ground truth for image
+            gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
+
+            # skip evaluation if not enabled or no gt data
+            if not config.evaluation or not gt_data:
                 return func(*args, **kwargs)
 
             logger = get_kiebids_logger(module)
-
-            # get ground truth for image
-            gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
 
@@ -75,6 +81,7 @@ def evaluator(module=""):
 
                 return texts_and_bb
             elif module == "semantic_tagging":
+                # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
                 # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
                 kwargs["text"] = text
