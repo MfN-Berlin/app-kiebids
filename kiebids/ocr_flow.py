@@ -51,18 +51,22 @@ def ocr_flow():
             current_image_index=image_index,
         )
 
-        # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
         entities = semantic_tagging.run(
             text=tr_result, current_image_name=filename, current_image_index=image_index
         )
 
-        entity_linking.run(
+        linked_entities = entity_linking.run(
             entities=entities,
             current_image_name=filename,
         )
 
         # write results to PAGE XML
-        write_page_xml(current_image_name=filename, tr_result=tr_result)
+        # TODO implement writer and use linking results as well
+        write_page_xml(
+            current_image_name=filename,
+            tr_result=tr_result,
+            linking_results=linked_entities,
+        )
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)

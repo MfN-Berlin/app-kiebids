@@ -111,7 +111,7 @@ def save_xml(root, output_path):
 
 
 @task
-def write_page_xml(current_image_name, tr_result):
+def write_page_xml(current_image_name, tr_result, **kwargs):  # pylint: disable=unused-argument
     """
     Writes the PAGE XML file for the given image.
 
