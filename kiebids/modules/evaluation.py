@@ -76,7 +76,7 @@ def evaluator(module=""):
                 return texts_and_bb
             elif module == "semantic_tagging":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
-                # use ground truth input for evaluation for now
+                # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
                 kwargs["text"] = text
 
                 sequences_and_tags = func(*args, **kwargs)
@@ -91,7 +91,7 @@ def evaluator(module=""):
                 return sequences_and_tags
             elif module == "entity_linking":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
-                # use ground truth input for evaluation for now
+                # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
                 kwargs["entities"] = [s["span"] for s in gt_spans]
 
                 entities_geoname_ids = func(*args, **kwargs)
@@ -401,7 +401,7 @@ def compare_tags(predictions: list, ground_truths: list):
 def compare_geoname_ids(predictions: list, ground_truths: list):
     geo_tags = pipeline_config["entity_linking"].geoname_tags
 
-    # get all geo labels
+    # we are only interested in geoname tags
     gt_geo_entities = [
         entity for entity in ground_truths if entity["span"].label_ in geo_tags
     ]
@@ -409,17 +409,13 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
         entity for entity in predictions if entity["span"].label_ in geo_tags
     ]
 
-    # This actually tracks the number of false positives and false negatives regarding tags. comparisson of geonames should be more specific
-    fn = max(0, len(gt_geo_entities) - len(pred_geo_entities))
-    fp = max(0, len(pred_geo_entities) - len(gt_geo_entities))
-    tp = 0
+    # This would actually track the number of false negatives regarding tags. here we need to compare geonames
+    # fn = max(0, len(gt_geo_entities) - len(pred_geo_entities))
 
-    # how can we map the predictions to the ground truth?
-    # is a simple string match enough?
+    tp, fp, fn = 0, 0, 0
     for pred in pred_geo_entities:
         for gt in gt_geo_entities:
             gt_span, gt_geoname_id = gt["span"], gt["geoname_id"]
-            pred_span, pred_geoname_id = pred["span"], pred["geoname_id"]
             if gt_geoname_id is None:
                 logger.debug(
                     "Ground truth geoname id for %s is None. Skipping comparison.",
@@ -427,23 +423,17 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
                 )
                 continue
 
-            # TODO comparisson with strings sufficient?
+            # Prediction have a list of geoname ids
+            pred_span, pred_geoname_ids = pred["span"], pred["geoname_ids"]
+            pred_geoname_ids = [] if pred_geoname_ids is None else pred_geoname_ids
+
+            # TODO comparisson with strings to match the correct tags sufficient?
             if str(pred_span) == str(gt_span):
-                tp += (
-                    (pred_geoname_id == gt_geoname_id)
-                    and (pred_geoname_id is not None)
-                    and (gt_geoname_id is not None)
-                ) * 1
-                fn += (
-                    (pred_geoname_id == gt_geoname_id)
-                    and (pred_geoname_id is None)
-                    and (gt_geoname_id is not None)
-                ) * 1
-                fp += (
-                    (pred_geoname_id != gt_geoname_id)
-                    and (pred_geoname_id is not None)
-                    and (gt_geoname_id is None)
-                ) * 1
+                tp += (gt_geoname_id in pred_geoname_ids) * 1
+                fp += (gt_geoname_id not in pred_geoname_ids) * 1
+                # the fn case never occurs because we are only interested in geoname tags.
+                # either there is a gt geoname id in geoname tags or the case is invalid
+                # thus there is no case where pred of geonames is present and gt is not
 
     precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
     return {

@@ -42,7 +42,10 @@ class EntityLinking:
                     # TODO which element in the response list should we take? taking the first one for now
                     if results_list:
                         entities_geoname_ids.append(
-                            {"span": entity, "geoname_id": results_list[0]["geonameId"]}
+                            {
+                                "span": entity,
+                                "geoname_ids": [r["geonameId"] for r in results_list],
+                            }
                         )
 
                 except requests.exceptions.HTTPError as e:
