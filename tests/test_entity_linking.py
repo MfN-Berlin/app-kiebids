@@ -130,7 +130,7 @@ def case_fn_fp_predictions():
     }
 
 
-# possible cases
+# possible cases, some cases handle multiple scenarios
 # [x] pred geoname ids present, gt geoname None => invalid evaluation case
 # [x] pred geoname ids empty, gt geoname None => invalid evaluation case
 # [x] pred geoname ids empty, gt geoname present => treat as different ids. false positive case
