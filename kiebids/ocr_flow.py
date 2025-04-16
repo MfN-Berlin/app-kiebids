@@ -5,7 +5,7 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, fiftyone_dataset, pipeline_config
+from kiebids import config, evaluation_writer, fiftyone_dataset, pipeline_config
 from kiebids.modules.entity_linking import EntityLinking
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
@@ -60,6 +60,8 @@ def ocr_flow():
             entities=entities,
             current_image_name=filename,
         )
+
+        evaluation_writer.create_table()
 
         # write results to PAGE XML
         write_page_xml(current_image_name=filename, tr_result=tr_result)

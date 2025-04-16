@@ -7,8 +7,8 @@ import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
 from prefect.logging import get_logger
-from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-from tensorboardX import SummaryWriter
+
+from kiebids.modules.evaluation_writer import EvaluationWriter
 
 load_dotenv()
 
@@ -52,12 +52,10 @@ if config.evaluation:
         os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),
         f"{log_dir}/ocr_config.yaml",
     )
-
-    evaluation_writer = SummaryWriter(log_dir)
-    event_accumulator = EventAccumulator(log_dir)
+    # TODO write to disc as well with corresponding config
+    evaluation_writer = EvaluationWriter()
 else:
     evaluation_writer = None
-    event_accumulator = None
 
 __all__ = [
     "get_logger",

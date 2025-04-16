@@ -61,7 +61,7 @@ stop_prefect() {
 trap 'stop_prefect' INT
 
 # Get the path to the current Python executable
-PYTHON_PATH=$(which /usr/bin/env python)
+INTERPRETER_PATH=$(which /usr/bin/env python)
 
 # Check if port $PREFECT_PORT is in use
 if ! lsof -i :$PREFECT_PORT > /dev/null; then
@@ -73,9 +73,9 @@ fi
 
 # Finally, run the flow
 if [ $serve_deployment -eq 1 ]; then
-    $PYTHON_PATH kiebids/ocr_flow.py --serve-deployment
+    $INTERPRETER_PATH kiebids/ocr_flow.py --serve-deployment
 else
-    $PYTHON_PATH kiebids/ocr_flow.py
+    $INTERPRETER_PATH kiebids/ocr_flow.py
     if [ $continue_prefect -eq 0 ]; then
         stop_prefect
     fi
