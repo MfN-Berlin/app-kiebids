@@ -327,7 +327,7 @@ def prepare_sem_tag_gt(file_dict):
     global_positions = []
     global_tags = []
     # multiple regions possible because of multiple exhibit labels.
-    # TODO this is just assuming that there is only one region as present in evaluation data set. Do we need a strategy to handle multiple regions?
+    # TODO this is just assuming that there is only one region present in evaluation data set. Do we need a strategy to handle multiple regions?
     for region in file_dict["text_regions"]:
         text = []
         # global offset used to correct posiotion for tags

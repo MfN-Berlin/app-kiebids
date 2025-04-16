@@ -39,11 +39,11 @@ class EntityLinking:
                     response.raise_for_status()
 
                     results_list = response.json()["geonames"]
-                    # TODO which element in the response list should we take? taking the first one for now
                     if results_list:
                         entities_geoname_ids.append(
                             {
                                 "span": entity,
+                                # taking the entire list of geoname_ids because it is unclear which one to prefer
                                 "geoname_ids": [r["geonameId"] for r in results_list],
                             }
                         )
