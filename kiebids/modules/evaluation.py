@@ -447,9 +447,9 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
 
     precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
     return {
-        "precision": round(precision * 100, 2),
-        "recall": round(recall * 100, 2),
-        "f1": round(f1 * 100, 2),
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
         "true-positive": tp,
         "false-positive": fp,
         "false-negative": fn,
@@ -465,7 +465,7 @@ def compute_performance_metrics(tp, fp, fn):
         else 0.0
     )
 
-    return precision, recall, f1
+    return round(precision * 100, 2), round(recall * 100, 2), round(f1 * 100, 2)
 
 
 if __name__ == "__main__":
