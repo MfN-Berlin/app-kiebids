@@ -1,14 +1,15 @@
 import os
-import shutil
+
+# import shutil
 from datetime import datetime
 
 import fiftyone.core.dataset as fod
 import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
-from prefect.logging import get_logger
+from prefect.logging import get_logger, get_run_logger
 
-from kiebids.modules.evaluation_writer import EvaluationWriter
+from kiebids.evaluation_writer import EvaluationWriter
 
 load_dotenv()
 
@@ -32,25 +33,18 @@ if not config.disable_fiftyone:
     fiftyone_dataset.overwrite = True
     fiftyone_dataset.persistent = True
 
-logger = get_logger(__name__)
-
-
 run_id = (
     datetime.now().strftime("%Y%m%d-%H%M%S")
     if config.run_tag is None
     else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_tag}"
 )
 
-logger.info("Starting app-kiebids... Run ID: %s", run_id)
-
 if config.evaluation:
-    log_dir = f"{config.evaluation_path}/tensorboard/{run_id}"
-
-    os.makedirs(log_dir, exist_ok=True)
-    shutil.copyfile(
-        os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),
-        f"{log_dir}/ocr_config.yaml",
-    )
+    # os.makedirs(log_dir, exist_ok=True)
+    # shutil.copyfile(
+    #     os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),
+    #     f"{log_dir}/ocr_config.yaml",
+    # )
     # TODO write to disc as well with corresponding config
     evaluation_writer = EvaluationWriter()
 else:
@@ -58,4 +52,6 @@ else:
 
 __all__ = [
     "get_logger",
+    "get_run_logger",
+    "run_id",
 ]

@@ -47,7 +47,9 @@ def evaluator(module=""):
                         original_resolution=original_resolution,
                     )
                     avg_iou["image_name"] = kwargs.get("current_image_name")
-                    evaluation_writer.layout_analysis_performance.append(avg_iou)
+                    evaluation_writer.metrics["layout-analysis-performance"].append(
+                        avg_iou
+                    )
                 return bb_labels
             elif module == "text_recognition":
                 texts_and_bb = func(*args, **kwargs)
@@ -69,7 +71,7 @@ def evaluator(module=""):
                 # TODO how to track cer when no match is found?
                 for cer in cers:
                     cer["image_name"] = kwargs.get("current_image_name")
-                evaluation_writer.text_recognition_performance.extend(cers)
+                evaluation_writer.metrics["text-recognition-performance"].extend(cers)
                 return texts_and_bb
             elif module == "semantic_tagging":
                 # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
@@ -80,12 +82,15 @@ def evaluator(module=""):
                 sequences_and_tags = func(*args, **kwargs)
 
                 sample_spans = [s["span"] for s in gt_spans]
-                compare_tags(predictions=sample_spans, ground_truths=gt_spans)
-                # extract recognized tags from predictions
-                # what do we actually want to compare?
-                #
-                # prepare ground truth sequences and tags
-                # compare with ground truth tags
+                performance = compare_tags(
+                    predictions=sample_spans, ground_truths=gt_spans
+                )
+
+                performance["image_name"] = kwargs.get("current_image_name")
+                evaluation_writer.metrics["semantic-tagging-performance"].append(
+                    performance
+                )
+
                 return sequences_and_tags
             elif module == "entity_linking":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
@@ -101,7 +106,9 @@ def evaluator(module=""):
                 )
 
                 performance["image_name"] = kwargs.get("current_image_name")
-                evaluation_writer.entity_linking_perfomance.append(performance)
+                evaluation_writer.metrics["entity-linking-perfomance"].append(
+                    performance
+                )
                 return entities_geoname_ids
             else:
                 return func(*args, **kwargs)
