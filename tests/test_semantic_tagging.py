@@ -1,6 +1,18 @@
 import pytest
 
-from kiebids.modules.semantic_tagging import SemanticTagging
+from kiebids.modules.semantic_tagging import SpacyMatcher
+
+
+class SemanticTagging:
+    def __init__(self):
+        self.model_regex = SpacyMatcher()
+
+    def run(self, texts):  # pylint: disable=unused-argument
+        st_result = []
+        for text in texts:
+            output = self.model_regex.get_regex_tags(text)
+            st_result.append(output)
+        return st_result
 
 
 @pytest.fixture
@@ -31,7 +43,7 @@ def test_semantic_tagging(semantic_tagging_instance):
         [("MfN_GatheringDate", 9, 5)],
     ]
 
-    text_geolongitute = ["Sample text with coordinates: 13°23'E and 52°30'W"]
+    text_geolongitude = ["Sample text with coordinates: 13°23'E and 52°30'W"]
     expected_geolongitude = [
         [("MfN_Geo_Longitude", 30, 7), ("MfN_Geo_Longitude", 42, 7)]
     ]
@@ -60,9 +72,62 @@ def test_semantic_tagging(semantic_tagging_instance):
         ]
     ]
 
-    assert semantic_tagging_instance.run(text_gatheringdate) == expected_gatheringdate
-    assert semantic_tagging_instance.run(text_geolongitute) == expected_geolongitude
-    assert semantic_tagging_instance.run(text_geolatitude) == expected_geolatitude
-    assert semantic_tagging_instance.run(text_nuri) == expected_nuri
-    assert semantic_tagging_instance.run(text_sex) == expected_sex
-    assert semantic_tagging_instance.run(text_type) == expected_type
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_gatheringdate)
+    ]
+
+    assert result == expected_gatheringdate
+
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_geolongitude)
+    ]
+
+    assert result == expected_geolongitude
+
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_geolatitude)
+    ]
+
+    assert result == expected_geolatitude
+
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_nuri)
+    ]
+
+    assert result == expected_nuri
+
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_sex)
+    ]
+
+    assert result == expected_sex
+
+    result = [
+        [
+            (span.label_, span.start_char, span.end_char - span.start_char)
+            for span in spans
+        ]
+        for spans in semantic_tagging_instance.run(text_type)
+    ]
+
+    assert result == expected_type
