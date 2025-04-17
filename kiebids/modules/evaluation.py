@@ -294,6 +294,7 @@ def prepare_sem_tag_gt(file_dict):
 
     line_separator = "\n\n"
 
+    tag_lookup = pipeline_config["semantic_tagging"].tag_lookup
     global_positions = []
     global_tags = []
     # multiple regions possible because of multiple exhibit labels.
@@ -308,14 +309,14 @@ def prepare_sem_tag_gt(file_dict):
 
             # skipping reading order
             global_tags.extend(
-                [ca[0] for ca in line["custom_attributes"] if ca[0] != "readingOrder"]
+                [ca[0] for ca in line["custom_attributes"] if ca[0] in tag_lookup]
             )
 
             # extract positions from custom attributes
             positions = [
                 {k: v for k, v in re.findall(r"(\w+):([^;]+)", ca[1])}
                 for ca in line["custom_attributes"]
-                if ca[0] != "readingOrder"
+                if ca[0] in tag_lookup
             ]
             # adding global offset to positions offset
             for p in positions:
@@ -350,7 +351,9 @@ def compare_tags(predictions: list, ground_truths: list):
         (s["span"].start_char, s["span"].end_char, s["span"].label_)
         for s in ground_truths
     }
-    pred_set = {(s.start_char, s.end_char, s.label_) for s in predictions}
+    pred_set = {
+        (s.start_char, s.end_char, s.label_) for s in predictions if s is not None
+    }
 
     # TODO can we compare like this?
     tp = len(gold_set & pred_set)
