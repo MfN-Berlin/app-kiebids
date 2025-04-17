@@ -75,10 +75,11 @@ def evaluator(module=""):
             elif module == "semantic_tagging":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
                 # use ground truth input for evaluation for now
-                kwargs["texts"] = text
+                kwargs["texts"] = [text]
 
                 sequences_and_tags = func(*args, **kwargs)
-                compare_tags(predictions=sequences_and_tags, ground_truths=gt_spans)
+                for region_st in sequences_and_tags:
+                    compare_tags(predictions=region_st, ground_truths=gt_spans)
                 # extract recognized tags from predictions
                 # what do we actually want to compare?
                 #

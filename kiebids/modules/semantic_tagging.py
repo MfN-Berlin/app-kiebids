@@ -3,8 +3,7 @@ from prefect import task
 from spacy.matcher import Matcher
 
 from kiebids import config, pipeline_config, run_id
-
-# from kiebids.modules.evaluation import evaluator
+from kiebids.modules.evaluation import evaluator
 from kiebids.utils import debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
@@ -23,7 +22,7 @@ class SemanticTagging:
 
     @task(name=module)
     @debug_writer(debug_path, module=module)
-    # @evaluator(module=module)
+    @evaluator(module=module)
     def run(self, texts, **kwargs):  # pylint: disable=unused-argument
         """
         Processes the input text to extract semantic tags using regex-based tagging.
@@ -31,18 +30,17 @@ class SemanticTagging:
             text (str): The input text to be processed.
             **kwargs: Additional keyword arguments (not used).
         Returns:
-            list: A list of semantic tags extracted from the input text for each bounding box.
+            list: list with tag str, where you can access the tag label, start character and end character.
+            (span.label_, span.start_char, span.end_char)
             [
-                [(label, start character, length), (label, star character, length), ...],
-                [(label, start character, length), (), ...],
+                [tag1, tag2, ...],
+                [...],
             ]
         """
         st_result = []
         for text in texts:
             self.logger.debug("%s", text)
-
             output = self.model_regex.get_regex_tags(text)
-            self.logger.debug("Semantic tagging result: %s", output)
             st_result.append(output)
         return st_result
 
@@ -54,6 +52,7 @@ class SpacyMatcher:
 
     def __init__(self):
         self.nlp = spacy.load("de_core_news_sm")
+        self.logger = get_kiebids_logger(module)
         self.matcher = Matcher(self.nlp.vocab)
         self.lookup = {
             tag: self.regex_lookup()[tag]
@@ -74,9 +73,12 @@ class SpacyMatcher:
         output = []
         for match_id, start, end in matches:
             span = doc[start:end]
-            label = self.nlp.vocab.strings[match_id]
-            output.append((label, span.start_char, span.end_char - span.start_char))
-
+            span.label_ = self.nlp.vocab.strings[match_id]
+            # output.append((label, span.start_char, span.end_char - span.start_char))
+            self.logger.info(
+                "Found Tag: %s (%s, %s)", span.label_, span.start_char, span.end_char
+            )
+            output.append(span)
         return output
 
     def regex_lookup(self):
@@ -136,3 +138,19 @@ class SpacyMatcher:
                 ]
             ],
         }
+
+
+if __name__ == "__main__":
+    from kiebids.utils import get_ground_truth_data
+
+    module_config = pipeline_config["semantic_tagging"]
+    module = "semantic_tagging"
+
+    file = "0002_20230207T115843_b0405f_59d27c4b-25a2-4960-852f-28d687ccaba9_label_front_0001_label.xml"
+    parsed_dict = get_ground_truth_data(file)
+
+    text = [region["text"] for region in parsed_dict["text_regions"]]
+
+    if len(text) > 0 and None not in text:
+        sematic_tagging = SemanticTagging()
+        result = sematic_tagging.run(texts=text, current_image_name=file)
