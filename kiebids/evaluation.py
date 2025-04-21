@@ -383,9 +383,11 @@ def compare_tags(predictions: list, ground_truths: list):
 def compare_geoname_ids(predictions: list, ground_truths: list):
     geo_tags = pipeline_config["entity_linking"].geoname_tags
 
-    # we are only interested in geoname tags
+    # we are only interested in geoname tags and not None geoname ids
     gt_geo_entities = [
-        entity for entity in ground_truths if entity["span"].label_ in geo_tags
+        entity
+        for entity in ground_truths
+        if entity["span"].label_ in geo_tags and entity["geoname_id"] is not None
     ]
     pred_geo_entities = [
         entity for entity in predictions if entity["span"].label_ in geo_tags
@@ -394,16 +396,7 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
     tp, fp, fn = 0, 0, 0
     for pred in pred_geo_entities:
         for gt in gt_geo_entities:
-            gt_span, gt_geoname_id = (
-                gt["span"],
-                int(gt["geoname_id"]) if gt["geoname_id"] else None,
-            )
-            if gt_geoname_id is None:
-                logger.debug(
-                    "Ground truth geoname id for %s is None. Skipping comparison.",
-                    gt_span.label_,
-                )
-                continue
+            gt_span, gt_geoname_id = (gt["span"], int(gt["geoname_id"]))
 
             # Prediction have a list of geoname ids
             pred_span, pred_geoname_ids = pred["span"], pred["geoname_ids"]
@@ -417,7 +410,13 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
                 # either there is a gt geoname id in geoname tags or the case is invalid
                 # thus there is no case where pred of geonames is present and gt is not
 
-    precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
+    # Invalid evaluation if no geoname tags are present in gt
+    precision, recall, f1 = (
+        ("invalid", "invalid", "invalid")
+        if len(gt_geo_entities) == 0
+        else compute_performance_metrics(tp, fp, fn)
+    )
+
     return {
         "precision": precision,
         "recall": recall,
@@ -425,6 +424,7 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
         "true-positive": tp,
         "false-positive": fp,
         "false-negative": fn,
+        "geonames-in-gt": len(gt_geo_entities),
     }
 
 
