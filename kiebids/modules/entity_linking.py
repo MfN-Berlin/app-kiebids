@@ -18,7 +18,7 @@ module_config = pipeline_config[module]
 class EntityLinking:
     def __init__(self):
         self.logger = get_kiebids_logger(module)
-        self.logger.info("Running %s module", module)
+        self.logger.info("Initializing %s module", module)
 
     @task(name=module)
     @debug_writer(debug_path, module=module)

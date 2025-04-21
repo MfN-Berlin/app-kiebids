@@ -15,7 +15,7 @@ module_config = pipeline_config[module]
 class SemanticTagging:
     def __init__(self):
         self.logger = get_kiebids_logger(module)
-        self.logger.info("Running Semantic tagging module")
+        self.logger.info("Initializing semantic tagging module")
 
     @task(name=module)
     @debug_writer(debug_path, module=module)

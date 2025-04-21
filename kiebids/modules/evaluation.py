@@ -60,7 +60,9 @@ def evaluator(module=""):
 
                 # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                 # For fair comparison we replace all \r\n with \n
-                gt_texts = [text.replace("\r\n", "\n") for text in gt_texts]
+                gt_texts = [
+                    text.replace("\r\n", "\n") for text in gt_texts if text is not None
+                ]
 
                 cers = compare_texts(
                     predictions=predictions,
@@ -321,7 +323,7 @@ def prepare_sem_tag_gt(file_dict):
 
             # extract positions from custom attributes
             positions = [
-                {k: v for k, v in re.findall(r"(\w+):([^;]+)", ca[1])}
+                {k: v for k, v in re.findall(r"(\w+):([^;]+);", ca[1])}
                 for ca in line["custom_attributes"]
                 if ca[0] in tag_lookup
             ]
@@ -389,13 +391,13 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
         entity for entity in predictions if entity["span"].label_ in geo_tags
     ]
 
-    # This would actually track the number of false negatives regarding tags. here we need to compare geonames
-    # fn = max(0, len(gt_geo_entities) - len(pred_geo_entities))
-
     tp, fp, fn = 0, 0, 0
     for pred in pred_geo_entities:
         for gt in gt_geo_entities:
-            gt_span, gt_geoname_id = gt["span"], gt["geoname_id"]
+            gt_span, gt_geoname_id = (
+                gt["span"],
+                int(gt["geoname_id"]) if gt["geoname_id"] else None,
+            )
             if gt_geoname_id is None:
                 logger.debug(
                     "Ground truth geoname id for %s is None. Skipping comparison.",

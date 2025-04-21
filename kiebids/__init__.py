@@ -1,6 +1,4 @@
 import os
-
-# import shutil
 from datetime import datetime
 
 import fiftyone.core.dataset as fod
@@ -40,11 +38,6 @@ run_id = (
 )
 
 if config.evaluation:
-    # os.makedirs(log_dir, exist_ok=True)
-    # shutil.copyfile(
-    #     os.path.join(os.path.dirname(__file__), f"../configs/{ocr_config}"),
-    #     f"{log_dir}/ocr_config.yaml",
-    # )
     # TODO write to disc as well with corresponding config
     evaluation_writer = EvaluationWriter()
 else:
