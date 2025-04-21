@@ -6,7 +6,7 @@ from prefect import task
 from transformers import AutoModelForCausalLM
 
 from kiebids import config, pipeline_config, run_id
-from kiebids.modules.evaluation import evaluator
+from kiebids.evaluation import evaluator
 from kiebids.utils import crop_image, debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]

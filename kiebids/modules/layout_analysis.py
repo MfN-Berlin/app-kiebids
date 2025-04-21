@@ -5,7 +5,7 @@ from prefect import task
 from segment_anything import SamAutomaticMaskGenerator, sam_model_registry
 
 from kiebids import config, pipeline_config, run_id
-from kiebids.modules.evaluation import evaluator
+from kiebids.evaluation import evaluator
 from kiebids.utils import debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
