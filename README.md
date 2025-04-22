@@ -10,7 +10,7 @@ Overview of each module
 2. Layout Analysis
 3. Text Recognition
 4. Semantic Labeling (not yet implemented)
-5. Entity linking (not yet implemented)
+5. Entity linking
 
 The pipeline can be run in three different modes:
 1. Prediction (work in progress)

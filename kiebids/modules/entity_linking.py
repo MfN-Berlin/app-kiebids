@@ -52,25 +52,3 @@ class EntityLinking:
                     self.logger.info(f"Request error: {e}")
 
         return entities_geoname_ids
-
-
-if __name__ == "__main__":
-    from kiebids.modules.evaluation import prepare_sem_tag_gt
-    from kiebids.utils import get_ground_truth_data
-
-    module_config = pipeline_config["entity_linking"]
-
-    file = "0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
-    parsed_dict = get_ground_truth_data(file)
-    text, gt_spans = prepare_sem_tag_gt(parsed_dict)
-
-    entity_linking = EntityLinking()
-
-    entities_geoname_ids = entity_linking.run(
-        entities=gt_spans,
-        current_image_name=file,
-    )
-
-    # if nearby_streets:
-    #     for street in nearby_streets.get("streetSegment", []):
-    #         print(street.get("name"))
