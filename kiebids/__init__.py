@@ -38,7 +38,6 @@ run_id = (
 )
 
 if config.evaluation.enabled:
-    # TODO write to disc as well with corresponding config
     evaluation_writer = EvaluationWriter()
 else:
     evaluation_writer = None

@@ -19,7 +19,6 @@ The pipeline can be run in three different modes:
 
 ## Quickstart with example image
 ### Prerequisites
-<!-- TODO GPU Support Cuda und  -->
 
 Tested on Ubuntu 22.04 distribution!
 
@@ -37,7 +36,6 @@ wget -P ./models/ https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec
 ```
 
 ### Set up local Python environment
-<!-- TODO try to run without conda -->
 Install conda (see [conda installation guide](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html)) and create a local python environment by using the bash shell:
 ```bash
 conda env create --file environment.yml
@@ -80,19 +78,23 @@ This starts the Prefect service, and you can view the dashboard at the url displ
 You can either put more images inside the `data/images` directory or you can reference a directory on your system under => `image_path` in [workflow_config.yaml](./configs/workflow_config.yaml) (Make sure that you also adjust the `max_images` field to analyse the desired number of images)
 
 ## Evaluation Mode
-To enable evaluation, you need to set the following inside the `evaluation:` block [workflow_config](./configs/workflow_config.yaml):
+To enable evaluation, you need to set the following config inside the `evaluation` block [workflow_config](./configs/workflow_config.yaml):
 ```
 evaluation:
    enabled: true
-
    xml_path: "path/to/ground/truth/xml_files"
 ```
-- Layout analysis: average iou over all regions (Intersection over Union)
-- Text recognition: average CER over all regions (Character Error Rate)
-- Semantic tagging:
-<!-- TODO desribe tables creation frequency summary_interval -->
-<!-- TODO describe dependency on ground truth -->
-- Entity linking: precision, recall and f1 metric
+
+- **Layout analysis**: average iou over all regions (Intersection over Union)
+- **Text recognition**: average CER over all regions (Character Error Rate)
+- **Semantic tagging**:
+- **Entity linking**: Because we don't want the evaluation to rely on previous results of the pipeline, we evaluate this module by creating tags from ground truth data and only comparing the results of the geoname id retrieval. The evaluation computes precision, recall and f1 metrics based on TP, FP and FN counts and corresponding logic. For further details, see the `compare_geoname_ids` function in [evaluation.py](./kiebids/evaluation.py)
+
+> If no ground truth data can be found for a certain image, the evaluation is skipped!
+
+### Evaluation Writer
+The `EvaluationWriter` is responsible for tracking and writing the results of evaluation. The results are written as prefect artefacts (tables) and can be viewed inside the prefect UI of the coresponding flow run.
+The creation of these tables happens for each `summary_interval` image that can be set inside `evaluation` block of [workflow_config.yaml](./configs/workflow_config.yaml)
 
 ## Debug Modus
 To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.

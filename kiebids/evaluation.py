@@ -176,8 +176,6 @@ def compare_layouts(
             gt_pred_confusion_matrix, max_iou_coordinates[0], axis=0
         )
 
-    # TODO could create a chart of individual ious inside evaluation writer but cant show it in prefect ui
-
     # account for false positives and false negatives
     num_fp_fn = abs(len(ground_truths) - len(predictions))
 
@@ -381,6 +379,10 @@ def compare_tags(predictions: list, ground_truths: list):
 
 
 def compare_geoname_ids(predictions: list, ground_truths: list):
+    """
+    Compares predictions with ground truths based on geoname ids.
+    Simple rule applies to check for true positive matches: if the geoname id is present in the prediction list of geoname ids then we have a match.
+    """
     geo_tags = pipeline_config["entity_linking"].geoname_tags
 
     # we are only interested in geoname tags and not None geoname ids
@@ -402,7 +404,7 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
             pred_span, pred_geoname_ids = pred["span"], pred["geoname_ids"]
             pred_geoname_ids = [] if pred_geoname_ids is None else pred_geoname_ids
 
-            # TODO comparisson with strings to match the correct tags sufficient?
+            # comparisson with strings to match the correct tags is sufficient because we are initializing the spans with the same text
             if str(pred_span) == str(gt_span):
                 tp += (gt_geoname_id in pred_geoname_ids) * 1
                 fp += (gt_geoname_id not in pred_geoname_ids) * 1
