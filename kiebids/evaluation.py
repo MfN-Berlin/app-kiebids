@@ -23,7 +23,7 @@ def evaluator(module=""):
             gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
 
             # skip evaluation if not enabled or no gt data
-            if not config.evaluation or not gt_data:
+            if not config.evaluation.enabled or not gt_data:
                 return func(*args, **kwargs)
 
             # logger = get_kiebids_logger(module)

@@ -7,11 +7,14 @@ max_images: 50  # number of images to process
 # Path to output directories
 output_path: data/output
 
-# Evaluation settings
 run_tag: # Specify a tag to identify the run (optional)
-evaluation: false
-evaluation_path: data/evaluation
-xml_path: "data/page_xml"
+
+# Evaluation settings
+evaluation:
+  enabled: false
+  path: data/evaluation
+  summary_interval: 10  # Frequency of evaluation table writing per x images
+  xml_path: "data/page_xml"
 
 # Debug configs
 mode:  # debug

@@ -64,7 +64,9 @@ def ocr_flow():
             current_image_name=filename,
         )
 
-        evaluation_writer.create_tables()
+        # write evaluation tables only at certain intervals
+        if evaluation_writer and image_index % config.evaluation.summary_interval == 0:
+            evaluation_writer.create_tables()
 
         # write results to PAGE XML
         # TODO implement writer and use linking results as well

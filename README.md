@@ -79,22 +79,20 @@ This starts the Prefect service, and you can view the dashboard at the url displ
 ### Run flow on own images:
 You can either put more images inside the `data/images` directory or you can reference a directory on your system under => `image_path` in [workflow_config.yaml](./configs/workflow_config.yaml) (Make sure that you also adjust the `max_images` field to analyse the desired number of images)
 
-## Evaluation Modus (Work in Progress - Tensorboard to be exchanged)
-To enable evaluation, you need to set the following in [workflow_config](./configs/workflow_config.yaml):
+## Evaluation Mode
+To enable evaluation, you need to set the following inside the `evaluation:` block [workflow_config](./configs/workflow_config.yaml):
 ```
-evaluation: true
-xml_path: "path/to/ground/truth/xml_files"
-```
-This starts a tensorboard session upon running the pipeline. Currently the main metrics are being measured for each image are:
+evaluation:
+   enabled: true
 
+   xml_path: "path/to/ground/truth/xml_files"
+```
 - Layout analysis: average iou over all regions (Intersection over Union)
 - Text recognition: average CER over all regions (Character Error Rate)
-
-The results for each run will be stored in the folder ```data/evaluation/tensorboard/{run-id}```. To view the dashboard, run:
-```bash
-tensorboard --logdir data/evaluation/tensorboard/{run-id}
-```
-The tensorboard updates every 1 minute during the pipeline process.
+- Semantic tagging:
+<!-- TODO desribe tables creation frequency summary_interval -->
+<!-- TODO describe dependency on ground truth -->
+- Entity linking: precision, recall and f1 metric
 
 ## Debug Modus
 To enable debug mode, set ```mode: debug``` in the [workflow_config](./configs/workflow_config.yaml) file.

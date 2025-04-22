@@ -319,8 +319,8 @@ def get_ground_truth_data(filename):
     xml_file = filename.replace(filename.split(".")[-1], "xml")
 
     # check if ground truth is available
-    if xml_file in os.listdir(config.xml_path):
-        file_path = os.path.join(config.xml_path, xml_file)
+    if xml_file in os.listdir(config.evaluation.xml_path):
+        file_path = os.path.join(config.evaluation.xml_path, xml_file)
         return read_xml(file_path)
 
     logger.warning(f"GT File not found for {filename}")

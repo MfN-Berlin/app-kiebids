@@ -37,7 +37,7 @@ run_id = (
     else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_tag}"
 )
 
-if config.evaluation:
+if config.evaluation.enabled:
     # TODO write to disc as well with corresponding config
     evaluation_writer = EvaluationWriter()
 else:
