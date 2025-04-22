@@ -4,7 +4,7 @@ import requests
 from prefect import task
 
 from kiebids import config, pipeline_config, run_id
-from kiebids.modules.evaluation import evaluator
+from kiebids.evaluation import evaluator
 from kiebids.utils import debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
@@ -18,7 +18,7 @@ module_config = pipeline_config[module]
 class EntityLinking:
     def __init__(self):
         self.logger = get_kiebids_logger(module)
-        self.logger.info("Running %s module", module)
+        self.logger.info("Initializing %s module", module)
 
     @task(name=module)
     @debug_writer(debug_path, module=module)

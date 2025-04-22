@@ -2,7 +2,7 @@ import pytest
 import spacy
 from spacy.tokens import Span
 
-from kiebids.modules.evaluation import compare_geoname_ids, compute_performance_metrics
+from kiebids.evaluation import compare_geoname_ids, compute_performance_metrics
 
 
 @pytest.fixture

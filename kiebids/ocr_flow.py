@@ -5,19 +5,23 @@ import fiftyone as fo
 from prefect import flow
 from tqdm import tqdm
 
-from kiebids import config, fiftyone_dataset, pipeline_config
+from kiebids import config, evaluation_writer, fiftyone_dataset, pipeline_config, run_id
 from kiebids.modules.entity_linking import EntityLinking
 from kiebids.modules.layout_analysis import LayoutAnalyzer
 from kiebids.modules.page_xml import write_page_xml
 from kiebids.modules.preprocessing import preprocessing
 from kiebids.modules.semantic_tagging import SemanticTagging
 from kiebids.modules.text_recognition import TextRecognizer
+from kiebids.utils import get_kiebids_logger
 
 pipeline_name = pipeline_config.pipeline_name
 
 
 @flow(name=pipeline_name, log_prints=True)
 def ocr_flow():
+    logger = get_kiebids_logger("kiebids_flow")
+    logger.info("Starting app-kiebids... Run ID: %s", run_id)
+
     os.makedirs(config.output_path, exist_ok=True)
 
     # init objects/models for every stage
@@ -59,6 +63,8 @@ def ocr_flow():
             entities=entities,
             current_image_name=filename,
         )
+
+        evaluation_writer.create_tables()
 
         # write results to PAGE XML
         # TODO implement writer and use linking results as well

@@ -41,7 +41,26 @@ text_recognition:  # easyocr module
       careful to preserve any scientific names, dates, and location information.
       Maintain the original formatting and line breaks. Most text is in German.
 
-semantic_labeling:
+semantic_tagging:
+  # TODO read this from the mfn_tags.yaml in reference data dynamically?
+  tag_lookup:
+    - "MfN_Collection"
+    - "MfN_Collector"
+    - "MfN_Determination"
+    - "MfN_ExpeditionProject"
+    - "MfN_GatheringDate"
+    - "MfN_Institution"
+    - "MfN_NURI"
+    - "MfN_Sex"
+    - "MfN_Specimen"
+    - "MfN_Type"
+    - "MfN_GatheringSite"
+    - "MfN_Geo_Area"
+    - "MfN_Geo_Elevation"
+    - "MfN_Geo_Latitude"
+    - "MfN_Geo_Longitude"
+    - "MfN_Geo_Town"
+    - "MfN_Geo_Country"
 
 entity_linking:
   geonames_api_url: "http://api.geonames.org/searchJSON"

@@ -20,6 +20,7 @@ logger.setLevel(config.log_level)
 
 def get_kiebids_logger(name=""):
     try:
+        # This must be inside a prefect context like a @task or a @flow
         logger = get_run_logger()
     except MissingContextError:
         logger = get_logger(name)

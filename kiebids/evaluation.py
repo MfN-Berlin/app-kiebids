@@ -8,16 +8,10 @@ import numpy as np
 import requests
 import spacy
 from PIL import Image
-from prefect.artifacts import create_table_artifact
 from torchmetrics.text import CharErrorRate
 
-from kiebids import evaluation_writer, event_accumulator, get_logger, pipeline_config
-from kiebids.utils import (
-    extract_polygon,
-    get_ground_truth_data,
-    get_kiebids_logger,
-    resize,
-)
+from kiebids import config, evaluation_writer, get_logger, pipeline_config
+from kiebids.utils import extract_polygon, get_ground_truth_data, resize
 
 logger = get_logger(__name__)
 
@@ -25,14 +19,14 @@ logger = get_logger(__name__)
 def evaluator(module=""):
     def decorator(func):
         def wrapper(*args, **kwargs):
-            # skip evaluation if not enabled
-            if not module or not evaluation_writer:
-                return func(*args, **kwargs)
-
-            logger = get_kiebids_logger(module)
-
             # get ground truth for image
             gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
+
+            # skip evaluation if not enabled or no gt data
+            if not config.evaluation or not gt_data:
+                return func(*args, **kwargs)
+
+            # logger = get_kiebids_logger(module)
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
 
@@ -46,35 +40,43 @@ def evaluator(module=""):
                         int(gt_data.get("image_height")),
                         int(gt_data.get("image_width")),
                     )
-                    logger.debug(f"image index: {kwargs.get('current_image_index')}")
-                    compare_layouts(
+
+                    avg_iou = compare_layouts(
                         bb_labels,
                         gt_regions,
-                        image_index=kwargs.get("current_image_index"),
-                        filename=kwargs.get("current_image_name"),
                         original_resolution=original_resolution,
                     )
-
+                    avg_iou["image_name"] = kwargs.get("current_image_name")
+                    evaluation_writer.metrics["layout-analysis-performance"].append(
+                        avg_iou
+                    )
                 return bb_labels
             elif module == "text_recognition":
                 texts_and_bb = func(*args, **kwargs)
 
                 predictions = [text["text"] for text in texts_and_bb]
-                if gt_data:
-                    gt_texts = [tr["text"] for tr in gt_data.get("text_regions")]
 
-                    # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
-                    # For fair comparison we replace all \r\n with \n
-                    gt_texts = [text.replace("\r\n", "\n") for text in gt_texts]
+                gt_texts = [tr["text"] for tr in gt_data.get("text_regions")]
 
-                    compare_texts(
-                        predictions=predictions,
-                        ground_truths=gt_texts,
-                        image_index=kwargs.get("current_image_index"),
-                    )
+                # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
+                # For fair comparison we replace all \r\n with \n
+                gt_texts = [
+                    text.replace("\r\n", "\n") for text in gt_texts if text is not None
+                ]
 
+                cers = compare_texts(
+                    predictions=predictions,
+                    ground_truths=gt_texts,
+                    image_index=kwargs.get("current_image_index"),
+                )
+
+                # TODO how to track cer when no match is found?
+                for cer in cers:
+                    cer["image_name"] = kwargs.get("current_image_name")
+                evaluation_writer.metrics["text-recognition-performance"].extend(cers)
                 return texts_and_bb
             elif module == "semantic_tagging":
+                # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
                 # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
                 kwargs["text"] = text
@@ -82,12 +84,15 @@ def evaluator(module=""):
                 sequences_and_tags = func(*args, **kwargs)
 
                 sample_spans = [s["span"] for s in gt_spans]
-                compare_tags(predictions=sample_spans, ground_truths=gt_spans)
-                # extract recognized tags from predictions
-                # what do we actually want to compare?
-                #
-                # prepare ground truth sequences and tags
-                # compare with ground truth tags
+                performance = compare_tags(
+                    predictions=sample_spans, ground_truths=gt_spans
+                )
+
+                performance["image_name"] = kwargs.get("current_image_name")
+                evaluation_writer.metrics["semantic-tagging-performance"].append(
+                    performance
+                )
+
                 return sequences_and_tags
             elif module == "entity_linking":
                 text, gt_spans = prepare_sem_tag_gt(gt_data)
@@ -102,18 +107,10 @@ def evaluator(module=""):
                     ground_truths=gt_spans,
                 )
 
-                try:
-                    create_table_artifact(
-                        # TODO naming of the artifact. keys have weird restriction so that file names wont work
-                        # key=f"{kwargs.get('current_image_name')}",
-                        key="entity-linking-performance",
-                        table=[performance],
-                        description="Performance metrics for geoname ids",
-                    )
-                except Exception:
-                    logger.warning(
-                        "Failed to create artifact for entity linking performance metrics"
-                    )
+                performance["image_name"] = kwargs.get("current_image_name")
+                evaluation_writer.metrics["entity-linking-perfomance"].append(
+                    performance
+                )
                 return entities_geoname_ids
             else:
                 return func(*args, **kwargs)
@@ -126,8 +123,6 @@ def evaluator(module=""):
 def compare_layouts(
     predictions: list,
     ground_truths: list,
-    image_index: int,
-    filename: str,
     original_resolution: tuple,
 ):
     """
@@ -181,20 +176,16 @@ def compare_layouts(
             gt_pred_confusion_matrix, max_iou_coordinates[0], axis=0
         )
 
-    # Add the ious to tensorboard
-    evaluation_writer.add_scalars(
-        "Layout_analysis/_ious",
-        {f"bb_{i}": iou for i, iou in enumerate(ious)},
-        image_index,
-    )
+    # TODO could create a chart of individual ious inside evaluation writer but cant show it in prefect ui
 
     # account for false positives and false negatives
     num_fp_fn = abs(len(ground_truths) - len(predictions))
 
-    # average ious
-    avg_iou = np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
+    avg_iou = {
+        "avg_iou": np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
+    }
     logger.debug(f"average iou: {avg_iou}")
-    evaluation_writer.add_scalar("Layout_analysis/_average_ious", avg_iou, image_index)
+    return avg_iou
 
 
 def create_polygon_mask(polygon_points, image_shape):
@@ -268,18 +259,10 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
     """
     # Only evaluate if the number of ground truth strings matches the number of predictions
     if len(ground_truths) != len(predictions):
-        event_accumulator.Reload()
-        if "Text_recognition/_average_CER" in event_accumulator.scalars.Keys():
-            logger.warning(
-                "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file. Evaluated images in TB: %s/%s",
-                len(event_accumulator.Scalars("Text_recognition/_average_CER")),
-                len(event_accumulator.Scalars("Layout_analysis/_average_ious")),
-            )
-        else:
-            logger.warning(
-                "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file."
-            )
-        return
+        logger.warning(
+            "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file."
+        )
+        return []
 
     CER_calculator = CharErrorRate()
 
@@ -297,21 +280,17 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
         for prediction, ground_truth in zip(ordered_predictions, ground_truths)
     ]
 
-    # Save individual CER values to tensorboard
-    evaluation_writer.add_scalars(
-        "Text_recognition/_CER",
-        {f"bb_{i}": cer for i, cer in enumerate(cer_values)},
-        image_index,
-    )
-
     logger.debug(
         "average CER: %s - Individual CER values: %s",
         round(float(min_cer), 4),
         [round(float(value), 4) for value in cer_values],
     )
 
+    cers = [{"cer": float(cer), "bb-index": i} for i, cer in enumerate(cer_values)]
+
     # Save average CER value to tensorboard
-    evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
+    # evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
+    return cers
 
 
 def prepare_sem_tag_gt(file_dict):
@@ -324,6 +303,7 @@ def prepare_sem_tag_gt(file_dict):
 
     line_separator = "\n\n"
 
+    tag_lookup = pipeline_config["semantic_tagging"].tag_lookup
     global_positions = []
     global_tags = []
     # multiple regions possible because of multiple exhibit labels.
@@ -338,14 +318,14 @@ def prepare_sem_tag_gt(file_dict):
 
             # skipping reading order
             global_tags.extend(
-                [ca[0] for ca in line["custom_attributes"] if ca[0] != "readingOrder"]
+                [ca[0] for ca in line["custom_attributes"] if ca[0] in tag_lookup]
             )
 
             # extract positions from custom attributes
             positions = [
-                {k: v for k, v in re.findall(r"(\w+):([^;]+)", ca[1])}
+                {k: v for k, v in re.findall(r"(\w+):([^;]+);", ca[1])}
                 for ca in line["custom_attributes"]
-                if ca[0] != "readingOrder"
+                if ca[0] in tag_lookup
             ]
             # adding global offset to positions offset
             for p in positions:
@@ -380,7 +360,9 @@ def compare_tags(predictions: list, ground_truths: list):
         (s["span"].start_char, s["span"].end_char, s["span"].label_)
         for s in ground_truths
     }
-    pred_set = {(s.start_char, s.end_char, s.label_) for s in predictions}
+    pred_set = {
+        (s.start_char, s.end_char, s.label_) for s in predictions if s is not None
+    }
 
     # TODO can we compare like this?
     tp = len(gold_set & pred_set)
@@ -401,27 +383,20 @@ def compare_tags(predictions: list, ground_truths: list):
 def compare_geoname_ids(predictions: list, ground_truths: list):
     geo_tags = pipeline_config["entity_linking"].geoname_tags
 
-    # we are only interested in geoname tags
+    # we are only interested in geoname tags and not None geoname ids
     gt_geo_entities = [
-        entity for entity in ground_truths if entity["span"].label_ in geo_tags
+        entity
+        for entity in ground_truths
+        if entity["span"].label_ in geo_tags and entity["geoname_id"] is not None
     ]
     pred_geo_entities = [
         entity for entity in predictions if entity["span"].label_ in geo_tags
     ]
 
-    # This would actually track the number of false negatives regarding tags. here we need to compare geonames
-    # fn = max(0, len(gt_geo_entities) - len(pred_geo_entities))
-
     tp, fp, fn = 0, 0, 0
     for pred in pred_geo_entities:
         for gt in gt_geo_entities:
-            gt_span, gt_geoname_id = gt["span"], gt["geoname_id"]
-            if gt_geoname_id is None:
-                logger.debug(
-                    "Ground truth geoname id for %s is None. Skipping comparison.",
-                    gt_span.label_,
-                )
-                continue
+            gt_span, gt_geoname_id = (gt["span"], int(gt["geoname_id"]))
 
             # Prediction have a list of geoname ids
             pred_span, pred_geoname_ids = pred["span"], pred["geoname_ids"]
@@ -435,7 +410,13 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
                 # either there is a gt geoname id in geoname tags or the case is invalid
                 # thus there is no case where pred of geonames is present and gt is not
 
-    precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
+    # Invalid evaluation if no geoname tags are present in gt
+    precision, recall, f1 = (
+        ("invalid", "invalid", "invalid")
+        if len(gt_geo_entities) == 0
+        else compute_performance_metrics(tp, fp, fn)
+    )
+
     return {
         "precision": precision,
         "recall": recall,
@@ -443,6 +424,7 @@ def compare_geoname_ids(predictions: list, ground_truths: list):
         "true-positive": tp,
         "false-positive": fp,
         "false-negative": fn,
+        "geonames-in-gt": len(gt_geo_entities),
     }
 
 
@@ -456,18 +438,3 @@ def compute_performance_metrics(tp, fp, fn):
     )
 
     return round(precision * 100, 2), round(recall * 100, 2), round(f1 * 100, 2)
-
-
-if __name__ == "__main__":
-    file = "0011_20230207T120422_d42fda_fc542f9f-d7d2-4b48-a2c9-0ab8ad9b8cae_label_front_0001_label.xml"
-    parsed_dict = get_ground_truth_data(file)
-    text, gt_spans = prepare_sem_tag_gt(parsed_dict)
-
-    nlp = spacy.load("en_core_web_sm")
-    doc_pred = nlp(text)
-    # pred_spans = [
-    #     Span(doc_pred, span.start, span.end, label=span.label) for span in gt_spans
-    # ]
-
-    # doc_pred.spans["predicted"] = pred_spans[:-1]
-    compare_tags(text, gt_spans, gt_spans, 0)
