@@ -69,18 +69,11 @@ def ocr_flow():
             evaluation_writer.create_tables()
 
         # write results to PAGE XML
-        # TODO implement writer and use linking results as well
         write_page_xml(
             current_image_name=filename,
             tr_result=tr_result,
             linking_results=linked_entities,
         )
-
-    # # Process images concurrently
-    # futures = process_single_image.map(image_paths, OUTPUT_DIR)
-
-    # # Wait for all futures to complete and gather results
-    # results = [future.result() for future in futures]
 
 
 if __name__ == "__main__":

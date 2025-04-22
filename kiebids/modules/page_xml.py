@@ -11,7 +11,7 @@ from kiebids.utils import bounding_box_to_coordinates
 
 
 def create_page_content(
-    filename: str, tr_result: list, width: int = None, height: int = None
+    filename: str, tr_result: list, width: int = None, height: int = None, **kwargs
 ):
     """Create a PAGE XML file structure with multiple TextRegions."""
     nsmap = {
@@ -73,6 +73,14 @@ def create_page_content(
         text_equiv = ET.SubElement(text_region, "TextEquiv")
         ET.SubElement(text_equiv, "Unicode").text = text
 
+        if "linking_results" in kwargs:
+            for i, lr in enumerate(kwargs["linking_results"]):
+                entity_linking = ET.SubElement(text_region, "EntityLinking")
+                entity_linking.set("id", f"entity_linking_{i}")
+                entity_linking.set("text", str(lr["span"]))
+                entity_linking.set("label", lr["span"].label_)
+                entity_linking.set("geoname_ids", lr["geoname_ids"])
+
     return root
 
 
@@ -121,7 +129,11 @@ def write_page_xml(current_image_name, tr_result, **kwargs):  # pylint: disable=
     height, width = image.shape[:2]
 
     root = create_page_content(
-        filename=current_image_name, tr_result=tr_result, width=width, height=height
+        filename=current_image_name,
+        tr_result=tr_result,
+        width=width,
+        height=height,
+        **kwargs,
     )
 
     output_path = (
