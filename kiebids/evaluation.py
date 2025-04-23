@@ -8,7 +8,12 @@ import spacy
 from torchmetrics.text import CharErrorRate
 
 from kiebids import config, evaluation_writer, get_logger, pipeline_config
-from kiebids.utils import extract_polygon, get_ground_truth_data, resize
+from kiebids.utils import (
+    extract_polygon,
+    get_ground_truth_data,
+    get_kiebids_logger,
+    resize,
+)
 
 logger = get_logger(__name__)
 
@@ -19,11 +24,18 @@ def evaluator(module=""):
             # get ground truth for image
             gt_data = get_ground_truth_data(kwargs.get("current_image_name"))
 
-            # skip evaluation if not enabled or no gt data
-            if not config.evaluation.enabled or not gt_data:
+            logger = get_kiebids_logger(module)
+            if not gt_data:
+                logger.warning(
+                    "Ground truth file not found for %s",
+                    kwargs.get("current_image_name"),
+                )
                 return func(*args, **kwargs)
 
-            # logger = get_kiebids_logger(module)
+            # skip evaluation if not enabled or no gt data
+            if not config.evaluation.enabled:
+                return func(*args, **kwargs)
+
             if module == "layout_analysis":
                 bb_labels = func(*args, **kwargs)
 

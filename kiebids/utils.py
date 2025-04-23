@@ -323,5 +323,4 @@ def get_ground_truth_data(filename):
         file_path = os.path.join(config.evaluation.xml_path, xml_file)
         return read_xml(file_path)
 
-    logger.warning(f"GT File not found for {filename}")
     return None
