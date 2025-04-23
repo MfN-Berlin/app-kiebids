@@ -25,7 +25,7 @@ entity_linking = EntityLinking()
 
 
 @flow(name=pipeline_name, log_prints=True)
-def ocr_flow(max_images: int):
+def ocr_flow(max_images: int, image_path: str = config.image_path):
     logger = get_kiebids_logger("kiebids_flow")
     logger.info("Starting app-kiebids... Run ID: %s", run_id)
 
@@ -36,7 +36,7 @@ def ocr_flow(max_images: int):
     max_images = max_images if max_images > 0 else config.max_images
     # Process images sequentially
     for image_index, filename in enumerate(
-        tqdm(sorted(os.listdir(config.image_path))[:max_images])
+        tqdm(sorted(os.listdir(image_path))[:max_images])
     ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
@@ -123,6 +123,7 @@ if __name__ == "__main__":
                 name=pipeline_config.deployment_name,
                 parameters={
                     "max_images": config.max_images,
+                    "image_path": config.image_path,
                 },
             )
         else:
