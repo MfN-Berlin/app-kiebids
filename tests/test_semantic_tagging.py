@@ -2,17 +2,6 @@ import pytest
 
 from kiebids.modules.semantic_tagging import SpacyMatcher
 
-# class SemanticTagging:
-#     def __init__(self):
-#         self.model_regex = SpacyMatcher()
-
-#     def run(self, texts):  # pylint: disable=unused-argument
-#         st_result = []
-#         for text in texts:
-#             output = self.model_regex.get_regex_tags(text)
-#             st_result.append(output)
-#         return st_result
-
 
 @pytest.fixture
 def spacy_matcher_instance():
