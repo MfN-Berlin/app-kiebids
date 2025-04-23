@@ -17,18 +17,19 @@ from kiebids.utils import get_kiebids_logger
 pipeline_name = pipeline_config.pipeline_name
 
 
+# init objects/models for every stage
+layout_analyzer = LayoutAnalyzer()
+text_recognizer = TextRecognizer()
+semantic_tagging = SemanticTagging()
+entity_linking = EntityLinking()
+
+
 @flow(name=pipeline_name, log_prints=True)
 def ocr_flow():
     logger = get_kiebids_logger("kiebids_flow")
     logger.info("Starting app-kiebids... Run ID: %s", run_id)
 
     os.makedirs(config.output_path, exist_ok=True)
-
-    # init objects/models for every stage
-    layout_analyzer = LayoutAnalyzer()
-    text_recognizer = TextRecognizer()
-    semantic_tagging = SemanticTagging()
-    entity_linking = EntityLinking()
 
     # Process images sequentially
     for image_index, filename in enumerate(
@@ -37,43 +38,61 @@ def ocr_flow():
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
-        # accepts image path. outputs image
-        preprocessed_image = preprocessing(current_image_name=filename)
-
-        # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
-        la_result = layout_analyzer.run(
-            image=preprocessed_image,
-            current_image_name=filename,
-            current_image_index=image_index,
-        )
-
-        # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
-        tr_result = text_recognizer.run(  # noqa: F841
-            image=preprocessed_image,
-            bounding_boxes=[bb_label["bbox"] for bb_label in la_result],
-            current_image_name=filename,
-            current_image_index=image_index,
-        )
-
-        entities = semantic_tagging.run(
-            text=tr_result, current_image_name=filename, current_image_index=image_index
-        )
-
-        linked_entities = entity_linking.run(
-            entities=entities,
-            current_image_name=filename,
+        single_image_flow(
+            filename=filename,
+            image_index=image_index,
         )
 
         # write evaluation tables only at certain intervals
-        if evaluation_writer and image_index % config.evaluation.summary_interval == 0:
+        if (
+            evaluation_writer
+            and (image_index + 1) % config.evaluation.summary_interval == 0
+        ):
             evaluation_writer.create_tables()
 
-        # write results to PAGE XML
-        write_page_xml(
-            current_image_name=filename,
-            tr_result=tr_result,
-            linking_results=linked_entities,
-        )
+    # final writing
+    if evaluation_writer:
+        evaluation_writer.create_tables()
+
+
+@flow(flow_run_name="{filename}")
+def single_image_flow(filename, image_index):
+    # accepts image path. outputs image
+    preprocessed_image = preprocessing(current_image_name=filename)
+
+    # accepts image. outputs image and bounding boxes. if debug the write snippets to disk
+    la_result = layout_analyzer.run(
+        image=preprocessed_image,
+        current_image_name=filename,
+        current_image_index=image_index,
+    )
+
+    # accepts image and bounding boxes. returns. if debug the write snippets with corresponding text to disk
+    tr_result = text_recognizer.run(  # noqa: F841
+        image=preprocessed_image,
+        bounding_boxes=[bb_label["bbox"] for bb_label in la_result],
+        current_image_name=filename,
+        current_image_index=image_index,
+    )
+
+    entities = semantic_tagging.run(
+        text=tr_result, current_image_name=filename, current_image_index=image_index
+    )
+
+    linked_entities = entity_linking.run(
+        entities=entities,
+        current_image_name=filename,
+    )
+
+    if evaluation_writer:
+        evaluation_writer.create_table()
+
+    # write results to PAGE XML
+    write_page_xml(
+        current_image_name=filename,
+        tr_result=tr_result,
+        linking_results=linked_entities,
+    )
 
 
 if __name__ == "__main__":

@@ -1,13 +1,10 @@
 import itertools
 import re
-from io import BytesIO
 from itertools import permutations
 
 import cv2
 import numpy as np
-import requests
 import spacy
-from PIL import Image
 from torchmetrics.text import CharErrorRate
 
 from kiebids import config, evaluation_writer, get_logger, pipeline_config
@@ -227,22 +224,6 @@ def compute_iou(prediction: np.ndarray, ground_truth: np.ndarray):
     return np.nan if union == 0 else intersection / union
 
 
-def load_image_from_url(url):
-    try:
-        response = requests.get(url)  # noqa: S113
-        response.raise_for_status()
-
-        image = Image.open(BytesIO(response.content))
-
-        return image  # noqa: TRY300
-    except requests.exceptions.RequestException:
-        logger.exception("Error fetching image from URL")
-        return None
-    except OSError:
-        logger.exception("Error opening image")
-        return None
-
-
 def compare_texts(predictions: list[str], ground_truths: list[str], image_index: int):
     """
     Computes the Character Error Rate (CER) ground truth and predicted strings,
@@ -285,9 +266,6 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
     )
 
     cers = [{"cer": float(cer), "bb-index": i} for i, cer in enumerate(cer_values)]
-
-    # Save average CER value to tensorboard
-    # evaluation_writer.add_scalar("Text_recognition/_average_CER", min_cer, image_index)
     return cers
 
 
@@ -369,9 +347,9 @@ def compare_tags(predictions: list, ground_truths: list):
 
     precision, recall, f1 = compute_performance_metrics(tp, fp, fn)
     return {
-        "precision": round(precision * 100, 2),
-        "recall": round(recall * 100, 2),
-        "f1": round(f1 * 100, 2),
+        "precision": precision,
+        "recall": recall,
+        "f1": f1,
         "true-positive": tp,
         "false-positive": fp,
         "false-negative": fn,

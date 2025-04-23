@@ -5,7 +5,6 @@ from kiebids.evaluation import evaluator
 from kiebids.utils import debug_writer, get_kiebids_logger
 
 module = __name__.split(".")[-1]
-
 debug_path = (
     "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
 )
