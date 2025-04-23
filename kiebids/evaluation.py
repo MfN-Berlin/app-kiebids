@@ -313,21 +313,22 @@ def prepare_sem_tag_gt(file_dict):
 
         text = line_separator.join(text)
 
-    nlp = spacy.load("en_core_web_sm")
     sem_tag_gt = []
+    if text:
+        nlp = spacy.load("en_core_web_sm")
 
-    # Create a spaCy doc (tokenized version of the text)
-    doc_gold = nlp.make_doc(text)
-    for tag, p in zip(global_tags, global_positions):
-        sem_tag_gt.append(
-            {
-                # Use char_span to align character offsets to tokens
-                "span": doc_gold.char_span(
-                    int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
-                ),
-                "geoname_id": p.get("Geonames"),
-            }
-        )
+        # Create a spaCy doc (tokenized version of the text)
+        doc_gold = nlp.make_doc(text)
+        for tag, p in zip(global_tags, global_positions):
+            sem_tag_gt.append(
+                {
+                    # Use char_span to align character offsets to tokens
+                    "span": doc_gold.char_span(
+                        int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
+                    ),
+                    "geoname_id": p.get("Geonames"),
+                }
+            )
     return text, sem_tag_gt
 
 
