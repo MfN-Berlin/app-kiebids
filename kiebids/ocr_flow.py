@@ -28,6 +28,11 @@ entity_linking = EntityLinking()
 def ocr_flow(max_images: int, image_path: str = config.image_path):
     logger = get_kiebids_logger("kiebids_flow")
     logger.info("Starting app-kiebids... Run ID: %s", run_id)
+    logger.info("Image path: %s", image_path)
+
+    # resetting config image path.
+    # TODO this should be done in a better way
+    config.image_path = image_path
 
     # reinit evaluation with every main flow run
     if evaluation_writer:
