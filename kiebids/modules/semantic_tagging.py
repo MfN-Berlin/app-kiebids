@@ -141,19 +141,3 @@ class SpacyMatcher:
                 ]
             ],
         }
-
-
-if __name__ == "__main__":
-    from kiebids.utils import get_ground_truth_data
-
-    module_config = pipeline_config["semantic_tagging"]
-    module = "semantic_tagging"
-
-    file = "0002_20230207T115843_b0405f_59d27c4b-25a2-4960-852f-28d687ccaba9_label_front_0001_label.xml"
-    parsed_dict = get_ground_truth_data(file)
-
-    text = [region["text"] for region in parsed_dict["text_regions"]]
-
-    if len(text) > 0 and None not in text:
-        sematic_tagging = SemanticTagging()
-        result = sematic_tagging.run(texts=text, current_image_name=file)
