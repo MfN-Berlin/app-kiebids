@@ -62,7 +62,9 @@ def ocr_flow():
         # entity_linking(image_path, config.output_path)
 
         # write results to PAGE XML
-        write_page_xml(current_image_name=filename, tr_result=tr_result)
+        write_page_xml(
+            current_image_name=filename, tr_result=tr_result, st_result=st_result
+        )
 
     # # Process images concurrently
     # futures = process_single_image.map(image_paths, OUTPUT_DIR)

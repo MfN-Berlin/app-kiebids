@@ -11,7 +11,11 @@ from kiebids.utils import bounding_box_to_coordinates
 
 
 def create_page_content(
-    filename: str, tr_result: list, width: int = None, height: int = None
+    filename: str,
+    tr_result: list,
+    st_result: list,
+    width: int = None,
+    height: int = None,
 ):
     """Create a PAGE XML file structure with multiple TextRegions."""
     nsmap = {
@@ -59,9 +63,19 @@ def create_page_content(
         coords_elem = ET.SubElement(text_region, "Coords")
         coords_elem.set("points", coords)
 
-        # Textline - only one per TextRegion
+        # Tagging per region
+        tags = st_result[idx]
+
+        # Textline - currently only one per TextRegion
         text_line = ET.SubElement(text_region, "TextLine")
         text_line.set("id", "line_1")
+
+        # Make custom string for the current TextLine
+        custom_string = f"readingOrder {{index:{idx};}}"
+        for tag in tags:
+            custom_string += f" {tag.label_} {{offset:{tag.start_char}; length:{tag.end_char - tag.start_char};}}"
+
+        text_line.set("custom", custom_string)
         coords_elem_line = ET.SubElement(text_line, "Coords")
         coords_elem_line.set("points", coords)
         baseline_elem_line = ET.SubElement(text_line, "Baseline")
@@ -111,7 +125,7 @@ def save_xml(root, output_path):
 
 
 @task
-def write_page_xml(current_image_name, tr_result):
+def write_page_xml(current_image_name, tr_result, st_result):
     """
     Writes the PAGE XML file for the given image.
 
@@ -121,7 +135,11 @@ def write_page_xml(current_image_name, tr_result):
     height, width = image.shape[:2]
 
     root = create_page_content(
-        filename=current_image_name, tr_result=tr_result, width=width, height=height
+        filename=current_image_name,
+        tr_result=tr_result,
+        st_result=st_result,
+        width=width,
+        height=height,
     )
 
     output_path = (

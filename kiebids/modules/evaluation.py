@@ -73,19 +73,21 @@ def evaluator(module=""):
 
                 return texts_and_bb
             elif module == "semantic_tagging":
-                text, gt_spans = prepare_sem_tag_gt(gt_data)
-                # use ground truth input for evaluation for now
-                kwargs["texts"] = [text]
+                gt_text, gt_spans = prepare_sem_tag_gt(gt_data)
 
+                # Text from pipeline
+                pipeline_text = kwargs.get("texts")
+
+                # use ground truth input for evaluation for now
+                kwargs["texts"] = [gt_text]
                 sequences_and_tags = func(*args, **kwargs)
+
                 for region_st in sequences_and_tags:
                     compare_tags(predictions=region_st, ground_truths=gt_spans)
-                # extract recognized tags from predictions
-                # what do we actually want to compare?
-                #
-                # prepare ground truth sequences and tags
-                # compare with ground truth tags
-                return sequences_and_tags
+
+                # Return the function with the original text
+                kwargs["texts"] = pipeline_text
+                return func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
 

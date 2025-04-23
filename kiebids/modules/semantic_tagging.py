@@ -75,8 +75,11 @@ class SpacyMatcher:
             span = doc[start:end]
             span.label_ = self.nlp.vocab.strings[match_id]
             # output.append((label, span.start_char, span.end_char - span.start_char))
-            self.logger.info(
-                "Found Tag: %s (%s, %s)", span.label_, span.start_char, span.end_char
+            self.logger.debug(
+                "Found Tag: %s (start_char, end_char) (%s, %s)",
+                span.label_,
+                span.start_char,
+                span.end_char,
             )
             output.append(span)
         return output
