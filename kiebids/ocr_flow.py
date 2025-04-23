@@ -25,24 +25,30 @@ entity_linking = EntityLinking()
 
 
 @flow(name=pipeline_name, log_prints=True)
-def ocr_flow():
+def ocr_flow(max_images: int):
     logger = get_kiebids_logger("kiebids_flow")
     logger.info("Starting app-kiebids... Run ID: %s", run_id)
 
+    # reinit evaluation with every main flow run
     if evaluation_writer:
         evaluation_writer.init_metrics()
 
+    max_images = max_images if max_images > 0 else config.max_images
     # Process images sequentially
     for image_index, filename in enumerate(
-        tqdm(sorted(os.listdir(config.image_path))[: config.max_images])
+        tqdm(sorted(os.listdir(config.image_path))[:max_images])
     ):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
-        single_image_flow(
-            filename=filename,
-            image_index=image_index,
-        )
+        try:
+            single_image_flow(
+                filename=filename,
+                image_index=image_index,
+            )
+        except Exception as e:
+            logger.error("Error processing image %s: %s", filename, str(e))
+            continue
 
         # write evaluation tables only at certain intervals
         if (
@@ -115,10 +121,12 @@ if __name__ == "__main__":
         if args.serve_deployment:
             ocr_flow.serve(
                 name=pipeline_config.deployment_name,
-                parameters={},
+                parameters={
+                    "max_images": config.max_images,
+                },
             )
         else:
-            ocr_flow()
+            ocr_flow(max_images=config.max_images)
 
     if not config.disable_fiftyone:
         fiftyone_session = fo.launch_app(fiftyone_dataset)
