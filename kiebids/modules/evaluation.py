@@ -59,7 +59,11 @@ def evaluator(module=""):
 
                     # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                     # For fair comparison we replace all \r\n with \n
-                    gt_texts = [text.replace("\r\n", "\n") for text in gt_texts]
+
+                    gt_texts = [
+                        text.replace("\r\n", "\n") if text is not None else ""
+                        for text in gt_texts
+                    ]
 
                     compare_texts(
                         predictions=predictions,
@@ -69,18 +73,21 @@ def evaluator(module=""):
 
                 return texts_and_bb
             elif module == "semantic_tagging":
-                text, gt_spans = prepare_sem_tag_gt(gt_data)
-                # use ground truth input for evaluation for now
-                kwargs["text"] = text
+                gt_text, gt_spans = prepare_sem_tag_gt(gt_data)
 
+                # Text from pipeline
+                pipeline_text = kwargs.get("texts")
+
+                # use ground truth input for evaluation for now
+                kwargs["texts"] = [gt_text]
                 sequences_and_tags = func(*args, **kwargs)
-                compare_tags(predictions=sequences_and_tags, ground_truths=gt_spans)
-                # extract recognized tags from predictions
-                # what do we actually want to compare?
-                #
-                # prepare ground truth sequences and tags
-                # compare with ground truth tags
-                return sequences_and_tags
+
+                for region_st in sequences_and_tags:
+                    compare_tags(predictions=region_st, ground_truths=gt_spans)
+
+                # Return the function with the original text
+                kwargs["texts"] = pipeline_text
+                return func(*args, **kwargs)
             else:
                 return func(*args, **kwargs)
 
