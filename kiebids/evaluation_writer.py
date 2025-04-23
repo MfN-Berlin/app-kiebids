@@ -5,6 +5,10 @@ from kiebids import get_run_logger
 
 class EvaluationWriter:
     def __init__(self):
+        self.init_metrics()
+
+    def init_metrics(self):
+        """Reinitialize metrics for the next run."""
         self.metrics = {
             "layout-analysis-performance": [],
             "text-recognition-performance": [],

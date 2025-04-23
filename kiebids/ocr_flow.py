@@ -29,7 +29,8 @@ def ocr_flow():
     logger = get_kiebids_logger("kiebids_flow")
     logger.info("Starting app-kiebids... Run ID: %s", run_id)
 
-    os.makedirs(config.output_path, exist_ok=True)
+    if evaluation_writer:
+        evaluation_writer.init_metrics()
 
     # Process images sequentially
     for image_index, filename in enumerate(

@@ -42,6 +42,8 @@ if config.evaluation.enabled:
 else:
     evaluation_writer = None
 
+os.makedirs(config.output_path, exist_ok=True)
+
 __all__ = [
     "get_logger",
     "get_run_logger",
