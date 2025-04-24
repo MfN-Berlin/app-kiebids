@@ -1,11 +1,9 @@
-name: app-kiebids
+name: app-kiebids-test
 channels:
   - conda-forge
   - defaults
 dependencies:
   - python=3.10.13
-  # TODO which version?
-  - pyvips
   - pip
   - pip:
     - -r requirements.txt
