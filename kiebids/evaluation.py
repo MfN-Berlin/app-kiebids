@@ -67,8 +67,11 @@ def evaluator(module=""):
 
                 # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                 # For fair comparison we replace all \r\n with \n
+                # If the text for the region is None we take the text from all the text_lines
                 gt_texts = [
-                    tr["text"].replace("\r\n", "\n") if tr["text"] is not None else ""
+                    tr["text"].replace("\r\n", "\n")
+                    if tr["text"] is not None
+                    else " ".join([text_line["text"] for text_line in tr["text_lines"]])
                     for tr in gt_data.get("text_regions")
                 ]
 
@@ -267,6 +270,10 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
 
     # Order the predicted strings to the ground truth strings until finding the best possible match
     min_cer = float("inf")
+
+    # Initiate the predictions with the original order
+    ordered_predictions = predictions
+
     for perm in permutations(predictions):
         cer = CER_calculator(perm, ground_truths)
         if cer < min_cer:
