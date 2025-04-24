@@ -65,12 +65,11 @@ def evaluator(module=""):
 
                 predictions = [text["text"] for text in texts_and_bb]
 
-                gt_texts = [tr["text"] for tr in gt_data.get("text_regions")]
-
                 # INFO: The ground truth xml files sometimes stores linebreakes as \r\n and sometimes \n.
                 # For fair comparison we replace all \r\n with \n
                 gt_texts = [
-                    text.replace("\r\n", "\n") for text in gt_texts if text is not None
+                    tr["text"].replace("\r\n", "\n") if tr["text"] is not None else ""
+                    for tr in gt_data.get("text_regions")
                 ]
 
                 cers = compare_texts(
@@ -85,41 +84,50 @@ def evaluator(module=""):
                 evaluation_writer.metrics["text-recognition-performance"].extend(cers)
                 return texts_and_bb
             elif module == "semantic_tagging":
-                # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
-                text, gt_spans = prepare_sem_tag_gt(gt_data)
-                # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
-                kwargs["text"] = text
+                gt_text, gt_spans = prepare_sem_tag_gt(gt_data)
 
+                # Text from pipeline
+                pipeline_text = kwargs.get("texts")
+
+                # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt text
+                kwargs["texts"] = [gt_text]
                 sequences_and_tags = func(*args, **kwargs)
 
-                sample_spans = [s["span"] for s in gt_spans]
-                performance = compare_tags(
-                    predictions=sample_spans, ground_truths=gt_spans
-                )
+                for i, region_st in enumerate(sequences_and_tags):
+                    performance = compare_tags(
+                        predictions=region_st, ground_truths=gt_spans
+                    )
 
-                performance["image_name"] = kwargs.get("current_image_name")
-                evaluation_writer.metrics["semantic-tagging-performance"].append(
-                    performance
-                )
+                    performance["region"] = f"region_{i}"
+                    performance["image_name"] = kwargs.get("current_image_name")
+                    evaluation_writer.metrics["semantic-tagging-performance"].append(
+                        performance
+                    )
 
-                return sequences_and_tags
+                # Return the function with the original text
+                kwargs["texts"] = pipeline_text
+                return func(*args, **kwargs)
+
             elif module == "entity_linking":
-                text, gt_spans = prepare_sem_tag_gt(gt_data)
+                _, gt_spans = prepare_sem_tag_gt(gt_data)
                 # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
-                kwargs["entities"] = [s["span"] for s in gt_spans]
+                # TODO this is assuming that there is only one region present in evaluation data set. thus only one list in list
+                kwargs["st_result"] = [[s["span"] for s in gt_spans]]
 
                 entities_geoname_ids = func(*args, **kwargs)
 
-                # compare with gt geoname ids
-                performance = compare_geoname_ids(
-                    predictions=entities_geoname_ids,
-                    ground_truths=gt_spans,
-                )
+                for region, pred_spans in entities_geoname_ids.items():
+                    # compare with gt geoname ids
+                    performance = compare_geoname_ids(
+                        predictions=pred_spans,
+                        ground_truths=gt_spans,
+                    )
 
-                performance["image_name"] = kwargs.get("current_image_name")
-                evaluation_writer.metrics["entity-linking-perfomance"].append(
-                    performance
-                )
+                    performance["region"] = region
+                    performance["image_name"] = kwargs.get("current_image_name")
+                    evaluation_writer.metrics["entity-linking-perfomance"].append(
+                        performance
+                    )
                 return entities_geoname_ids
             else:
                 return func(*args, **kwargs)

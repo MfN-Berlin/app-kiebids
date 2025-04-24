@@ -87,12 +87,15 @@ def single_image_flow(filename, image_index):
         current_image_index=image_index,
     )
 
-    entities = semantic_tagging.run(
-        text=tr_result, current_image_name=filename, current_image_index=image_index
+    # only have gt for single exhibit labels (regions). in cases when multiple labels are present, we need a way to map gt region to prediction region at hand
+    st_result = semantic_tagging.run(  # noqa: F841
+        texts=[result["text"] for result in tr_result],
+        current_image_name=filename,
+        current_image_index=image_index,
     )
 
-    linked_entities = entity_linking.run(
-        entities=entities,
+    el_result = entity_linking.run(
+        st_result=st_result,
         current_image_name=filename,
     )
 
@@ -103,7 +106,8 @@ def single_image_flow(filename, image_index):
     write_page_xml(
         current_image_name=filename,
         tr_result=tr_result,
-        linking_results=linked_entities,
+        st_result=st_result,
+        el_result=el_result,
     )
 
 

@@ -23,32 +23,38 @@ class EntityLinking:
     @task(name=module)
     @debug_writer(debug_path, module=module)
     @evaluator(module=module)
-    def run(self, entities, **kwargs):  # pylint: disable=unused-argument
-        entities_geoname_ids = []
-        for entity in entities:
-            if entity.label_ in module_config.geoname_tags:
-                api_params = {
-                    "q": str(entity),
-                    "fuzzy": 0.8,
-                    "username": os.getenv("GEONAMES_API_USERNAME"),
-                }
-                try:
-                    response = requests.get(
-                        module_config.geonames_api_url, params=api_params, timeout=60
-                    )
-                    response.raise_for_status()
-
-                    results_list = response.json()["geonames"]
-                    if results_list:
-                        entities_geoname_ids.append(
-                            {
-                                "span": entity,
-                                # taking the entire list of geoname_ids because it is unclear which one to prefer
-                                "geoname_ids": [r["geonameId"] for r in results_list],
-                            }
+    def run(self, st_result, **kwargs):  # pylint: disable=unused-argument
+        entities_geoname_ids = {}
+        for i, region in enumerate(st_result):
+            entities_geoname_ids[f"region_{i}"] = []
+            for entity in region:
+                if entity.label_ in module_config.geoname_tags:
+                    api_params = {
+                        "q": str(entity),
+                        "fuzzy": 0.8,
+                        "username": os.getenv("GEONAMES_API_USERNAME"),
+                    }
+                    try:
+                        response = requests.get(
+                            module_config.geonames_api_url,
+                            params=api_params,
+                            timeout=60,
                         )
+                        response.raise_for_status()
 
-                except requests.exceptions.HTTPError as e:
-                    self.logger.info(f"Request error: {e}")
+                        results_list = response.json()["geonames"]
+                        if results_list:
+                            entities_geoname_ids[f"region_{i}"].append(
+                                {
+                                    "span": entity,
+                                    # taking the entire list of geoname_ids because it is unclear which one to prefer
+                                    "geoname_ids": [
+                                        r["geonameId"] for r in results_list
+                                    ],
+                                }
+                            )
+
+                    except requests.exceptions.HTTPError as e:
+                        self.logger.info(f"Request error: {e}")
 
         return entities_geoname_ids
