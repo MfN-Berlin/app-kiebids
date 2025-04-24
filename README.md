@@ -40,6 +40,7 @@ Install conda (see [conda installation guide](https://docs.conda.io/projects/con
 ```bash
 conda env create --file environment.yml
 conda activate app-kiebids
+python -m spacy download de_core_news_sm
 ```
 
 ### Run app and trigger flow run from browser
