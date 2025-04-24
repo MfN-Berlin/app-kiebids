@@ -342,7 +342,7 @@ def prepare_sem_tag_gt(file_dict):
 
     sem_tag_gt = []
     if text:
-        nlp = spacy.load("en_core_web_sm")
+        nlp = spacy.load("de_core_news_sm")
 
         # Create a spaCy doc (tokenized version of the text)
         doc_gold = nlp.make_doc(text)
