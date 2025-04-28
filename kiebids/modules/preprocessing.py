@@ -3,21 +3,22 @@ from pathlib import Path
 import cv2
 from prefect import task
 
-from kiebids import config, get_logger, pipeline_config
-from kiebids.utils import debug_writer, resize
+from kiebids import config, pipeline_config, run_id
+from kiebids.utils import debug_writer, get_kiebids_logger, resize
 
 module = __name__.split(".")[-1]
-logger = get_logger(module)
-logger.setLevel(config.log_level)
 
-debug_path = "" if config.mode != "debug" else f"{config['debug_path']}/{module}"
+debug_path = (
+    "" if config.mode != "debug" else f"{config['debug_path']}/{module}/{run_id}"
+)
 module_config = pipeline_config[module]
 
 
-@debug_writer(debug_path, module=module)
 @task(name=module)
+@debug_writer(debug_path, module=module)
 def preprocessing(current_image_name):
     image_path = Path(config.image_path) / current_image_name
+    logger = get_kiebids_logger(module)
     logger.info("Preprocessing image: %s", image_path)
     image = cv2.imread(image_path)
 
@@ -43,7 +44,9 @@ def preprocessing(current_image_name):
 
 def gray(image):
     """Converts an image to grayscale"""
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Convert back BGR to keep 3 color channels
+    return cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR)
 
 
 def smooth(image):

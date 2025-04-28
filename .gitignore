@@ -116,6 +116,7 @@ celerybeat.pid
 
 # Environments
 .env
+.prd.env
 .venv
 env/
 venv/
@@ -168,7 +169,9 @@ data/output/*
 data/evaluation/*
 data/tmp
 models/*
-!0071__MB_I_0034_label_00001.JPG
+!data/images/0004__MB_1976_9_13_label_00001.JPG
+!data/pdf_xml/0004__MB_1976_9_13_label_00001.xml
+
 
 weights/
 

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from pathlib import Path
 
 import cv2
@@ -8,12 +9,23 @@ import fiftyone.core.labels as fol
 import numpy as np
 from lxml import etree
 from PIL import ImageDraw, ImageFont
-from prefect.logging import get_logger
+from prefect.exceptions import MissingContextError
+from prefect.logging import get_logger, get_run_logger
 
 from kiebids import config, fiftyone_dataset
 
 logger = get_logger(__name__)
 logger.setLevel(config.log_level)
+
+
+def get_kiebids_logger(name=""):
+    try:
+        # This must be inside a prefect context like a @task or a @flow
+        logger = get_run_logger()
+    except MissingContextError:
+        logger = get_logger(name)
+
+    return logger
 
 
 def debug_writer(debug_path="", module=""):
@@ -32,6 +44,8 @@ def debug_writer(debug_path="", module=""):
             if not module:
                 raise ValueError("Module not provided")
 
+            logger = get_kiebids_logger(module)
+
             if not os.path.exists(debug_path):
                 os.makedirs(debug_path, exist_ok=True)
 
@@ -49,7 +63,8 @@ def debug_writer(debug_path="", module=""):
 
                 image = func(*args, **kwargs)
 
-                image_output_path = Path(debug_path) / current_image
+                filename = Path(current_image).with_suffix(".jpg")
+                image_output_path = Path(debug_path) / filename
                 cv2.imwrite(str(image_output_path), image)
                 logger.debug("Saved preprocessed image to: %s", image_output_path)
 
@@ -68,10 +83,21 @@ def debug_writer(debug_path="", module=""):
 
                 image = kwargs.get("image")
 
-                # TODO are the crops still needed somewhere?
-                crop_and_save_detections(
-                    image, label_masks, current_image.split(".")[0], debug_path
-                )
+                filename = Path(current_image).stem
+                crop_and_save_detections(image, label_masks, filename, debug_path)
+
+                mask_path = Path(debug_path) / "masks"
+                os.makedirs(mask_path, exist_ok=True)
+                for i, mask in enumerate(label_masks):
+                    [x, y, w, h] = mask["bbox"]
+                    binary_mask = np.array(
+                        mask["segmentation"].copy() * 1, dtype=np.uint8
+                    )
+
+                    cv2.rectangle(binary_mask, (x, y), (x + w, y + h), 255, thickness=3)
+                    cv2.imwrite(
+                        f"{mask_path}/{filename}_mask{i}.jpg", binary_mask * 100
+                    )
 
                 if fiftyone_dataset is not None:
                     # Adding detections to the dataset
@@ -93,15 +119,24 @@ def debug_writer(debug_path="", module=""):
 
                 return label_masks
             elif module == "text_recognition":
-                texts = func(*args, **kwargs)
+                texts_and_bb = func(*args, **kwargs)
+
+                output = {
+                    "image_index": kwargs.get("current_image_index"),
+                    "regions": texts_and_bb,
+                }
 
                 output_path = os.path.join(
                     debug_path, current_image.split(".")[0] + ".json"
                 )
                 with open(output_path, "w") as f:
-                    json.dump(texts, f, ensure_ascii=False, indent=4)
+                    json.dump(output, f, ensure_ascii=False, indent=4)
                 logger.debug("Saved extracted text to: %s", output_path)
-                return texts
+                return texts_and_bb
+            elif module == "entity_linking":
+                return func(*args, **kwargs)
+            else:
+                return func(*args, **kwargs)
 
         return wrapper
 
@@ -109,10 +144,12 @@ def debug_writer(debug_path="", module=""):
 
 
 def crop_image(image: np.array, bounding_box: list[int]):
-    """get the cropped image from bounding boxes.
-    Parameters:
-        image: he original image as a numpy array (height, width, 3)
-        bounding_box: coordinates to crop [x_min,y_min,width,height]
+    """
+    Get the cropped image from bounding boxes.
+
+    Args:
+        image: the original image as a numpy array (height, width, 3)
+        bounding_box: coordinates to crop [x_min, y_min, width,height]
     """
     x, y, w, h = bounding_box
     return image[y : y + h, x : x + w]
@@ -123,9 +160,9 @@ def crop_and_save_detections(image, masks, image_name, output_dir):
     Plot and save individual images for each mask, using the bounding box to crop the image.
 
     Args:
-    image (numpy.ndarray): The original image as a numpy array (height, width, 3).
-    masks (list): A list of dictionaries, each containing a 'bbox' key with [x, y, width, height].
-    output_dir (str): Directory to save the output images.
+        image (numpy.ndarray): The original image as a numpy array (height, width, 3).
+        masks (list): A list of dictionaries, each containing a 'bbox' key with [x, y, width, height].
+        output_dir (str): Directory to save the output images.
     """
 
     for i, mask in enumerate(masks, 1):
@@ -157,9 +194,7 @@ def draw_polygon_on_image(image, coordinates, i=-1):
 
 
 def clear_fiftyone():
-    """
-    Clear all datasets from the FiftyOne database.
-    """
+    """Clear all datasets from the FiftyOne database."""
     datasets = fo.list_datasets()
 
     for dataset_name in datasets:
@@ -168,6 +203,17 @@ def clear_fiftyone():
 
 def extract_polygon(coordinates):
     return [tuple(map(int, point.split(","))) for point in coordinates.split()]
+
+
+def bounding_box_to_coordinates(bounding_box: list[int]):
+    """
+    Convert a bounding box to coordinates.
+    params bounding_box:  [x_min, y_min, width, height]
+
+    returns: "x_min,y_min x_max,y_min x_max,y_max x_min,y_max"
+    """
+    x, y, w, h = bounding_box
+    return f"{x},{y} {x+w},{y} {x+w},{y+h} {x},{y+h}"
 
 
 def resize(img, max_size):
@@ -185,8 +231,10 @@ def resize(img, max_size):
 def read_xml(file_path: str) -> dict:
     """
     Parses an XML file and extracts information about pages, text regions, and text lines.
+
     Args:
         file_path (str): The path to the XML file to be parsed.
+
     Returns:
         dict: A dictionary containing the extracted information with the following structure:
             {
@@ -232,12 +280,20 @@ def read_xml(file_path: str) -> dict:
                 region.findall(".//ns:TextEquiv", namespaces=ns)[-1]
                 .find(".//ns:Unicode", namespaces=ns)
                 .text
-                or ""
+                if region.findall(".//ns:TextEquiv", namespaces=ns)
+                else ""
             ),
             "text_lines": [],
         }
 
         for line in region.findall(".//ns:TextLine", namespaces=ns):
+            if "custom" in line.attrib:
+                custom_attributes = line.attrib["custom"]
+                matches = re.findall(r"(\w+)\s*\{([^}]*)\}", custom_attributes)
+                custom_attributes = [
+                    (tag, position.strip()) for tag, position in matches
+                ]
+
             text_region["text_lines"].append(
                 {
                     "id": line.get("id"),
@@ -251,6 +307,7 @@ def read_xml(file_path: str) -> dict:
                         .text
                         or ""
                     ),
+                    "custom_attributes": custom_attributes,
                 }
             )
 
@@ -263,9 +320,8 @@ def get_ground_truth_data(filename):
     xml_file = filename.replace(filename.split(".")[-1], "xml")
 
     # check if ground truth is available
-    if xml_file in os.listdir(config.xml_path):
-        file_path = os.path.join(config.xml_path, xml_file)
+    if xml_file in os.listdir(config.evaluation.xml_path):
+        file_path = os.path.join(config.evaluation.xml_path, xml_file)
         return read_xml(file_path)
 
-    logger.warning(f"GT File not found for {filename}")
     return None

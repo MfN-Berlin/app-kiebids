@@ -12,16 +12,8 @@ usage() {
 serve_deployment=0
 continue_prefect=0
 
-# Parse command-line options using getopt
-OPTIONS=$(getopt -o "" --long "serve-deployment,continue-prefect,help" -- "$@")
-if [ $? -ne 0 ]; then
-    usage
-fi
-
-eval set -- "$OPTIONS"
-
-# Process the arguments
-while true; do
+# Parse and process command-line options manually for cross-platform compatibility
+while [[ $# -gt 0 ]]; do
     case "$1" in
         --serve-deployment)
             serve_deployment=1
@@ -39,15 +31,13 @@ while true; do
             break
             ;;
         *)
-            echo "Error: Invalid option"
-            echo $1
+            echo "Error: Invalid option: $1"
             usage
             ;;
     esac
 done
 
 export PYTHONPATH=$PYTHONPATH:.
-source .env
 
 if [ -z "$PREFECT_PORT" ]; then
     echo "defaulting PREFECT_PORT to 4200"
@@ -71,11 +61,11 @@ stop_prefect() {
 trap 'stop_prefect' INT
 
 # Get the path to the current Python executable
-PYTHON_PATH=$(which /usr/bin/env python)
+INTERPRETER_PATH=$(which /usr/bin/env python)
 
 # Check if port $PREFECT_PORT is in use
 if ! lsof -i :$PREFECT_PORT > /dev/null; then
-    prefect server start --port $PREFECT_PORT &
+    prefect server start --host localhost --port $PREFECT_PORT &
 
     # wait for prefect server to start
     sleep 5
@@ -83,9 +73,9 @@ fi
 
 # Finally, run the flow
 if [ $serve_deployment -eq 1 ]; then
-    $PYTHON_PATH kiebids/ocr_flow.py --serve-deployment
+    $INTERPRETER_PATH kiebids/ocr_flow.py --serve-deployment
 else
-    $PYTHON_PATH kiebids/ocr_flow.py
+    $INTERPRETER_PATH kiebids/ocr_flow.py
     if [ $continue_prefect -eq 0 ]; then
         stop_prefect
     fi

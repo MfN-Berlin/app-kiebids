@@ -2,22 +2,30 @@
 
 # Path to input /images directory
 image_path: data/images
+max_images: 50  # number of images to process
 
 # Path to output directories
 output_path: data/output
 
+run_tag: # Specify a tag to identify the run (optional)
+
 # Evaluation settings
-evaluation: False
-evaluation_path: data/evaluation
-xml_path: ""
+evaluation:
+  enabled: false
+  path: data/evaluation
+  summary_interval: 10  # Frequency of evaluation table writing per x images
+  xml_path: "data/page_xml"
 
 # Debug configs
 mode:  # debug
 debug_path: data/debug
-max_images: 5  # number of images to process, useful for debugging
 
 log_level: INFO  # DEBUG
 
 fiftyone_dataset: "mfn-dataset"
 fiftyone_database_dir: data/debug/fifty-db
 disable_fiftyone: true
+
+# Information on who created the XML file. Used in the XML output.
+creator_info: |
+  Information about the creator of the XML file.

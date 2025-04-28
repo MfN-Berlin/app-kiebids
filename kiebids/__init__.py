@@ -5,8 +5,9 @@ import fiftyone.core.dataset as fod
 import yaml
 from dotenv import load_dotenv
 from dotmap import DotMap
-from prefect.logging import get_logger
-from tensorboardX import SummaryWriter
+from prefect.logging import get_logger, get_run_logger
+
+from kiebids.evaluation_writer import EvaluationWriter
 
 load_dotenv()
 
@@ -30,12 +31,21 @@ if not config.disable_fiftyone:
     fiftyone_dataset.overwrite = True
     fiftyone_dataset.persistent = True
 
-if config.evaluation:
-    log_dir = f"{config.evaluation_path}/tensorboard/{datetime.now().strftime('%Y%m%d-%H%M%S')}"
-    evaluation_writer = SummaryWriter(log_dir)
+run_id = (
+    datetime.now().strftime("%Y%m%d-%H%M%S")
+    if config.run_tag is None
+    else f"{datetime.now().strftime('%Y%m%d-%H%M%S')}_{config.run_tag}"
+)
+
+if config.evaluation.enabled:
+    evaluation_writer = EvaluationWriter()
 else:
     evaluation_writer = None
 
+os.makedirs(config.output_path, exist_ok=True)
+
 __all__ = [
     "get_logger",
+    "get_run_logger",
+    "run_id",
 ]
