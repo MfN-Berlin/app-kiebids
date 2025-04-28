@@ -372,7 +372,7 @@ def compare_tags(predictions: list, ground_truths: list):
         (s.start_char, s.end_char, s.label_) for s in predictions if s is not None
     }
 
-    # TODO can we compare like this?
+    # Comparing exact matches of start and end indices of the labeled subtext
     tp = len(gold_set & pred_set)
     fp = len(pred_set - gold_set)
     fn = len(gold_set - pred_set)
