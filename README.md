@@ -53,6 +53,9 @@ bash run_flow.sh --serve-deployment
 This will serve a self hosted prefect environment:
 1. Copy and paste the shown url of respective deployment. The URL should look similar to this `http://localhost:4200/deployments/deployment/<some-random-deployment-id>`
 2. Click upper right button `Run` and select `Quick run`
+3. If desired:
+   - set the `max_images` parameter for the maximum number of images you would like to process. (set this value to -1 if you would like to process all images inside this directory.)
+   - set the path to your images directory on your local system. (This will only work if the directory resides on the same file system as the one where the Prefect server is running.)
 
 Behaviour:
 - This will start a flow run on all images inside the `image_path` referenced in [workflow_config.yaml](./configs/workflow_config.yaml)

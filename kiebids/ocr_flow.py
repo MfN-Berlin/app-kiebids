@@ -38,11 +38,10 @@ def ocr_flow(max_images: int, image_path: str = config.image_path):
     if evaluation_writer:
         evaluation_writer.init_metrics()
 
-    max_images = max_images if max_images > 0 else config.max_images
+    images_list = sorted(os.listdir(image_path))
+    max_images = max_images if max_images > 0 else len(images_list)
     # Process images sequentially
-    for image_index, filename in enumerate(
-        tqdm(sorted(os.listdir(image_path))[:max_images])
-    ):
+    for image_index, filename in enumerate(tqdm(images_list[:max_images])):
         if not filename.lower().endswith((".jpg", ".jpeg", ".png", ".tiff", ".tif")):
             continue
 
