@@ -2,6 +2,11 @@
 
 [Insert description]
 
+## Hardware and OS recommendations
+The code in this repository has been tested on Ubuntu 22.04 operating system.
+
+The utilized GPU is a [NVIDIA A30](https://www.nvidia.com/en-us/data-center/products/a30-gpu/) unit with 24GB memory. We strongly recommend a NVIDIA GPU device with at least 16GB memory.
+
 ## Modules and modes
 
 Overview of each module
