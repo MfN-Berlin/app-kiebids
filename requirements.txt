@@ -24,10 +24,7 @@ PyYAML==6.0.2
 Requests==2.32.3
 segment_anything_py==1.0.1
 spacy==3.8.5
-tensorboard==2.17.1
-tensorboardX==2.6.2.2
 torch==2.4.1
 torchmetrics==1.6.1
 tqdm==4.66.5
 transformers==4.48.0
-spacy==3.8.5
