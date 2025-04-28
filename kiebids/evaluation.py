@@ -351,7 +351,10 @@ def prepare_sem_tag_gt(file_dict):
                 {
                     # Use char_span to align character offsets to tokens
                     "span": doc_gold.char_span(
-                        int(p["offset"]), int(p["offset"]) + int(p["length"]), label=tag
+                        int(p["offset"]),
+                        int(p["offset"]) + int(p["length"]),
+                        label=tag,
+                        alignment_mode="expand",
                     ),
                     "geoname_id": p.get("Geonames"),
                 }
@@ -363,6 +366,7 @@ def compare_tags(predictions: list, ground_truths: list):
     gold_set = {
         (s["span"].start_char, s["span"].end_char, s["span"].label_)
         for s in ground_truths
+        if s is not None
     }
     pred_set = {
         (s.start_char, s.end_char, s.label_) for s in predictions if s is not None
