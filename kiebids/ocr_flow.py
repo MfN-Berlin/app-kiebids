@@ -31,7 +31,6 @@ def ocr_flow(max_images: int, image_path: str = config.image_path):
     logger.info("Image path: %s", image_path)
 
     # resetting config image path.
-    # TODO this should be done in a better way
     config.image_path = image_path
 
     # reinit evaluation with every main flow run

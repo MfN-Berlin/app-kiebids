@@ -87,18 +87,20 @@ def evaluator(module=""):
                 evaluation_writer.metrics["text-recognition-performance"].extend(cers)
                 return texts_and_bb
             elif module == "semantic_tagging":
-                gt_text, gt_spans = prepare_sem_tag_gt(gt_data)
+                sem_tag_gt = prepare_sem_tag_gt(gt_data)
 
-                # Text from pipeline
+                # caching text from pipeline
                 pipeline_text = kwargs.get("texts")
 
-                # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt text
-                kwargs["texts"] = [gt_text]
+                # Because we want to evaluate the module's standalone behaviour we evaluate this module on the gt text
+                kwargs["texts"] = [content["text"] for _, content in sem_tag_gt.items()]
                 sequences_and_tags = func(*args, **kwargs)
 
                 for i, region_st in enumerate(sequences_and_tags):
+                    # TODO in our GT for sem tagging we only have one region. Thats why we just access the first GT item for now. In further iterations a matching of regions must be implemented
+                    region_gt = sem_tag_gt[next(iter(sem_tag_gt))]["tags"]
                     performance = compare_tags(
-                        predictions=region_st, ground_truths=gt_spans
+                        predictions=region_st, ground_truths=region_gt
                     )
 
                     performance["region"] = f"region_{i}"
@@ -112,10 +114,13 @@ def evaluator(module=""):
                 return func(*args, **kwargs)
 
             elif module == "entity_linking":
-                _, gt_spans = prepare_sem_tag_gt(gt_data)
+                sem_tag_gt = prepare_sem_tag_gt(gt_data)
+
+                # TODO in our GT for sem tagging we only have one region. Thats why we just access the first GT item for now. In further iterations a matching of regions must be implemented
+                region_gt = sem_tag_gt[next(iter(sem_tag_gt))]["tags"]
+
                 # Because we want to evaluate the modules standalone behaviour we evaluate this module on the gt spans
-                # TODO this is assuming that there is only one region present in evaluation data set. thus only one list in list
-                kwargs["st_result"] = [[s["span"] for s in gt_spans]]
+                kwargs["st_result"] = [[s["span"] for s in region_gt]]
 
                 entities_geoname_ids = func(*args, **kwargs)
 
@@ -123,7 +128,7 @@ def evaluator(module=""):
                     # compare with gt geoname ids
                     performance = compare_geoname_ids(
                         predictions=pred_spans,
-                        ground_truths=gt_spans,
+                        ground_truths=region_gt,
                     )
 
                     performance["region"] = region
@@ -202,7 +207,6 @@ def compare_layouts(
     avg_iou = {
         "avg_iou": np.average(np.concatenate((np.array(ious), np.zeros(num_fp_fn))))
     }
-    logger.debug(f"average iou: {avg_iou}")
     return avg_iou
 
 
@@ -307,12 +311,14 @@ def prepare_sem_tag_gt(file_dict):
     line_separator = "\n\n"
 
     tag_lookup = pipeline_config["semantic_tagging"].tag_lookup
-    global_positions = []
-    global_tags = []
+    sem_tag_gt = {}
     # multiple regions possible because of multiple exhibit labels.
-    # TODO this is just assuming that there is only one region present in evaluation data set. Do we need a strategy to handle multiple regions?
     for region in file_dict["text_regions"]:
         text = []
+        global_tags = []
+        global_positions = []
+        sem_tag_gt[region["id"]] = {}
+
         # global offset used to correct posiotion for tags
         global_offset = 0
         for line in region["text_lines"]:
@@ -335,31 +341,31 @@ def prepare_sem_tag_gt(file_dict):
                 p["offset"] = int(p["offset"]) + global_offset
 
             global_positions.extend(positions)
-
             global_offset += len(line["text"]) + len(line_separator)
 
         text = line_separator.join(text)
 
-    sem_tag_gt = []
-    if text:
-        nlp = spacy.load("de_core_news_sm")
+        if text:
+            nlp = spacy.load("de_core_news_sm")
 
-        # Create a spaCy doc (tokenized version of the text)
-        doc_gold = nlp.make_doc(text)
-        for tag, p in zip(global_tags, global_positions):
-            sem_tag_gt.append(
-                {
-                    # Use char_span to align character offsets to tokens
-                    "span": doc_gold.char_span(
-                        int(p["offset"]),
-                        int(p["offset"]) + int(p["length"]),
-                        label=tag,
-                        alignment_mode="expand",
-                    ),
-                    "geoname_id": p.get("Geonames"),
-                }
-            )
-    return text, sem_tag_gt
+            # Create a spaCy doc (tokenized version of the text)
+            doc_gold = nlp.make_doc(text)
+            sem_tag_gt[region["id"]]["text"] = text
+            sem_tag_gt[region["id"]]["tags"] = []
+            for tag, p in zip(global_tags, global_positions):
+                sem_tag_gt[region["id"]]["tags"].append(
+                    {
+                        # Use char_span to align character offsets to tokens
+                        "span": doc_gold.char_span(
+                            int(p["offset"]),
+                            int(p["offset"]) + int(p["length"]),
+                            label=tag,
+                            alignment_mode="expand",
+                        ),
+                        "geoname_id": p.get("Geonames"),
+                    }
+                )
+    return sem_tag_gt
 
 
 def compare_tags(predictions: list, ground_truths: list):
