@@ -75,11 +75,17 @@ def evaluator(module=""):
                     for tr in gt_data.get("text_regions")
                 ]
 
-                cers = compare_texts(
-                    predictions=predictions,
-                    ground_truths=gt_texts,
-                    image_index=kwargs.get("current_image_index"),
-                )
+                cers = []
+                if len(gt_texts) == len(predictions):
+                    cers = compare_texts(
+                        predictions=predictions,
+                        ground_truths=gt_texts,
+                    )
+                else:
+                    logger.warning(
+                        "Did not evaluate text in image %s - the number of found text regions are not the same as in the ground truth XML file.",
+                        kwargs.get("current_image_name"),
+                    )
 
                 # TODO how to track cer when no match is found?
                 for cer in cers:
@@ -251,7 +257,7 @@ def compute_iou(prediction: np.ndarray, ground_truth: np.ndarray):
     return np.nan if union == 0 else intersection / union
 
 
-def compare_texts(predictions: list[str], ground_truths: list[str], image_index: int):
+def compare_texts(predictions: list[str], ground_truths: list[str]):
     """
     Computes the Character Error Rate (CER) ground truth and predicted strings,
     using torchmetric CharErrorRate. https://lightning.ai/docs/torchmetrics/stable/text/char_error_rate.html.
@@ -263,13 +269,6 @@ def compare_texts(predictions: list[str], ground_truths: list[str], image_index:
         predictions: List of predicted strings.
 
     """
-    # Only evaluate if the number of ground truth strings matches the number of predictions
-    if len(ground_truths) != len(predictions):
-        logger.warning(
-            "Did not evaluate text in image - the number of found text regions are not the same as in the ground truth XML file."
-        )
-        return []
-
     CER_calculator = CharErrorRate()
 
     # Order the predicted strings to the ground truth strings until finding the best possible match
