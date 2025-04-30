@@ -1,26 +1,73 @@
-# Anwendungsworkflow zur Informationsextraktion aus Sammlungsetiketten
+# Application Workflow for Information Extraction from Collection Labels <!-- omit in toc -->
 
-[Insert description]
+This repository provides an application for extracting information from collection labels.
+
+## Table of Contents <!-- omit in toc -->
+- [Hardware and OS recommendations](#hardware-and-os-recommendations)
+- [Prefect](#prefect)
+- [Pipeline Overview and Dependencies](#pipeline-overview-and-dependencies)
+  - [1. Image Preprocessing](#1-image-preprocessing)
+  - [2. Layout Analysis](#2-layout-analysis)
+  - [3. Text Recognition](#3-text-recognition)
+  - [4. Semantic Tagging](#4-semantic-tagging)
+  - [5. Entity Linking](#5-entity-linking)
+- [Quickstart with example image](#quickstart-with-example-image)
+  - [Prerequisites](#prerequisites)
+  - [Set up local Python environment](#set-up-local-python-environment)
+  - [Run app and trigger flow run from browser](#run-app-and-trigger-flow-run-from-browser)
+  - [Running a flow without prefect UI:](#running-a-flow-without-prefect-ui)
+  - [Run flow on own images:](#run-flow-on-own-images)
+- [Evaluation Mode](#evaluation-mode)
+  - [Evaluation Writer](#evaluation-writer)
+- [Debug Modus](#debug-modus)
+- [Dockerized application](#dockerized-application)
+- [Testing (WIP)](#testing-wip)
+- [Development Environment KI-Ideenwerkstatt](#development-environment-ki-ideenwerkstatt)
+  - [Config behaviour](#config-behaviour)
+- [Known issues](#known-issues)
+  - [Prefect](#prefect-1)
+  - [FiftyOne Database](#fiftyone-database)
 
 ## Hardware and OS recommendations
 The code in this repository has been tested on Ubuntu 22.04 operating system.
 
 The utilized GPU is a [NVIDIA A30](https://www.nvidia.com/en-us/data-center/products/a30-gpu/) unit with 24GB memory. We strongly recommend a NVIDIA GPU device with at least 16GB memory.
 
-## Modules and modes
+## Prefect
+In this project [```Prefect```](https://www.prefect.io/) is used as a workflow orchestration tool to monitor tasks and pipeine runs. It provides a user interface where you get an overview of the different run and each processed image.
+More about how to start the prefect server [here](#run-app-and-trigger-flow-run-from-browser).
 
-Overview of each module
+## Pipeline Overview and Dependencies
+The pipeline consist of five different steps:
 
 1. Preprocessing
 2. Layout Analysis
 3. Text Recognition
-4. Semantic Labeling (not yet implemented)
-5. Entity linking
+4. Semantic Tagging
+5. Entity Linking
 
-The pipeline can be run in three different modes:
-1. Prediction (work in progress)
-2. Evaluation (work in progress)
-3. Debug
+### 1. Image Preprocessing
+- **Modules**: `cv2` (OpenCV)
+  OpenCV (`cv2`) is used for various image preprocessing tasks such as resizing, normalization, noise reduction, and general image transformations.
+
+### 2. Layout Analysis
+- **Modules**: `segment_anything`
+   The `segment_anything` module is used to perform the image segmentation, identifying distinct regions/etickets within the image.
+
+### 3. Text Recognition
+- **Modules**: `easyocr`, `Moondream` (using Hugging Face)
+   For the text recognition step, two different models are implemented, `easyocr` https://www.jaided.ai/easyocr/ and `Moondream` https://moondream.ai/.
+   in the [ocr_config](./configs/ocr_config.yaml), you can set which of them to use. None of them are specifically trained to recognize handwritten text, and can be expected to perform subpar on datasets where large parts are handwritten.
+   Moondream has been performing slightly better than easyocr, but easyocr runs significantly faster. Running one image through the pipeline is on average around ~15s with easyocr, and around ~35s with moondream.
+
+### 4. Semantic Tagging
+- **Modules**: `spacy` with regular expressions (`re`)
+  After recognizing the text, `spacy` is used for semantic tagging using regular expressions and
+  [rule based pattern matching](https://spacy.io/usage/rule-based-matching).  Which tags that are implemented with regular expression and spacy can be found in [ocr_config](./configs/ocr_config.yaml).
+
+### 5. Entity Linking
+- **Method**: API calls to [GeoNames](http://api.geonames.org/searchJSON)
+  Extracted entities (e.g., place names) are linked to structured geographical data by making API requests to the GeoNames service.
 
 ## Quickstart with example image
 ### Prerequisites

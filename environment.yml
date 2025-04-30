@@ -1,4 +1,4 @@
-name: app-kiebids-test
+name: app-kiebids
 channels:
   - conda-forge
   - defaults
