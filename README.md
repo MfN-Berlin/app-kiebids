@@ -48,25 +48,30 @@ The pipeline consist of five different steps:
 
 ### 1. Image Preprocessing
 - **Modules**: `cv2` (OpenCV)
+  
   OpenCV (`cv2`) is used for various image preprocessing tasks such as resizing, normalization, noise reduction, and general image transformations.
 
 ### 2. Layout Analysis
 - **Modules**: `segment_anything`
+  
    The `segment_anything` module is used to perform the image segmentation, identifying distinct regions/etickets within the image.
 
 ### 3. Text Recognition
 - **Modules**: `easyocr`, `Moondream` (using Hugging Face)
+  
    For the text recognition step, two different models are implemented, `easyocr` https://www.jaided.ai/easyocr/ and `Moondream` https://moondream.ai/.
    in the [ocr_config](./configs/ocr_config.yaml), you can set which of them to use. None of them are specifically trained to recognize handwritten text, and can be expected to perform subpar on datasets where large parts are handwritten.
    Moondream has been performing slightly better than easyocr, but easyocr runs significantly faster. Running one image through the pipeline is on average around ~15s with easyocr, and around ~35s with moondream.
 
 ### 4. Semantic Tagging
 - **Modules**: `spacy` with regular expressions (`re`)
+  
   After recognizing the text, `spacy` is used for semantic tagging using regular expressions and
   [rule based pattern matching](https://spacy.io/usage/rule-based-matching).  Which tags that are implemented with regular expression and spacy can be found in [ocr_config](./configs/ocr_config.yaml).
 
 ### 5. Entity Linking
 - **Method**: API calls to [GeoNames](http://api.geonames.org/searchJSON)
+  
   Extracted entities (e.g., place names) are linked to structured geographical data by making API requests to the GeoNames service.
 
 ## Quickstart with example image
