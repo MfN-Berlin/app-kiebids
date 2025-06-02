@@ -47,15 +47,15 @@ The pipeline consist of five different steps:
 4. Semantic Tagging
 5. Entity Linking
 
-The first steps of the pipeline preprocesses the image and identifies and divides the image to the different regions (if there is more than one).
+The first steps of the pipeline preprocess the image and identify and divide a given image into separate regions corresponding to individual labels.
 
 <img src="docs/flow.png" alt="Pipeline Flow" width="60%"/>
 
-Text recognition is done on each region separately. For each region, MfN specific semantic tags are recognized in the text: 
+Text recognition is done on each region separately. For each region, semantic entities are recognized in the text and tagged: 
 
 <img src="docs/semantic_tagging.png" alt="Pipeline Flow" width="60%"/>
 
-The tags found are then in the entity linking module, if possible, linked to structural geografical data via API calls to: **https://www.geonames.org/**.
+In the entity linking module, text that is tagged as denoting geographical entities, is linked whenever possible via API calls to corresponding [Geonames entries](https://www.geonames.org/).
 
 ### 1. Image Preprocessing
 - **Modules**: `cv2` (OpenCV)
