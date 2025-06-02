@@ -55,7 +55,7 @@ Text recognition is done on each region separately. For each region, MfN specifi
 
 <img src="docs/semantic_tagging.png" alt="Pipeline Flow" width="60%"/>
 
-The tags found are then in the entity linking module, if possible, linked to structural geografical data via API calls to: ![https://www.geonames.org/](https://www.geonames.org/).
+The tags found are then in the entity linking module, if possible, linked to structural geografical data via API calls to: **https://www.geonames.org/**.
 
 ### 1. Image Preprocessing
 - **Modules**: `cv2` (OpenCV)
