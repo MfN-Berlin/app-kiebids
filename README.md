@@ -24,7 +24,8 @@ This repository provides an application for extracting information from collecti
 - [Testing (WIP)](#testing-wip)
 - [Development Environment KI-Ideenwerkstatt](#development-environment-ki-ideenwerkstatt)
   - [Config behaviour](#config-behaviour)
-- [Known issues](#known-issues)
+- [Known Limitations](#known-limitations)
+  - [Algorithms and Code](#algorithms-and-code)
   - [Prefect](#prefect-1)
   - [FiftyOne Database](#fiftyone-database)
 
@@ -46,32 +47,42 @@ The pipeline consist of five different steps:
 4. Semantic Tagging
 5. Entity Linking
 
+The first steps of the pipeline preprocess the image and identify and divide a given image into separate regions corresponding to individual labels.
+
+<img src="docs/flow.png" alt="Pipeline Flow" width="60%"/>
+
+Text recognition is done on each region separately. For each region, semantic entities are recognized in the text and tagged: 
+
+<img src="docs/semantic_tagging.png" alt="Pipeline Flow" width="60%"/>
+
+In the entity linking module, text that is tagged as denoting geographical entities, is linked whenever possible via API calls to corresponding [Geonames entries](https://www.geonames.org/).
+
 ### 1. Image Preprocessing
 - **Modules**: `cv2` (OpenCV)
-  
+
   OpenCV (`cv2`) is used for various image preprocessing tasks such as resizing, normalization, noise reduction, and general image transformations.
 
 ### 2. Layout Analysis
 - **Modules**: `segment_anything`
-  
+
    The `segment_anything` module is used to perform the image segmentation, identifying distinct regions/etickets within the image.
 
 ### 3. Text Recognition
 - **Modules**: `easyocr`, `Moondream` (using Hugging Face)
-  
+
    For the text recognition step, two different models are implemented, `easyocr` https://www.jaided.ai/easyocr/ and `Moondream` https://moondream.ai/.
    in the [ocr_config](./configs/ocr_config.yaml), you can set which of them to use. None of them are specifically trained to recognize handwritten text, and can be expected to perform subpar on datasets where large parts are handwritten.
    Moondream has been performing slightly better than easyocr, but easyocr runs significantly faster. Running one image through the pipeline is on average around ~15s with easyocr, and around ~35s with moondream.
 
 ### 4. Semantic Tagging
 - **Modules**: `spacy` with regular expressions (`re`)
-  
+
   After recognizing the text, `spacy` is used for semantic tagging using regular expressions and
   [rule based pattern matching](https://spacy.io/usage/rule-based-matching).  Which tags that are implemented with regular expression and spacy can be found in [ocr_config](./configs/ocr_config.yaml).
 
 ### 5. Entity Linking
 - **Method**: API calls to [GeoNames](http://api.geonames.org/searchJSON)
-  
+
   Extracted entities (e.g., place names) are linked to structured geographical data by making API requests to the GeoNames service.
 
 ## Quickstart with example image
@@ -197,7 +208,12 @@ WORKFLOW_CONFIG="dev_workflow_config.yaml"
 ```
 If these variables are not set, the default [workflow_config](./configs/workflow_config.yaml) and [ocr_config](./configs/ocr_config.yaml) are initialized instead.
 
-## Known issues
+## Known Limitations 
+
+### Algorithms and Code
+- The text recognition algorithm performs best on digital (machine-printed) text. Handwritten text is currently not well supported.
+- Semantic tagging is currently based solely on regular expressions. As a result, tagging accuracy can degrade significantly when text recognition quality is low.
+- The semantic tagging module is not yet fully implemented — some tag types are still missing
 
 ### Prefect
 
