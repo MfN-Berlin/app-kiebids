@@ -1,6 +1,5 @@
-# Application Workflow for Information Extraction from Collection Labels <!-- omit in toc -->
-
-This repository provides an application for extracting information from collection labels.
+# KIEBIDS: Framework and Workflow for Information Extraction from Collection Labels <!-- omit in toc -->
+The repository provides an application for extracting information from digital representations of collection labels associated with objects in natural history collections. KIEBIDS, in German, stands for *<ins>KI</ins> basierte <ins>E</ins>xtraktion <ins>BI</ins>odiversitätsrelevanter <ins>D</ins>aten aus <ins>S</ins>chriftgut* (AI-based extraction of biodiversity-related data from written records).
 
 ## Table of Contents <!-- omit in toc -->
 - [Hardware and OS recommendations](#hardware-and-os-recommendations)
