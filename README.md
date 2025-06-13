@@ -64,7 +64,7 @@ In the entity linking module, text that is tagged as denoting geographical entit
 ### 2. Layout Analysis
 - **Modules**: `segment_anything`
 
-   The `segment_anything` module is used to perform the image segmentation, identifying distinct regions/etickets within the image.
+   The `segment_anything` module is used to perform image segmentation - identifying distinct regions of interest, i.e. the image regions actually depicting labels within the entirety of the image.
 
 ### 3. Text Recognition
 - **Modules**: `easyocr`, `Moondream` (using Hugging Face)
@@ -96,7 +96,7 @@ sudo apt install -y ffmpeg libsm6 libxext6 curl libcurl4
 ```
 
 <!-- Files and models -->
-After cloning this repository, download the required SAM Model by running:
+After cloning this repository, download the required SAM Model to the `app-kiebids/models/` directory by running:
 ```
 cd ./app-kiebids
 wget -P ./models/ https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth
